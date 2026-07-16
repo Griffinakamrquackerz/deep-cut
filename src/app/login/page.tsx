@@ -19,12 +19,17 @@ export default function LoginPage() {
     else setSent(true);
   }
 
+  // Hidden until Google OAuth is actually configured in Supabase — otherwise
+  // visitors hit "Unsupported provider: provider is not enabled".
+  const googleEnabled = process.env.NEXT_PUBLIC_ENABLE_GOOGLE === "1";
+
   async function googleSignIn() {
     const supabase = supabaseBrowser();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (error) setError(`Google sign-in isn't available yet — use the magic link. (${error.message})`);
   }
 
   return (
@@ -59,13 +64,15 @@ export default function LoginPage() {
           >
             Send magic link
           </button>
-          <button
-            type="button"
-            onClick={googleSignIn}
-            className="rounded border border-line bg-surface px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-cream"
-          >
-            Continue with Google
-          </button>
+          {googleEnabled && (
+            <button
+              type="button"
+              onClick={googleSignIn}
+              className="rounded border border-line bg-surface px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-cream"
+            >
+              Continue with Google
+            </button>
+          )}
           {error && <p className="text-xs text-ticket">{error}</p>}
         </form>
       )}

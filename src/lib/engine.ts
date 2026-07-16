@@ -184,18 +184,28 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
     });
     await db.from("ai_logs").insert({ user_id: userId, stage: "recs", raw });
 
-    for (const cand of candidates.recs) {
+    // Resolve + cache every candidate in parallel — serverless functions have a
+    // hard 60s budget, and sequential TMDB validation of 12 films blows it.
+    const resolved = (
+      await Promise.all(
+        candidates.recs.map(async (cand) => {
+          // Resolve against TMDB — LLMs occasionally invent films.
+          const tmdbId = await resolveTitleYear(cand.title, cand.year).catch(() => null);
+          if (!tmdbId || excludedIds.has(tmdbId)) return null;
+          const movie = await cacheMovie(tmdbId).catch(() => null);
+          return movie ? { cand, movie } : null;
+        }),
+      )
+    ).filter((x): x is NonNullable<typeof x> => x !== null);
+
+    for (const { cand, movie } of resolved) {
       if (survivors.length >= 12) break;
-      // Resolve against TMDB — LLMs occasionally invent films.
-      const tmdbId = await resolveTitleYear(cand.title, cand.year).catch(() => null);
-      if (!tmdbId || excludedIds.has(tmdbId)) continue;
-      const movie = await cacheMovie(tmdbId).catch(() => null);
-      if (!movie) continue;
+      if (excludedIds.has(movie.id)) continue; // in-batch duplicate guard
 
       const obscurity = obscurityFromVoteCount(movie.vote_count);
       if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
         // Real popularity outside the requested window — skip but exclude from retry.
-        excludedIds.add(tmdbId);
+        excludedIds.add(movie.id);
         excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
         continue;
       }
@@ -214,7 +224,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
         .single();
       if (error || !inserted) continue; // unique(user_id, movie_id) guards dupes in SQL
 
-      excludedIds.add(tmdbId);
+      excludedIds.add(movie.id);
       excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
       survivors.push({
         id: inserted.id,

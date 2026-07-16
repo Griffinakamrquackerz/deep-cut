@@ -67,8 +67,13 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
         myServicesOnly: mineOnly,
       }),
     });
-    if (res.status === 429) setMessage("You've hit today's limit — 3 deals a day keeps it special.");
-    else if (!res.ok) setMessage("The projector jammed. Try again in a minute.");
+    if (res.status === 429) {
+      setMessage("You've hit today's deal limit — back tomorrow.");
+    } else if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
+      setMessage(`The projector jammed${detail}. Try again in a minute.`);
+    }
     await load();
     setDealing(false);
   }
