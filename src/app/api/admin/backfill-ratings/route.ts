@@ -4,7 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cacheMovie } from "@/lib/tmdb";
 import { omdbConfigured } from "@/lib/omdb";
 
-export const maxDuration = 300;
+// 60s is the safe ceiling on Vercel's free (Hobby) plan — the backfill is
+// resumable, so just re-visit the URL if it times out partway.
+export const maxDuration = 60;
 
 // One-off backfill: re-enrich every cached movie with ratings (TMDB always,
 // IMDb + Rotten Tomatoes when OMDB_API_KEY is set). Safe to run repeatedly.

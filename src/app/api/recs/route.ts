@@ -5,7 +5,8 @@ import { dealRecs } from "@/lib/engine";
 import { checkAndIncrement } from "@/lib/rate-limit";
 import { RecBatchInput } from "@/lib/schemas";
 
-export const maxDuration = 120;
+// 60s is the safe ceiling on Vercel's free (Hobby) plan.
+export const maxDuration = 60;
 
 /** Active recs with joined movie data. */
 export async function GET() {
