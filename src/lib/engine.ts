@@ -195,8 +195,9 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
     (opts.myServicesOnly && services.length > 0 ? watchableCount : survivors.length) >=
     TARGET_RECS;
 
-  // At most one supplemental batch when fewer than TARGET_RECS survive validation.
-  for (let round = 0; round < 2 && !targetMet(); round++) {
+  // Single LLM round — Discover below tops up any shortfall in seconds,
+  // and a second LLM round risks Vercel's 60s function limit.
+  for (let round = 0; round < 1 && !targetMet(); round++) {
     const { candidates, raw } = await generateRecCandidates({
       threads: profile.threads,
       lovedTitles: lovedBriefs.map((m) => `${m.title} (${m.year ?? "?"})`),
@@ -268,6 +269,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
   // When the LLM's picks all collide with the user's history (heavy users) or
   // fail validation, pull real films straight from TMDB by taste-genres +
   // obscurity band + services, loosening constraints until the batch fills.
+  try {
   if (!targetMet()) {
     const genreIds = topGenreIds(lovedBriefs);
     const svc = services as Service[];
@@ -278,10 +280,12 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
       ? [{ genreIds, services: svc }, { services: svc }, { genreIds }, {}]
       : [{ genreIds }, {}];
 
+    let pagesUsed = 0;
     for (const attempt of attempts) {
-      if (targetMet() || survivors.length >= 12) break;
+      if (targetMet() || survivors.length >= 12 || pagesUsed >= 6) break;
       // Rotate pages per batch so repeat deals surface different films.
-      for (let p = 0; p < 3 && !targetMet() && survivors.length < 12; p++) {
+      for (let p = 0; p < 3 && !targetMet() && survivors.length < 12 && pagesUsed < 6; p++) {
+        pagesUsed++;
         const page = (((batch - 1) * 3 + p) % 12) + 1;
         const found = await discoverMovies({
           obscurityMin: opts.obscurityMin,
@@ -335,6 +339,9 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
         }
       }
     }
+  }
+  } catch {
+    // Discover is best-effort — a fallback failure must never sink the deal.
   }
 
   await track(userId, "rec_batch_dealt", { batch, count: survivors.length });
