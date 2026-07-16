@@ -152,13 +152,18 @@ export async function getWatchProviders(tmdbId: number): Promise<Service[]> {
  * Fetch + upsert a movie into the `movies` cache table.
  * Providers are refreshed when older than a week (they change).
  */
-export async function cacheMovie(tmdbId: number): Promise<CachedMovie | null> {
+export async function cacheMovie(
+  tmdbId: number,
+  opts: { force?: boolean } = {},
+): Promise<CachedMovie | null> {
   const db = supabaseAdmin();
   const { data: existing } = await db.from("movies").select("*").eq("id", tmdbId).maybeSingle();
 
   // Fresh means providers refreshed within the week AND ratings have been
   // fetched at least once (older rows predate ratings — refresh to backfill).
+  // `force` bypasses the cache to re-enrich (e.g. after adding an OMDb key).
   const fresh =
+    !opts.force &&
     existing?.providers_refreshed_at &&
     existing?.ratings_refreshed_at &&
     Date.now() - new Date(existing.providers_refreshed_at).getTime() < PROVIDER_TTL_MS;
