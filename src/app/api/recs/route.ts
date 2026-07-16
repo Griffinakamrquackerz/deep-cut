@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dealRecs } from "@/lib/engine";
-import { checkAndIncrement } from "@/lib/rate-limit";
+import { checkAndIncrement, refund } from "@/lib/rate-limit";
 import { RecBatchInput } from "@/lib/schemas";
 
 // 60s is the safe ceiling on Vercel's free (Hobby) plan.
@@ -47,8 +47,10 @@ export async function POST(request: Request) {
 
   try {
     const recs = await dealRecs(user.id, parsed.data);
+    if (recs.length === 0) await refund(user.id, "rec_batch"); // empty deal = free
     return NextResponse.json({ dealt: recs.length, recs });
   } catch (err) {
+    await refund(user.id, "rec_batch"); // errors shouldn't burn quota
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

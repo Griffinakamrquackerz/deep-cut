@@ -37,3 +37,22 @@ export async function checkAndIncrement(userId: string, kind: LimitKind): Promis
     .upsert({ user_id: userId, day, kind, count: current + 1 });
   return true;
 }
+
+/** Give back a consumed slot (e.g. the deal failed) — errors shouldn't burn quota. */
+export async function refund(userId: string, kind: LimitKind): Promise<void> {
+  const db = supabaseAdmin();
+  const day = new Date().toISOString().slice(0, 10);
+  const { data } = await db
+    .from("usage_counters")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("day", day)
+    .eq("kind", kind)
+    .maybeSingle();
+  const current = data?.count ?? 0;
+  if (current > 0) {
+    await db
+      .from("usage_counters")
+      .upsert({ user_id: userId, day, kind, count: current - 1 });
+  }
+}

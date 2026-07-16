@@ -73,6 +73,16 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       const data = await res.json().catch(() => null);
       const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
       setMessage(`The projector jammed${detail}. Try again in a minute.`);
+    } else {
+      const data = await res.json().catch(() => null);
+      const dealt = data?.dealt ?? 0;
+      if (dealt === 0) {
+        setMessage(
+          "The engine came back empty — every candidate was already in your history or didn't check out. Widen the obscurity dial, uncheck 'my services only', or add more loved films and try again (this attempt didn't count against your daily limit).",
+        );
+      } else {
+        setMessage(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}.`);
+      }
     }
     await load();
     setDealing(false);
