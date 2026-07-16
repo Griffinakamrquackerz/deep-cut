@@ -256,7 +256,7 @@ export async function cacheMovie(
   };
 
   const now = new Date().toISOString();
-  await db.from("movies").upsert({
+  const baseRow = {
     id: details.id,
     title: details.title,
     year: details.year,
@@ -266,15 +266,29 @@ export async function cacheMovie(
     genres: details.genres,
     popularity: details.popularity,
     vote_count: details.vote_count,
+    providers,
+    providers_refreshed_at: now,
+    cached_at: now,
+  };
+
+  let { error: upsertErr } = await db.from("movies").upsert({
+    ...baseRow,
     tmdb_rating: ratings.tmdb,
     imdb_id: details.imdb_id,
     imdb_rating: ratings.imdb,
     rt_rating: ratings.rt,
-    providers,
-    providers_refreshed_at: now,
     ratings_refreshed_at: now,
-    cached_at: now,
   });
+  if (upsertErr) {
+    // Ratings columns may not exist yet (migration 0003 unapplied) — retry the
+    // pre-ratings shape so the cache write (and every FK depending on it) works.
+    ({ error: upsertErr } = await db.from("movies").upsert(baseRow));
+  }
+  if (upsertErr) {
+    // The movies row truly failed — recommendations/loved FKs would bounce.
+    // Never pretend the cache write worked.
+    return null;
+  }
 
   return { ...details, providers, ratings };
 }
