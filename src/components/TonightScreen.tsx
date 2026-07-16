@@ -1,0 +1,241 @@
+"use client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import Poster from "./Poster";
+import ObscurityDots from "./ObscurityDots";
+import ServiceBadges from "./ServiceBadges";
+import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
+import { SERVICES, type Service } from "@/lib/services";
+
+interface RecRow {
+  id: string;
+  reason: string;
+  obscurity: number;
+  status: string;
+  movies: {
+    id: number;
+    title: string;
+    year: number | null;
+    runtime: number | null;
+    poster_path: string | null;
+    genres: string[];
+    providers: Partial<Record<Service, boolean>>;
+  } | null;
+}
+
+function availableServices(rec: RecRow): Service[] {
+  const p = rec.movies?.providers ?? {};
+  return SERVICES.filter((s) => p[s]);
+}
+
+export default function TonightScreen({ myServices }: { myServices: Service[] }) {
+  const [recs, setRecs] = useState<RecRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dealing, setDealing] = useState(false);
+  const [depth, setDepth] = useState(1); // obscurity dial: minimum obscurity
+  const [mineOnly, setMineOnly] = useState(false);
+  const [reacting, setReacting] = useState<RecRow | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/recs");
+    if (res.ok) {
+      const data = await res.json();
+      setRecs((data.recs ?? []).filter((r: RecRow) => r.status === "active"));
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function deal() {
+    setDealing(true);
+    setMessage(null);
+    const res = await fetch("/api/recs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        obscurityMin: depth,
+        obscurityMax: 5,
+        myServicesOnly: mineOnly,
+      }),
+    });
+    if (res.status === 429) setMessage("You've hit today's limit — 3 deals a day keeps it special.");
+    else if (!res.ok) setMessage("The projector jammed. Try again in a minute.");
+    await load();
+    setDealing(false);
+  }
+
+  async function setStatus(rec: RecRow, status: string) {
+    setRecs((prev) => prev.filter((r) => r.id !== rec.id));
+    await fetch(`/api/recs/${rec.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async function submitReaction(rec: RecRow, payload: ReactionPayload) {
+    await fetch("/api/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        movieId: rec.movies?.id,
+        recId: rec.id,
+        ...payload,
+      }),
+    });
+    setReacting(null);
+    setRecs((prev) => prev.filter((r) => r.id !== rec.id));
+  }
+
+  function tapReason(rec: RecRow) {
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "reason_tapped", props: { recId: rec.id } }),
+    });
+  }
+
+  const visible = useMemo(
+    () =>
+      recs.filter((r) => {
+        if (r.obscurity < depth) return false;
+        if (mineOnly) {
+          const avail = availableServices(r);
+          if (!avail.some((s) => myServices.includes(s))) return false;
+        }
+        return true;
+      }),
+    [recs, depth, mineOnly, myServices],
+  );
+
+  return (
+    <section className="flex flex-col gap-4">
+      <header>
+        <p className="eyebrow">Tonight</p>
+        <h1 className="font-display text-4xl text-cream">MOVIES YOU HAVEN&apos;T MET YET</h1>
+      </header>
+
+      <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
+        <label className="flex items-center gap-3">
+          <span className="eyebrow shrink-0">Obscurity</span>
+          <input
+            type="range"
+            min={1}
+            max={5}
+            value={depth}
+            onChange={(e) => setDepth(Number(e.target.value))}
+            className="w-full accent-amber"
+            aria-label="Minimum obscurity"
+          />
+          <span className="font-mono text-xs tracking-widest text-amber">
+            {"◆".repeat(depth)}
+            {"◇".repeat(5 - depth)}
+          </span>
+        </label>
+        <label className="flex items-center gap-2 font-mono text-xs text-dim">
+          <input
+            type="checkbox"
+            checked={mineOnly}
+            onChange={(e) => setMineOnly(e.target.checked)}
+            className="accent-avail"
+          />
+          my services only
+        </label>
+      </div>
+
+      {message && <p className="font-mono text-xs text-ticket">{message}</p>}
+
+      {loading ? (
+        <p className="animate-pulse py-10 text-center font-mono text-xs text-dim">
+          rolling film…
+        </p>
+      ) : visible.length === 0 ? (
+        <div className="ticket-edge rounded p-6 text-center">
+          <p className="font-display text-2xl text-cream">NOTHING ON THE MARQUEE</p>
+          <p className="mt-1 text-sm text-dim">Deal a fresh batch below.</p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {visible.map((rec) => {
+            const m = rec.movies;
+            if (!m) return null;
+            const avail = availableServices(rec);
+            return (
+              <li key={rec.id} className="flex gap-3 rounded border border-line bg-surface p-3">
+                <Link href={`/m/${m.id}`} className="w-24 shrink-0">
+                  <Poster
+                    posterPath={m.poster_path}
+                    title={m.title}
+                    year={m.year}
+                    genres={m.genres}
+                  />
+                </Link>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <Link href={`/m/${m.id}`} className="truncate font-display text-xl text-cream">
+                      {m.title}
+                    </Link>
+                    <ObscurityDots score={rec.obscurity} />
+                  </div>
+                  <p className="font-mono text-[0.65rem] text-dim">
+                    {m.year ?? "—"}
+                    {m.runtime ? ` · ${m.runtime} min` : ""}
+                  </p>
+                  <button
+                    onClick={() => tapReason(rec)}
+                    className="mt-1.5 text-left text-sm italic text-amber"
+                  >
+                    {rec.reason}
+                  </button>
+                  <div className="mt-1.5">
+                    <ServiceBadges available={avail} mine={myServices} />
+                  </div>
+                  <div className="mt-auto flex gap-2 pt-2">
+                    <button
+                      onClick={() => setStatus(rec, "watchlisted")}
+                      className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
+                    >
+                      + Watchlist
+                    </button>
+                    <button
+                      onClick={() => setReacting(rec)}
+                      className="rounded border border-line px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-cream"
+                    >
+                      Seen it
+                    </button>
+                    <button
+                      onClick={() => setStatus(rec, "dismissed")}
+                      className="rounded border border-line px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-dim"
+                    >
+                      Not for me
+                    </button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <button
+        onClick={deal}
+        disabled={dealing}
+        className="rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-cream disabled:opacity-50"
+      >
+        {dealing ? "Dealing…" : "Deal me more"}
+      </button>
+
+      {reacting && reacting.movies && (
+        <ReactionSheet
+          title={reacting.movies.title}
+          onClose={() => setReacting(null)}
+          onSubmit={(payload) => submitReaction(reacting, payload)}
+        />
+      )}
+    </section>
+  );
+}

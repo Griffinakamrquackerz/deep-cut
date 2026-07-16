@@ -1,0 +1,276 @@
+// Rec-engine orchestration: Stage A (profile) + Stage B (recs w/ TMDB validation).
+// The taste profile is the product; everything here sharpens or expresses it.
+
+import {
+  generateRecCandidates,
+  generateTasteProfile,
+  type LogBrief,
+  type MovieBrief,
+} from "./ai";
+import { obscurityFromVoteCount } from "./obscurity";
+import { cacheMovie, resolveTitleYear } from "./tmdb";
+import { supabaseAdmin } from "./supabase/admin";
+import { track } from "./analytics";
+import type { TasteProfile } from "./schemas";
+
+const REGEN_EVERY_LOGS = 5;
+const TARGET_RECS = 8;
+const EXCLUSION_PROMPT_CAP = 120;
+
+async function getLovedBriefs(userId: string): Promise<Array<MovieBrief & { id: number }>> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("loved_movies")
+    .select("movie_id, movies(id, title, year, genres, overview)")
+    .eq("user_id", userId);
+  return (data ?? [])
+    .map((r) => {
+      const m = r.movies as unknown as {
+        id: number;
+        title: string;
+        year: number | null;
+        genres: string[];
+        overview: string | null;
+      } | null;
+      if (!m) return null;
+      return {
+        id: m.id,
+        title: m.title,
+        year: m.year,
+        genres: m.genres ?? [],
+        overview: m.overview ?? "",
+      };
+    })
+    .filter((x): x is MovieBrief & { id: number } => x !== null);
+}
+
+async function getRecentLogBriefs(userId: string, limit = 20): Promise<LogBrief[]> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("watch_logs")
+    .select("reaction, why, note, movies(title, year)")
+    .eq("user_id", userId)
+    .order("watched_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((r) => {
+    const m = r.movies as unknown as { title: string; year: number | null } | null;
+    return {
+      title: m?.title ?? "unknown",
+      year: m?.year ?? null,
+      reaction: r.reaction,
+      why: r.why,
+      note: r.note,
+    };
+  });
+}
+
+/** Stage A: (re)generate the taste profile and bump its version. */
+export async function regenerateProfile(userId: string): Promise<TasteProfile> {
+  const db = supabaseAdmin();
+  const [loved, logs] = await Promise.all([
+    getLovedBriefs(userId),
+    getRecentLogBriefs(userId),
+  ]);
+  if (loved.length === 0) throw new Error("no loved movies");
+
+  const { profile, raw } = await generateTasteProfile(loved, logs);
+
+  await db.from("ai_logs").insert({ user_id: userId, stage: "profile", raw });
+
+  const { data: existing } = await db
+    .from("taste_profiles")
+    .select("version")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  await db.from("taste_profiles").upsert({
+    user_id: userId,
+    threads: profile.threads,
+    version: (existing?.version ?? 0) + 1,
+    generated_at: new Date().toISOString(),
+  });
+
+  await track(userId, "profile_generated", { threads: profile.threads.length });
+  return profile;
+}
+
+export async function getOrCreateProfile(userId: string): Promise<TasteProfile> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("taste_profiles")
+    .select("threads")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data?.threads && Array.isArray(data.threads) && data.threads.length > 0) {
+    return { threads: data.threads as TasteProfile["threads"] };
+  }
+  return regenerateProfile(userId);
+}
+
+/** Everything the user has loved, logged, or been dealt — never recommend again. */
+async function getExclusions(
+  userId: string,
+): Promise<{ ids: Set<number>; titles: string[] }> {
+  const db = supabaseAdmin();
+  const [loved, logs, recs] = await Promise.all([
+    db.from("loved_movies").select("movie_id, movies(title, year)").eq("user_id", userId),
+    db.from("watch_logs").select("movie_id, movies(title, year)").eq("user_id", userId),
+    db.from("recommendations").select("movie_id, movies(title, year)").eq("user_id", userId),
+  ]);
+  const ids = new Set<number>();
+  const titles: string[] = [];
+  for (const rows of [loved.data, logs.data, recs.data]) {
+    for (const r of rows ?? []) {
+      if (ids.has(r.movie_id)) continue;
+      ids.add(r.movie_id);
+      const m = r.movies as unknown as { title: string; year: number | null } | null;
+      if (m) titles.push(`${m.title} (${m.year ?? "?"})`);
+    }
+  }
+  return { ids, titles: titles.slice(-EXCLUSION_PROMPT_CAP) };
+}
+
+export interface DealtRec {
+  id: string;
+  movieId: number;
+  title: string;
+  year: number | null;
+  reason: string;
+  obscurity: number;
+}
+
+export interface DealOptions {
+  obscurityMin: number;
+  obscurityMax: number;
+  myServicesOnly: boolean;
+}
+
+/**
+ * Stage B: ask Claude for candidates, validate every one against TMDB
+ * (drop hallucinations), score real obscurity, persist survivors.
+ */
+export async function dealRecs(userId: string, opts: DealOptions): Promise<DealtRec[]> {
+  const db = supabaseAdmin();
+  const [profile, lovedBriefs, exclusions, svcRows] = await Promise.all([
+    getOrCreateProfile(userId),
+    getLovedBriefs(userId),
+    getExclusions(userId),
+    db.from("user_services").select("service").eq("user_id", userId),
+  ]);
+  const services = (svcRows.data ?? []).map((r) => r.service as string);
+
+  const { data: batchRow } = await db
+    .from("recommendations")
+    .select("batch")
+    .eq("user_id", userId)
+    .order("batch", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const batch = (batchRow?.batch ?? 0) + 1;
+
+  const excludedIds = new Set(exclusions.ids);
+  const excludedTitles = [...exclusions.titles];
+  const survivors: DealtRec[] = [];
+
+  // At most one supplemental batch when fewer than TARGET_RECS survive validation.
+  for (let round = 0; round < 2 && survivors.length < TARGET_RECS; round++) {
+    const { candidates, raw } = await generateRecCandidates({
+      threads: profile.threads,
+      lovedTitles: lovedBriefs.map((m) => `${m.title} (${m.year ?? "?"})`),
+      exclusionTitles: excludedTitles,
+      services,
+      obscurityMin: opts.obscurityMin,
+      obscurityMax: opts.obscurityMax,
+    });
+    await db.from("ai_logs").insert({ user_id: userId, stage: "recs", raw });
+
+    for (const cand of candidates.recs) {
+      if (survivors.length >= 12) break;
+      // Resolve against TMDB — LLMs occasionally invent films.
+      const tmdbId = await resolveTitleYear(cand.title, cand.year).catch(() => null);
+      if (!tmdbId || excludedIds.has(tmdbId)) continue;
+      const movie = await cacheMovie(tmdbId).catch(() => null);
+      if (!movie) continue;
+
+      const obscurity = obscurityFromVoteCount(movie.vote_count);
+      if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
+        // Real popularity outside the requested window — skip but exclude from retry.
+        excludedIds.add(tmdbId);
+        excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
+        continue;
+      }
+
+      const { data: inserted, error } = await db
+        .from("recommendations")
+        .insert({
+          user_id: userId,
+          movie_id: movie.id,
+          reason: cand.reason,
+          obscurity,
+          status: "active",
+          batch,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) continue; // unique(user_id, movie_id) guards dupes in SQL
+
+      excludedIds.add(tmdbId);
+      excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
+      survivors.push({
+        id: inserted.id,
+        movieId: movie.id,
+        title: movie.title,
+        year: movie.year,
+        reason: cand.reason,
+        obscurity,
+      });
+    }
+  }
+
+  await track(userId, "rec_batch_dealt", { batch, count: survivors.length });
+  return survivors;
+}
+
+/** Log a watch; regenerate the profile every 5th log. */
+export async function logWatch(
+  userId: string,
+  input: {
+    movieId: number;
+    reaction: string;
+    why?: string | null;
+    note?: string | null;
+    recId?: string | null;
+  },
+): Promise<{ regenerated: boolean }> {
+  const db = supabaseAdmin();
+  await cacheMovie(input.movieId).catch(() => null);
+
+  const { error } = await db.from("watch_logs").insert({
+    user_id: userId,
+    movie_id: input.movieId,
+    reaction: input.reaction,
+    why: input.why ?? null,
+    note: input.note ?? null,
+  });
+  if (error) throw new Error(error.message);
+
+  if (input.recId) {
+    await db
+      .from("recommendations")
+      .update({ status: "seen" })
+      .eq("id", input.recId)
+      .eq("user_id", userId);
+    await track(userId, "rec_seen", { recId: input.recId, reaction: input.reaction });
+  }
+
+  const { count } = await db
+    .from("watch_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  const shouldRegen = !!count && count % REGEN_EVERY_LOGS === 0;
+  if (shouldRegen) {
+    await regenerateProfile(userId).catch(() => null); // best-effort; next deal retries
+  }
+  return { regenerated: shouldRegen };
+}
