@@ -1,9 +1,19 @@
 import { supabaseAdmin } from "./supabase/admin";
 
+// Per-user daily caps. These are product guardrails, NOT cost limits — on the
+// free Groq/TMDB/OMDb tiers there's no dollar spend. Tune via env:
+//   DAILY_REC_BATCHES     (default 25)  — "Deal me more" batches/day
+//   DAILY_PROFILE_REGENS  (default 10)  — manual "refresh my profile"/day
+// Set a big number (e.g. 9999) for effectively unlimited on a personal instance.
+function envInt(name: string, fallback: number): number {
+  const v = Number(process.env[name]);
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : fallback;
+}
+
 export const DAILY_LIMITS = {
-  profile_regen: 1,
-  rec_batch: 3,
-} as const;
+  profile_regen: envInt("DAILY_PROFILE_REGENS", 10),
+  rec_batch: envInt("DAILY_REC_BATCHES", 25),
+};
 
 export type LimitKind = keyof typeof DAILY_LIMITS;
 
