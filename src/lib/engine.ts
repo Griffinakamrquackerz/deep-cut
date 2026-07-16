@@ -171,9 +171,16 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
   const excludedIds = new Set(exclusions.ids);
   const excludedTitles = [...exclusions.titles];
   const survivors: DealtRec[] = [];
+  // With "my services only" on, unwatchable survivors still persist (they're
+  // valid recs) but don't count toward the target — the supplemental round
+  // keeps hunting until enough films are watchable tonight.
+  let watchableCount = 0;
+  const targetMet = () =>
+    (opts.myServicesOnly && services.length > 0 ? watchableCount : survivors.length) >=
+    TARGET_RECS;
 
   // At most one supplemental batch when fewer than TARGET_RECS survive validation.
-  for (let round = 0; round < 2 && survivors.length < TARGET_RECS; round++) {
+  for (let round = 0; round < 2 && !targetMet(); round++) {
     const { candidates, raw } = await generateRecCandidates({
       threads: profile.threads,
       lovedTitles: lovedBriefs.map((m) => `${m.title} (${m.year ?? "?"})`),
@@ -181,6 +188,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
       services,
       obscurityMin: opts.obscurityMin,
       obscurityMax: opts.obscurityMax,
+      myServicesOnly: opts.myServicesOnly,
     });
     await db.from("ai_logs").insert({ user_id: userId, stage: "recs", raw });
 
@@ -226,6 +234,9 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
 
       excludedIds.add(movie.id);
       excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
+      if (services.some((s) => movie.providers[s as keyof typeof movie.providers])) {
+        watchableCount++;
+      }
       survivors.push({
         id: inserted.id,
         movieId: movie.id,

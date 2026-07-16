@@ -166,7 +166,24 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       ) : visible.length === 0 ? (
         <div className="ticket-edge rounded p-6 text-center">
           <p className="font-display text-2xl text-cream">NOTHING ON THE MARQUEE</p>
-          <p className="mt-1 text-sm text-dim">Deal a fresh batch below.</p>
+          {recs.length > 0 ? (
+            <>
+              <p className="mt-1 text-sm text-dim">
+                {recs.length} rec{recs.length === 1 ? "" : "s"} hidden by your filters.
+              </p>
+              <button
+                onClick={() => {
+                  setDepth(1);
+                  setMineOnly(false);
+                }}
+                className="mt-3 rounded border border-amber px-3 py-2 font-mono text-xs uppercase tracking-widest text-amber"
+              >
+                Show everything
+              </button>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-dim">Deal a fresh batch below.</p>
+          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
@@ -236,6 +253,12 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
             );
           })}
         </ul>
+      )}
+
+      {visible.length > 0 && recs.length > visible.length && (
+        <p className="text-center font-mono text-[0.65rem] text-dim">
+          {recs.length - visible.length} more hidden by your filters
+        </p>
       )}
 
       <button

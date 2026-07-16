@@ -276,6 +276,8 @@ export interface RecRequest {
   services: string[];
   obscurityMin: number;
   obscurityMax: number;
+  /** User wants films watchable tonight — bias hard toward their services. */
+  myServicesOnly?: boolean;
 }
 
 export async function generateRecCandidates(
@@ -291,7 +293,12 @@ export async function generateRecCandidates(
     "\nSTREAMING SERVICES:",
     req.services.length ? req.services.join(", ") : "(unknown)",
     `\nREQUESTED OBSCURITY RANGE: ${req.obscurityMin}-${req.obscurityMax}`,
-  ].join("\n");
+    req.myServicesOnly && req.services.length
+      ? `\nIMPORTANT: The user wants films they can watch TONIGHT. Strongly prefer films currently streaming on: ${req.services.join(", ")}. Well-known streaming-catalog staples beat unstreamable deep cuts here.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const { value, raw } = await completeJson(RECS_SYSTEM, user, RecCandidatesOutput, 6000);
   return { candidates: value, raw };
