@@ -43,7 +43,7 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 137, title: "Groundhog Day", year: 1993 },
   { tmdbId: 680, title: "Pulp Fiction", year: 1994 },
   { tmdbId: 807, title: "Se7en", year: 1995 },
-  { tmdbId: 405, title: "La Haine", year: 1995 },
+  { tmdbId: 406, title: "La Haine", year: 1995 },
   { tmdbId: 19404, title: "Dilwale Dulhania Le Jayenge", year: 1995 },
   { tmdbId: 275, title: "Fargo", year: 1996 },
   { tmdbId: 128, title: "Princess Mononoke", year: 1997 },
