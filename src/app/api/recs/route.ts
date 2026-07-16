@@ -13,15 +13,26 @@ export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabaseAdmin()
-    .from("recommendations")
-    .select(
-      "id, reason, obscurity, status, batch, created_at, movies(id, title, year, runtime, poster_path, overview, genres, providers, tmdb_rating, imdb_rating, rt_rating)",
-    )
-    .eq("user_id", user.id)
-    .in("status", ["active", "watchlisted"])
-    .order("created_at", { ascending: false })
-    .limit(60);
+  const db = supabaseAdmin();
+  const query = (cols: string) =>
+    db
+      .from("recommendations")
+      .select(`id, reason, obscurity, status, batch, created_at, movies(${cols})`)
+      .eq("user_id", user.id)
+      .in("status", ["active", "watchlisted"])
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+  let { data, error } = await query(
+    "id, title, year, runtime, poster_path, overview, genres, providers, tmdb_rating, imdb_rating, rt_rating",
+  );
+  if (error) {
+    // Ratings columns may not exist yet (migration 0003 unapplied) — the recs
+    // themselves must still load.
+    ({ data, error } = await query(
+      "id, title, year, runtime, poster_path, overview, genres, providers",
+    ));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ recs: data ?? [] });
 }

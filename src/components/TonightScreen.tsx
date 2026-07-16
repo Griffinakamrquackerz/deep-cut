@@ -47,6 +47,12 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
     if (res.ok) {
       const data = await res.json();
       setRecs((data.recs ?? []).filter((r: RecRow) => r.status === "active"));
+    } else {
+      // Never fail silently — an empty marquee must mean genuinely no recs.
+      const data = await res.json().catch(() => null);
+      setMessage(
+        `Couldn't load your recs${data?.error ? `: ${String(data.error).slice(0, 200)}` : ""}.`,
+      );
     }
     setLoading(false);
   }, []);
