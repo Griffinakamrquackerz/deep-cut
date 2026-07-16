@@ -1,7 +1,19 @@
-// All Anthropic access goes through this module — nothing else calls the API,
-// and the key never reaches the client. Model per spec: claude-sonnet-4-6.
+// All LLM access goes through this module — nothing else calls a model API,
+// and keys never reach the client.
+//
+// Provider-agnostic: the default is any OpenAI-compatible chat-completions
+// endpoint (Groq, OpenRouter, DeepSeek, Together, Fireworks, a local vLLM…),
+// configured entirely by env. Anthropic remains available as an opt-in.
+//
+//   LLM_PROVIDER  openai-compatible (default) | anthropic
+//   LLM_BASE_URL  default https://api.groq.com/openai/v1 (Groq free tier)
+//   LLM_MODEL     default llama-3.3-70b-versatile
+//   LLM_API_KEY   key for the endpoint above
+//
+// The pipeline was built to tolerate weaker models: strict-JSON parsing with a
+// Zod repair pass here, and TMDB validation downstream that drops any film a
+// model invents.
 
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import {
   RecCandidatesOutput,
@@ -10,12 +22,106 @@ import {
   type TasteProfile,
 } from "./schemas";
 
-const MODEL = "claude-sonnet-4-6";
+export type LlmProvider = "openai-compatible" | "anthropic";
 
-let _client: Anthropic | null = null;
-function client(): Anthropic {
-  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  return _client;
+export interface LlmConfig {
+  provider: LlmProvider;
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+}
+
+export function resolveLlmConfig(env: Record<string, string | undefined> = process.env): LlmConfig {
+  const provider = (env.LLM_PROVIDER ?? "openai-compatible") as LlmProvider;
+  if (provider === "anthropic") {
+    return {
+      provider,
+      baseUrl: "https://api.anthropic.com",
+      model: env.LLM_MODEL ?? "claude-sonnet-4-6",
+      apiKey: env.ANTHROPIC_API_KEY ?? "",
+    };
+  }
+  return {
+    provider: "openai-compatible",
+    baseUrl: (env.LLM_BASE_URL ?? "https://api.groq.com/openai/v1").replace(/\/+$/, ""),
+    model: env.LLM_MODEL ?? "llama-3.3-70b-versatile",
+    apiKey: env.LLM_API_KEY ?? "",
+  };
+}
+
+interface ChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+async function chatOpenAiCompatible(
+  cfg: LlmConfig,
+  system: string,
+  turns: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  const body = {
+    model: cfg.model,
+    max_tokens: maxTokens,
+    messages: [{ role: "system", content: system }, ...turns],
+  };
+
+  // Free tiers rate-limit aggressively; one retry with backoff on 429/5xx.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string | null } }>;
+      };
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) throw new Error("LLM returned an empty completion");
+      return content;
+    }
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt >= 1) {
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      throw new Error(`LLM ${res.status} from ${cfg.baseUrl}: ${detail}`);
+    }
+    const retryAfter = Number(res.headers.get("retry-after")) || 2 * (attempt + 1);
+    await new Promise((r) => setTimeout(r, Math.min(retryAfter, 15) * 1000));
+  }
+}
+
+async function chatAnthropic(
+  cfg: LlmConfig,
+  system: string,
+  turns: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  const client = new Anthropic({ apiKey: cfg.apiKey });
+  const res = await client.messages.create({
+    model: cfg.model,
+    max_tokens: maxTokens,
+    system,
+    messages: turns,
+  });
+  return res.content
+    .filter((b): b is Extract<(typeof res.content)[number], { type: "text" }> => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+}
+
+async function chat(
+  system: string,
+  turns: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  const cfg = resolveLlmConfig();
+  if (cfg.provider === "anthropic") return chatAnthropic(cfg, system, turns, maxTokens);
+  return chatOpenAiCompatible(cfg, system, turns, maxTokens);
 }
 
 export interface MovieBrief {
@@ -55,27 +161,17 @@ async function completeJson<T>(
   schema: z.ZodType<T>,
   maxTokens: number,
 ): Promise<{ value: T; raw: string }> {
-  const c = client();
   let lastErr: unknown;
-  let messages: Anthropic.MessageParam[] = [{ role: "user", content: user }];
+  let turns: ChatTurn[] = [{ role: "user", content: user }];
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await c.messages.create({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages,
-    });
-    const raw = res.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("");
+    const raw = await chat(system, turns, maxTokens);
     try {
       return { value: parseStrictJson(raw, schema), raw };
     } catch (err) {
       lastErr = err;
       // One repair pass: show the model its own output + the validation error.
-      messages = [
+      turns = [
         { role: "user", content: user },
         { role: "assistant", content: raw },
         {

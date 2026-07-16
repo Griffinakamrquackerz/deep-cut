@@ -13,8 +13,13 @@ Built per `DEEP-CUT-SPEC` — milestones M1–M6, one commit each.
 
 - **Next.js 15** (App Router) · TypeScript strict · Tailwind v4 — mobile-first at 390px
 - **Supabase** — Postgres + Auth (magic link + Google OAuth) + RLS
-- **Anthropic API** (`claude-sonnet-4-6`) — Stage A taste profiles, Stage B rec candidates.
-  Server-side only; all calls behind `src/lib/ai.ts`; strict JSON validated with Zod + one repair pass
+- **LLM (provider-agnostic)** — Stage A taste profiles, Stage B rec candidates.
+  Default: any OpenAI-compatible endpoint, shipped pointed at **Groq's free tier**
+  (`llama-3.3-70b-versatile`); OpenRouter/DeepSeek/local vLLM are env-var swaps, and
+  Anthropic is available via `LLM_PROVIDER=anthropic`. Server-side only; all calls
+  behind `src/lib/ai.ts`; strict JSON validated with Zod + one repair pass, and every
+  candidate film verified against TMDB — so weaker models degrade gracefully instead
+  of breaking. Compare providers with the raw outputs in `ai_logs`.
 - **TMDB** — metadata/search/posters/watch-providers, cached into the `movies` table,
   all behind `src/lib/tmdb.ts`. Every Claude candidate is validated against TMDB
   (fuzzy title+year); unresolvable candidates are dropped
@@ -29,8 +34,11 @@ Built per `DEEP-CUT-SPEC` — milestones M1–M6, one commit each.
 3. Enable Email (magic link) and Google providers in Supabase Auth; add
    `http://localhost:3000/auth/callback` to the redirect allowlist.
 4. Get a TMDB API key (v3 key or v4 read token both work): https://developer.themoviedb.org
-5. `cp .env.example .env.local` and fill in the keys.
-6. `npm run dev`
+5. Get an LLM key — free options: Groq (https://console.groq.com, default config) or
+   OpenRouter free routes (https://openrouter.ai). See `.env.example` for the exact
+   `LLM_BASE_URL`/`LLM_MODEL` pairs.
+6. `cp .env.example .env.local` and fill in the keys.
+7. `npm run dev`
 
 ## Scripts
 
