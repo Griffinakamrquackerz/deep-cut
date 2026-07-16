@@ -2,11 +2,17 @@ import { describe, expect, it } from "vitest";
 import { resolveLlmConfig } from "@/lib/ai";
 
 describe("LLM provider config", () => {
-  it("defaults to Groq's OpenAI-compatible free tier", () => {
+  it("defaults to Groq's OpenAI-compatible free tier with a Llama fallback", () => {
     const cfg = resolveLlmConfig({});
     expect(cfg.provider).toBe("openai-compatible");
     expect(cfg.baseUrl).toBe("https://api.groq.com/openai/v1");
     expect(cfg.model).toBe("openai/gpt-oss-120b");
+    expect(cfg.fallbackModel).toBe("llama-3.3-70b-versatile");
+  });
+
+  it("drops the fallback when it equals the primary model", () => {
+    const cfg = resolveLlmConfig({ LLM_MODEL: "llama-3.3-70b-versatile" });
+    expect(cfg.fallbackModel).toBeNull();
   });
 
   it("honors a custom OpenAI-compatible host and strips trailing slashes", () => {

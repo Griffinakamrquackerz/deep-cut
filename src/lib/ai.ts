@@ -28,6 +28,8 @@ export interface LlmConfig {
   provider: LlmProvider;
   baseUrl: string;
   model: string;
+  /** Tried when the primary model is rate-limited — free-tier quotas are per-model. */
+  fallbackModel: string | null;
   apiKey: string;
 }
 
@@ -38,13 +40,17 @@ export function resolveLlmConfig(env: Record<string, string | undefined> = proce
       provider,
       baseUrl: "https://api.anthropic.com",
       model: env.LLM_MODEL ?? "claude-sonnet-4-6",
+      fallbackModel: null,
       apiKey: env.ANTHROPIC_API_KEY ?? "",
     };
   }
+  const model = env.LLM_MODEL ?? "openai/gpt-oss-120b";
+  const fallbackModel = env.LLM_FALLBACK_MODEL ?? "llama-3.3-70b-versatile";
   return {
     provider: "openai-compatible",
     baseUrl: (env.LLM_BASE_URL ?? "https://api.groq.com/openai/v1").replace(/\/+$/, ""),
-    model: env.LLM_MODEL ?? "openai/gpt-oss-120b",
+    model,
+    fallbackModel: fallbackModel && fallbackModel !== model ? fallbackModel : null,
     apiKey: env.LLM_API_KEY ?? "",
   };
 }
@@ -54,14 +60,24 @@ interface ChatTurn {
   content: string;
 }
 
-async function chatOpenAiCompatible(
+class LlmHttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function chatOneModel(
   cfg: LlmConfig,
+  model: string,
   system: string,
   turns: ChatTurn[],
   maxTokens: number,
 ): Promise<string> {
   const body = {
-    model: cfg.model,
+    model,
     max_tokens: maxTokens,
     messages: [{ role: "system", content: system }, ...turns],
   };
@@ -87,10 +103,29 @@ async function chatOpenAiCompatible(
     const retryable = res.status === 429 || res.status >= 500;
     if (!retryable || attempt >= 1) {
       const detail = (await res.text().catch(() => "")).slice(0, 300);
-      throw new Error(`LLM ${res.status} from ${cfg.baseUrl}: ${detail}`);
+      throw new LlmHttpError(res.status, `LLM ${res.status} (${model}) from ${cfg.baseUrl}: ${detail}`);
     }
     const retryAfter = Number(res.headers.get("retry-after")) || 2 * (attempt + 1);
-    await new Promise((r) => setTimeout(r, Math.min(retryAfter, 15) * 1000));
+    await new Promise((r) => setTimeout(r, Math.min(retryAfter, 10) * 1000));
+  }
+}
+
+async function chatOpenAiCompatible(
+  cfg: LlmConfig,
+  system: string,
+  turns: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  try {
+    return await chatOneModel(cfg, cfg.model, system, turns, maxTokens);
+  } catch (err) {
+    // Free-tier quotas are per-model — a rate-limited primary doesn't touch the
+    // fallback's pool, so a 429 falls through to the second model.
+    const rateLimited = err instanceof LlmHttpError && err.status === 429;
+    if (rateLimited && cfg.fallbackModel) {
+      return chatOneModel(cfg, cfg.fallbackModel, system, turns, maxTokens);
+    }
+    throw err;
   }
 }
 
