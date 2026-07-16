@@ -15,7 +15,8 @@ Built per `DEEP-CUT-SPEC` — milestones M1–M6, one commit each.
 - **Supabase** — Postgres + Auth (magic link + Google OAuth) + RLS
 - **LLM (provider-agnostic)** — Stage A taste profiles, Stage B rec candidates.
   Default: any OpenAI-compatible endpoint, shipped pointed at **Groq's free tier**
-  (`llama-3.3-70b-versatile`); OpenRouter/DeepSeek/local vLLM are env-var swaps, and
+  (`openai/gpt-oss-120b`; `llama-3.3-70b-versatile` is the fallback if 120B
+  rate-limits); OpenRouter/DeepSeek/local vLLM are env-var swaps, and
   Anthropic is available via `LLM_PROVIDER=anthropic`. Server-side only; all calls
   behind `src/lib/ai.ts`; strict JSON validated with Zod + one repair pass, and every
   candidate film verified against TMDB — so weaker models degrade gracefully instead

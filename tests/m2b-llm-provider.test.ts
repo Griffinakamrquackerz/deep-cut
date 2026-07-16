@@ -6,7 +6,7 @@ describe("LLM provider config", () => {
     const cfg = resolveLlmConfig({});
     expect(cfg.provider).toBe("openai-compatible");
     expect(cfg.baseUrl).toBe("https://api.groq.com/openai/v1");
-    expect(cfg.model).toBe("llama-3.3-70b-versatile");
+    expect(cfg.model).toBe("openai/gpt-oss-120b");
   });
 
   it("honors a custom OpenAI-compatible host and strips trailing slashes", () => {

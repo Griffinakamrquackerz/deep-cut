@@ -7,7 +7,7 @@
 //
 //   LLM_PROVIDER  openai-compatible (default) | anthropic
 //   LLM_BASE_URL  default https://api.groq.com/openai/v1 (Groq free tier)
-//   LLM_MODEL     default llama-3.3-70b-versatile
+//   LLM_MODEL     default openai/gpt-oss-120b
 //   LLM_API_KEY   key for the endpoint above
 //
 // The pipeline was built to tolerate weaker models: strict-JSON parsing with a
@@ -44,7 +44,7 @@ export function resolveLlmConfig(env: Record<string, string | undefined> = proce
   return {
     provider: "openai-compatible",
     baseUrl: (env.LLM_BASE_URL ?? "https://api.groq.com/openai/v1").replace(/\/+$/, ""),
-    model: env.LLM_MODEL ?? "llama-3.3-70b-versatile",
+    model: env.LLM_MODEL ?? "openai/gpt-oss-120b",
     apiKey: env.LLM_API_KEY ?? "",
   };
 }
