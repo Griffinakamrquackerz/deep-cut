@@ -64,3 +64,10 @@ export function mapTmdbProviders(providerIds: number[]): Service[] {
   }
   return SERVICES.filter((s) => found.has(s));
 }
+
+/** TMDB provider ids for a set of our services (for /discover with_watch_providers). */
+export function tmdbProviderIds(services: Service[]): number[] {
+  const out = new Set<number>();
+  for (const s of services) for (const id of TMDB_PROVIDER_IDS[s]) out.add(id);
+  return [...out];
+}

@@ -8,10 +8,26 @@ import {
   type MovieBrief,
 } from "./ai";
 import { obscurityFromVoteCount } from "./obscurity";
-import { cacheMovie, resolveTitleYear } from "./tmdb";
+import { cacheMovie, discoverMovies, resolveTitleYear, TMDB_GENRE_IDS } from "./tmdb";
+import type { Service } from "./services";
 import { supabaseAdmin } from "./supabase/admin";
 import { track } from "./analytics";
 import type { TasteProfile } from "./schemas";
+
+/** Top TMDB genre ids across the user's loved films — the Discover taste proxy. */
+export function topGenreIds(loved: Array<{ genres: string[] }>, take = 4): number[] {
+  const counts = new Map<number, number>();
+  for (const m of loved) {
+    for (const g of m.genres) {
+      const id = TMDB_GENRE_IDS[g];
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, take)
+    .map(([id]) => id);
+}
 
 const REGEN_EVERY_LOGS = 5;
 const TARGET_RECS = 8;
@@ -245,6 +261,79 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
         reason: cand.reason,
         obscurity,
       });
+    }
+  }
+
+  // ── Bottomless fallback: TMDB Discover ─────────────────────────────
+  // When the LLM's picks all collide with the user's history (heavy users) or
+  // fail validation, pull real films straight from TMDB by taste-genres +
+  // obscurity band + services, loosening constraints until the batch fills.
+  if (!targetMet()) {
+    const genreIds = topGenreIds(lovedBriefs);
+    const svc = services as Service[];
+    const wantServices = opts.myServicesOnly && svc.length > 0;
+    const threadTitle = profile.threads[0]?.title ?? "your taste";
+
+    const attempts: Array<{ genreIds?: number[]; services?: Service[] }> = wantServices
+      ? [{ genreIds, services: svc }, { services: svc }, { genreIds }, {}]
+      : [{ genreIds }, {}];
+
+    for (const attempt of attempts) {
+      if (targetMet() || survivors.length >= 12) break;
+      // Rotate pages per batch so repeat deals surface different films.
+      for (let p = 0; p < 3 && !targetMet() && survivors.length < 12; p++) {
+        const page = (((batch - 1) * 3 + p) % 12) + 1;
+        const found = await discoverMovies({
+          obscurityMin: opts.obscurityMin,
+          obscurityMax: opts.obscurityMax,
+          genreIds: attempt.genreIds,
+          services: attempt.services,
+          page,
+        });
+        const fresh = found.filter((f) => !excludedIds.has(f.id)).slice(0, 12);
+        if (fresh.length === 0) continue;
+
+        const cached = (
+          await Promise.all(fresh.map((f) => cacheMovie(f.id).catch(() => null)))
+        ).filter((m): m is NonNullable<typeof m> => m !== null);
+
+        for (const movie of cached) {
+          if (targetMet() || survivors.length >= 12) break;
+          if (excludedIds.has(movie.id)) continue;
+          const obscurity = obscurityFromVoteCount(movie.vote_count);
+          if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
+            excludedIds.add(movie.id);
+            continue;
+          }
+          const reason = `Vault pull for your “${threadTitle}” thread — ${
+            movie.genres.slice(0, 2).join("/") || "wild card"
+          }, ${movie.year ?? "year unknown"}.`;
+          const { data: inserted, error } = await db
+            .from("recommendations")
+            .insert({
+              user_id: userId,
+              movie_id: movie.id,
+              reason,
+              obscurity,
+              status: "active",
+              batch,
+            })
+            .select("id")
+            .single();
+          if (error || !inserted) continue;
+
+          excludedIds.add(movie.id);
+          if (svc.some((s) => movie.providers[s])) watchableCount++;
+          survivors.push({
+            id: inserted.id,
+            movieId: movie.id,
+            title: movie.title,
+            year: movie.year,
+            reason,
+            obscurity,
+          });
+        }
+      }
     }
   }
 

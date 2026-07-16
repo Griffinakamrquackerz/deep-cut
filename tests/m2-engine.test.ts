@@ -3,13 +3,13 @@ import { obscurityFromVoteCount, obscurityDots } from "@/lib/obscurity";
 import { parseStrictJson } from "@/lib/ai";
 import { RecCandidatesOutput, TasteProfileOutput } from "@/lib/schemas";
 
-describe("M2 — obscurity scoring", () => {
-  it("buckets vote counts per spec", () => {
-    expect(obscurityFromVoteCount(600_000)).toBe(1);
-    expect(obscurityFromVoteCount(250_000)).toBe(2);
-    expect(obscurityFromVoteCount(50_000)).toBe(3);
-    expect(obscurityFromVoteCount(10_000)).toBe(4);
-    expect(obscurityFromVoteCount(500)).toBe(5);
+describe("M2 — obscurity scoring (TMDB-calibrated buckets)", () => {
+  it("buckets vote counts on TMDB's real scale", () => {
+    expect(obscurityFromVoteCount(37_000)).toBe(1); // Inception-tier
+    expect(obscurityFromVoteCount(12_000)).toBe(2); // big hit
+    expect(obscurityFromVoteCount(5_000)).toBe(3); // well known
+    expect(obscurityFromVoteCount(1_500)).toBe(4); // niche
+    expect(obscurityFromVoteCount(400)).toBe(5); // deep cut
   });
 
   it("renders ◆◆◆◇◇ dots", () => {

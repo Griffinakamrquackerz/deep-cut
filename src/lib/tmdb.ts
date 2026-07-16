@@ -1,12 +1,59 @@
 // All TMDB access goes through this module — nothing else calls the TMDB API.
 // Docs: https://developer.themoviedb.org/reference/intro/getting-started
 
-import { mapTmdbProviders, type Service } from "./services";
+import { mapTmdbProviders, tmdbProviderIds, type Service } from "./services";
 import { getOmdbRatings } from "./omdb";
 import { supabaseAdmin } from "./supabase/admin";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const PROVIDER_TTL_MS = 7 * 24 * 60 * 60 * 1000; // refresh watch providers weekly
+
+// Standard TMDB movie genre ids (stable).
+export const TMDB_GENRE_IDS: Record<string, number> = {
+  Action: 28,
+  Adventure: 12,
+  Animation: 16,
+  Comedy: 35,
+  Crime: 80,
+  Documentary: 99,
+  Drama: 18,
+  Family: 10751,
+  Fantasy: 14,
+  History: 36,
+  Horror: 27,
+  Music: 10402,
+  Mystery: 9648,
+  Romance: 10749,
+  "Science Fiction": 878,
+  "TV Movie": 10770,
+  Thriller: 53,
+  War: 10752,
+  Western: 37,
+};
+
+// Obscurity band → TMDB vote_count bounds (inverse of obscurityFromVoteCount).
+// min = least-obscure allowed → upper vote bound; max = most-obscure → lower bound.
+const VOTE_LTE_BY_MIN: Record<number, number | undefined> = {
+  1: undefined,
+  2: 20_000,
+  3: 8_000,
+  4: 2_500,
+  5: 800,
+};
+const VOTE_GTE_BY_MAX: Record<number, number> = {
+  1: 20_000,
+  2: 8_000,
+  3: 2_500,
+  4: 800,
+  5: 50, // floor to skip unrated junk
+};
+
+export function voteBandForObscurity(
+  min: number,
+  max: number,
+): { gte: number; lte: number | undefined } {
+  return { gte: VOTE_GTE_BY_MAX[max] ?? 50, lte: VOTE_LTE_BY_MIN[min] };
+}
 
 export interface MovieRatings {
   tmdb: number | null; // /10
@@ -278,4 +325,60 @@ export async function resolveTitleYear(title: string, year: number): Promise<num
 
 export function posterUrl(posterPath: string | null, size: "w342" | "w500" | "w780" = "w342") {
   return posterPath ? `https://image.tmdb.org/t/p/${size}${posterPath}` : null;
+}
+
+// ── Discover — the bottomless well ──────────────────────────────────
+// Pulls real films straight from TMDB by obscurity band + genre + streaming
+// provider. Used as the rec engine's fallback so the marquee never runs dry.
+
+export interface DiscoverOpts {
+  obscurityMin: number;
+  obscurityMax: number;
+  genreIds?: number[];
+  services?: Service[]; // when set, only films streaming on these (US)
+  page?: number;
+  sortBy?: string;
+}
+
+export interface DiscoverResult {
+  id: number;
+  vote_count: number;
+  vote_average: number;
+  popularity: number;
+}
+
+export async function discoverMovies(opts: DiscoverOpts): Promise<DiscoverResult[]> {
+  const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
+  const qs: Record<string, string> = {
+    include_adult: "false",
+    include_video: "false",
+    language: "en-US",
+    watch_region: "US",
+    sort_by: opts.sortBy ?? "popularity.desc",
+    "vote_count.gte": String(band.gte),
+    page: String(opts.page ?? 1),
+  };
+  if (band.lte != null) qs["vote_count.lte"] = String(band.lte);
+  if (opts.genreIds?.length) qs.with_genres = opts.genreIds.join("|"); // OR
+  const providerIds = opts.services?.length ? tmdbProviderIds(opts.services) : [];
+  if (providerIds.length) {
+    qs.with_watch_providers = providerIds.join("|");
+    qs.with_watch_monetization_types = "flatrate|ads|free";
+  }
+
+  interface DiscoverPayload {
+    results?: Array<{
+      id: number;
+      vote_count: number;
+      vote_average: number;
+      popularity: number;
+    }>;
+  }
+  const data = await tmdbFetch<DiscoverPayload>("/discover/movie", qs).catch(() => null);
+  return (data?.results ?? []).map((r) => ({
+    id: r.id,
+    vote_count: r.vote_count,
+    vote_average: r.vote_average,
+    popularity: r.popularity,
+  }));
 }
