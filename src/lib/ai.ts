@@ -212,7 +212,9 @@ export async function generateTasteProfile(
     .filter(Boolean)
     .join("\n");
 
-  const { value, raw } = await completeJson(PROFILE_SYSTEM, user, TasteProfileOutput, 1500);
+  // Generous budget: reasoning models (e.g. GPT OSS) spend thinking tokens
+  // from the same completion allowance before emitting the JSON.
+  const { value, raw } = await completeJson(PROFILE_SYSTEM, user, TasteProfileOutput, 4000);
   return { profile: value, raw };
 }
 
@@ -255,6 +257,6 @@ export async function generateRecCandidates(
     `\nREQUESTED OBSCURITY RANGE: ${req.obscurityMin}-${req.obscurityMax}`,
   ].join("\n");
 
-  const { value, raw } = await completeJson(RECS_SYSTEM, user, RecCandidatesOutput, 2500);
+  const { value, raw } = await completeJson(RECS_SYSTEM, user, RecCandidatesOutput, 6000);
   return { candidates: value, raw };
 }
