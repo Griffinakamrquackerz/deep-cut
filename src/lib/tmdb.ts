@@ -2,10 +2,17 @@
 // Docs: https://developer.themoviedb.org/reference/intro/getting-started
 
 import { mapTmdbProviders, type Service } from "./services";
+import { getOmdbRatings } from "./omdb";
 import { supabaseAdmin } from "./supabase/admin";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const PROVIDER_TTL_MS = 7 * 24 * 60 * 60 * 1000; // refresh watch providers weekly
+
+export interface MovieRatings {
+  tmdb: number | null; // /10
+  imdb: number | null; // /10
+  rt: number | null; // 0-100 (Rotten Tomatoes %)
+}
 
 export interface TmdbMovie {
   id: number;
@@ -17,10 +24,13 @@ export interface TmdbMovie {
   genres: string[];
   popularity: number;
   vote_count: number;
+  vote_average: number | null; // TMDB rating, /10
+  imdb_id: string | null;
 }
 
 export interface CachedMovie extends TmdbMovie {
   providers: Partial<Record<Service, boolean>>;
+  ratings: MovieRatings;
 }
 
 function authParams(): { url: (path: string, qs?: Record<string, string>) => string; headers: Record<string, string> } {
@@ -90,10 +100,17 @@ interface TmdbDetails {
   genres: Array<{ name: string }>;
   popularity: number;
   vote_count: number;
+  vote_average: number;
+  imdb_id?: string | null;
+  external_ids?: { imdb_id?: string | null };
 }
 
 export async function getMovieDetails(tmdbId: number): Promise<TmdbMovie | null> {
-  const d = await tmdbFetch<TmdbDetails>(`/movie/${tmdbId}`, { language: "en-US" });
+  // append_to_response pulls external_ids (imdb_id) in the same request.
+  const d = await tmdbFetch<TmdbDetails>(`/movie/${tmdbId}`, {
+    language: "en-US",
+    append_to_response: "external_ids",
+  });
   if (!d) return null;
   return {
     id: d.id,
@@ -105,6 +122,8 @@ export async function getMovieDetails(tmdbId: number): Promise<TmdbMovie | null>
     genres: d.genres.map((g) => g.name),
     popularity: d.popularity,
     vote_count: d.vote_count,
+    vote_average: typeof d.vote_average === "number" && d.vote_average > 0 ? d.vote_average : null,
+    imdb_id: d.imdb_id ?? d.external_ids?.imdb_id ?? null,
   };
 }
 
@@ -137,11 +156,14 @@ export async function cacheMovie(tmdbId: number): Promise<CachedMovie | null> {
   const db = supabaseAdmin();
   const { data: existing } = await db.from("movies").select("*").eq("id", tmdbId).maybeSingle();
 
-  const providersFresh =
+  // Fresh means providers refreshed within the week AND ratings have been
+  // fetched at least once (older rows predate ratings — refresh to backfill).
+  const fresh =
     existing?.providers_refreshed_at &&
+    existing?.ratings_refreshed_at &&
     Date.now() - new Date(existing.providers_refreshed_at).getTime() < PROVIDER_TTL_MS;
 
-  if (existing && providersFresh) {
+  if (existing && fresh) {
     return {
       id: existing.id,
       title: existing.title,
@@ -152,7 +174,14 @@ export async function cacheMovie(tmdbId: number): Promise<CachedMovie | null> {
       genres: existing.genres ?? [],
       popularity: Number(existing.popularity ?? 0),
       vote_count: existing.vote_count ?? 0,
+      vote_average: existing.tmdb_rating != null ? Number(existing.tmdb_rating) : null,
+      imdb_id: existing.imdb_id ?? null,
       providers: existing.providers ?? {},
+      ratings: {
+        tmdb: existing.tmdb_rating != null ? Number(existing.tmdb_rating) : null,
+        imdb: existing.imdb_rating != null ? Number(existing.imdb_rating) : null,
+        rt: existing.rt_rating != null ? Number(existing.rt_rating) : null,
+      },
     };
   }
 
@@ -163,6 +192,18 @@ export async function cacheMovie(tmdbId: number): Promise<CachedMovie | null> {
     Record<Service, boolean>
   >;
 
+  // IMDb + Rotten Tomatoes (no-op returning nulls when OMDB_API_KEY is unset).
+  const omdb = details.imdb_id
+    ? await getOmdbRatings(details.imdb_id).catch(() => ({ imdb: null, rt: null }))
+    : { imdb: null, rt: null };
+
+  const ratings: MovieRatings = {
+    tmdb: details.vote_average,
+    imdb: omdb.imdb,
+    rt: omdb.rt,
+  };
+
+  const now = new Date().toISOString();
   await db.from("movies").upsert({
     id: details.id,
     title: details.title,
@@ -173,12 +214,17 @@ export async function cacheMovie(tmdbId: number): Promise<CachedMovie | null> {
     genres: details.genres,
     popularity: details.popularity,
     vote_count: details.vote_count,
+    tmdb_rating: ratings.tmdb,
+    imdb_id: details.imdb_id,
+    imdb_rating: ratings.imdb,
+    rt_rating: ratings.rt,
     providers,
-    providers_refreshed_at: new Date().toISOString(),
-    cached_at: new Date().toISOString(),
+    providers_refreshed_at: now,
+    ratings_refreshed_at: now,
+    cached_at: now,
   });
 
-  return { ...details, providers };
+  return { ...details, providers, ratings };
 }
 
 export async function cacheMovies(tmdbIds: number[]): Promise<CachedMovie[]> {

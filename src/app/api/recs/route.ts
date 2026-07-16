@@ -15,7 +15,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin()
     .from("recommendations")
     .select(
-      "id, reason, obscurity, status, batch, created_at, movies(id, title, year, runtime, poster_path, genres, providers)",
+      "id, reason, obscurity, status, batch, created_at, movies(id, title, year, runtime, poster_path, overview, genres, providers, tmdb_rating, imdb_rating, rt_rating)",
     )
     .eq("user_id", user.id)
     .in("status", ["active", "watchlisted"])

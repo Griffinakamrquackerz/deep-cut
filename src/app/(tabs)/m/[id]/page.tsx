@@ -5,6 +5,7 @@ import { cacheMovie } from "@/lib/tmdb";
 import { SERVICES, type Service } from "@/lib/services";
 import Poster from "@/components/Poster";
 import ServiceBadges from "@/components/ServiceBadges";
+import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,6 +59,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
             {movie.runtime ? ` · ${movie.runtime} min` : ""}
           </p>
           <p className="mt-1 font-mono text-[0.65rem] text-dim">{movie.genres.join(" · ")}</p>
+          <RatingsBadges className="mt-2" ratings={movie.ratings} />
           <div className="mt-2">
             <ServiceBadges available={available} mine={myServices} />
           </div>

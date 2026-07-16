@@ -21,6 +21,9 @@ Built per `DEEP-CUT-SPEC` — milestones M1–M6, one commit each.
   behind `src/lib/ai.ts`; strict JSON validated with Zod + one repair pass, and every
   candidate film verified against TMDB — so weaker models degrade gracefully instead
   of breaking. Compare providers with the raw outputs in `ai_logs`.
+- **Ratings** — IMDb + Rotten Tomatoes via **OMDb** (free, optional `OMDB_API_KEY`),
+  behind `src/lib/omdb.ts`; TMDB's own score is the always-on fallback. Shown on the
+  Tonight cards and every movie page.
 - **TMDB** — metadata/search/posters/watch-providers, cached into the `movies` table,
   all behind `src/lib/tmdb.ts`. Every Claude candidate is validated against TMDB
   (fuzzy title+year); unresolvable candidates are dropped

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Poster from "./Poster";
 import ObscurityDots from "./ObscurityDots";
 import ServiceBadges from "./ServiceBadges";
+import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import { SERVICES, type Service } from "@/lib/services";
 
@@ -18,8 +19,12 @@ interface RecRow {
     year: number | null;
     runtime: number | null;
     poster_path: string | null;
+    overview: string | null;
     genres: string[];
     providers: Partial<Record<Service, boolean>>;
+    tmdb_rating: number | null;
+    imdb_rating: number | null;
+    rt_rating: number | null;
   } | null;
 }
 
@@ -185,12 +190,19 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
                     {m.year ?? "—"}
                     {m.runtime ? ` · ${m.runtime} min` : ""}
                   </p>
+                  <RatingsBadges
+                    className="mt-1"
+                    ratings={{ tmdb: m.tmdb_rating, imdb: m.imdb_rating, rt: m.rt_rating }}
+                  />
                   <button
                     onClick={() => tapReason(rec)}
                     className="mt-1.5 text-left text-sm italic text-amber"
                   >
                     {rec.reason}
                   </button>
+                  {m.overview && (
+                    <p className="mt-1 line-clamp-2 text-xs text-dim">{m.overview}</p>
+                  )}
                   <div className="mt-1.5">
                     <ServiceBadges available={avail} mine={myServices} />
                   </div>
