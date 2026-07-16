@@ -1,6 +1,8 @@
-// Curated 40-film starter grid for onboarding — spread across genres and eras.
-// IDs are TMDB ids; title/year are for typographic fallback cards before the
-// TMDB cache warms. Metadata is always re-fetched from TMDB by id.
+// Curated starter grid for onboarding — a shelf to warm people up, not a
+// top-100 list. Mix: a few canon anchors, cult picks, international cinema,
+// and a heavy dose of 2014–2024. Search covers everything else (all of TMDB).
+// IDs are TMDB ids; title/year render the typographic fallback cards before
+// the TMDB cache warms. Metadata is always re-fetched from TMDB by id.
 
 export interface StarterFilm {
   tmdbId: number;
@@ -9,44 +11,101 @@ export interface StarterFilm {
 }
 
 export const STARTER_GRID: StarterFilm[] = [
+  // ── anchors & older classics ──
   { tmdbId: 289, title: "Casablanca", year: 1942 },
+  { tmdbId: 599, title: "Sunset Boulevard", year: 1950 },
+  { tmdbId: 567, title: "Rear Window", year: 1954 },
+  { tmdbId: 389, title: "12 Angry Men", year: 1957 },
+  { tmdbId: 426, title: "Vertigo", year: 1958 },
   { tmdbId: 539, title: "Psycho", year: 1960 },
   { tmdbId: 935, title: "Dr. Strangelove", year: 1964 },
   { tmdbId: 429, title: "The Good, the Bad and the Ugly", year: 1966 },
   { tmdbId: 238, title: "The Godfather", year: 1972 },
+  { tmdbId: 578, title: "Jaws", year: 1975 },
+  { tmdbId: 510, title: "One Flew Over the Cuckoo's Nest", year: 1975 },
+  { tmdbId: 103, title: "Taxi Driver", year: 1976 },
   { tmdbId: 11, title: "Star Wars", year: 1977 },
+  { tmdbId: 348, title: "Alien", year: 1979 },
   { tmdbId: 694, title: "The Shining", year: 1980 },
   { tmdbId: 78, title: "Blade Runner", year: 1982 },
-  { tmdbId: 601, title: "E.T. the Extra-Terrestrial", year: 1982 },
+  { tmdbId: 111, title: "Scarface", year: 1983 },
+  { tmdbId: 68, title: "Brazil", year: 1985 },
   { tmdbId: 105, title: "Back to the Future", year: 1985 },
   { tmdbId: 9377, title: "Ferris Bueller's Day Off", year: 1986 },
   { tmdbId: 2493, title: "The Princess Bride", year: 1987 },
+  { tmdbId: 562, title: "Die Hard", year: 1988 },
+  { tmdbId: 12477, title: "Grave of the Fireflies", year: 1988 },
+  { tmdbId: 11216, title: "Cinema Paradiso", year: 1988 },
+
+  // ── the 90s ──
   { tmdbId: 274, title: "The Silence of the Lambs", year: 1991 },
   { tmdbId: 500, title: "Reservoir Dogs", year: 1992 },
+  { tmdbId: 137, title: "Groundhog Day", year: 1993 },
   { tmdbId: 680, title: "Pulp Fiction", year: 1994 },
-  { tmdbId: 278, title: "The Shawshank Redemption", year: 1994 },
-  { tmdbId: 862, title: "Toy Story", year: 1995 },
   { tmdbId: 807, title: "Se7en", year: 1995 },
+  { tmdbId: 405, title: "La Haine", year: 1995 },
   { tmdbId: 19404, title: "Dilwale Dulhania Le Jayenge", year: 1995 },
+  { tmdbId: 275, title: "Fargo", year: 1996 },
+  { tmdbId: 128, title: "Princess Mononoke", year: 1997 },
+  { tmdbId: 637, title: "Life Is Beautiful", year: 1997 },
+  { tmdbId: 115, title: "The Big Lebowski", year: 1998 },
   { tmdbId: 550, title: "Fight Club", year: 1999 },
   { tmdbId: 603, title: "The Matrix", year: 1999 },
+
+  // ── the 2000s ──
   { tmdbId: 77, title: "Memento", year: 2000 },
+  { tmdbId: 641, title: "Requiem for a Dream", year: 2000 },
+  { tmdbId: 1359, title: "American Psycho", year: 2000 },
   { tmdbId: 129, title: "Spirited Away", year: 2001 },
   { tmdbId: 194, title: "Amélie", year: 2001 },
   { tmdbId: 141, title: "Donnie Darko", year: 2001 },
+  { tmdbId: 598, title: "City of God", year: 2002 },
+  { tmdbId: 24, title: "Kill Bill: Vol. 1", year: 2003 },
+  { tmdbId: 38, title: "Eternal Sunshine of the Spotless Mind", year: 2004 },
   { tmdbId: 4935, title: "Howl's Moving Castle", year: 2004 },
+  { tmdbId: 1422, title: "The Departed", year: 2006 },
+  { tmdbId: 7345, title: "There Will Be Blood", year: 2007 },
   { tmdbId: 155, title: "The Dark Knight", year: 2008 },
   { tmdbId: 8321, title: "In Bruges", year: 2008 },
+  { tmdbId: 20453, title: "3 Idiots", year: 2009 },
+
+  // ── the 2010s ──
   { tmdbId: 27205, title: "Inception", year: 2010 },
+  { tmdbId: 77338, title: "The Intouchables", year: 2011 },
   { tmdbId: 68718, title: "Django Unchained", year: 2012 },
   { tmdbId: 106646, title: "The Wolf of Wall Street", year: 2013 },
   { tmdbId: 120467, title: "The Grand Budapest Hotel", year: 2014 },
+  { tmdbId: 244786, title: "Whiplash", year: 2014 },
+  { tmdbId: 264660, title: "Ex Machina", year: 2014 },
+  { tmdbId: 194662, title: "Birdman", year: 2014 },
+  { tmdbId: 210577, title: "Gone Girl", year: 2014 },
+  { tmdbId: 245891, title: "John Wick", year: 2014 },
   { tmdbId: 76341, title: "Mad Max: Fury Road", year: 2015 },
   { tmdbId: 313369, title: "La La Land", year: 2016 },
+  { tmdbId: 376867, title: "Moonlight", year: 2016 },
+  { tmdbId: 372058, title: "Your Name", year: 2016 },
   { tmdbId: 419430, title: "Get Out", year: 2017 },
   { tmdbId: 391713, title: "Lady Bird", year: 2017 },
   { tmdbId: 335984, title: "Blade Runner 2049", year: 2017 },
+  { tmdbId: 399055, title: "The Shape of Water", year: 2017 },
   { tmdbId: 324857, title: "Spider-Man: Into the Spider-Verse", year: 2018 },
+  { tmdbId: 493922, title: "Hereditary", year: 2018 },
+  { tmdbId: 300668, title: "Annihilation", year: 2018 },
   { tmdbId: 496243, title: "Parasite", year: 2019 },
   { tmdbId: 546554, title: "Knives Out", year: 2019 },
+  { tmdbId: 503919, title: "The Lighthouse", year: 2019 },
+  { tmdbId: 530915, title: "1917", year: 2019 },
+  { tmdbId: 475557, title: "Joker", year: 2019 },
+  { tmdbId: 466272, title: "Once Upon a Time in Hollywood", year: 2019 },
+
+  // ── the 2020s ──
+  { tmdbId: 581734, title: "Nomadland", year: 2020 },
+  { tmdbId: 508442, title: "Soul", year: 2020 },
+  { tmdbId: 545611, title: "Everything Everywhere All at Once", year: 2022 },
+  { tmdbId: 361743, title: "Top Gun: Maverick", year: 2022 },
+  { tmdbId: 661374, title: "Glass Onion", year: 2022 },
+  { tmdbId: 872585, title: "Oppenheimer", year: 2023 },
+  { tmdbId: 346698, title: "Barbie", year: 2023 },
+  { tmdbId: 792307, title: "Poor Things", year: 2023 },
+  { tmdbId: 693134, title: "Dune: Part Two", year: 2024 },
 ];

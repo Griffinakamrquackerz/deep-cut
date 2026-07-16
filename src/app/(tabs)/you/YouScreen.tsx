@@ -224,16 +224,29 @@ function LovedSection({
     onChanged();
   }
 
+  async function remove(id: number) {
+    await fetch("/api/loved", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ movieId: id }),
+    });
+    onChanged();
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <input
         type="search"
         value={query}
         onChange={(e) => void search(e.target.value)}
-        placeholder="Add a film you love…"
+        placeholder="Search any film to add — all of TMDB…"
         aria-label="Search films to love"
         className="rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
       />
+      <p className="font-mono text-[0.6rem] text-dim">
+        Add or ✕ remove films, then hit <span className="text-amber">Refresh</span> up top to
+        reshape your taste profile.
+      </p>
       {results.length > 0 && (
         <ul className="divide-y divide-line rounded border border-line bg-surface">
           {results.map((r) => (
@@ -254,7 +267,7 @@ function LovedSection({
       <ul className="grid grid-cols-3 gap-3">
         {loved.map((l) =>
           l.movies ? (
-            <li key={l.movie_id}>
+            <li key={l.movie_id} className="relative">
               <Link href={`/m/${l.movies.id}`}>
                 <Poster
                   posterPath={l.movies.poster_path}
@@ -263,6 +276,13 @@ function LovedSection({
                   genres={l.movies.genres}
                 />
               </Link>
+              <button
+                onClick={() => void remove(l.movie_id)}
+                aria-label={`Remove ${l.movies.title} from loved films`}
+                className="absolute right-1 top-1 rounded-full border border-line bg-bg/90 px-2 py-0.5 font-mono text-xs text-ticket"
+              >
+                ✕
+              </button>
             </li>
           ) : null,
         )}

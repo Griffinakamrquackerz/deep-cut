@@ -33,7 +33,7 @@ export default function OnboardingFlow() {
     setPicks((prev) => {
       const next = new Map(prev);
       if (next.has(p.id)) next.delete(p.id);
-      else if (next.size < 40) next.set(p.id, p);
+      else if (next.size < 60) next.set(p.id, p);
       return next;
     });
   }, []);
@@ -182,7 +182,8 @@ export default function OnboardingFlow() {
         <p className="eyebrow mb-1">Step 1 of 2</p>
         <h1 className="font-display text-4xl text-cream">PICK FILMS YOU LOVE</h1>
         <p className="mt-1 text-sm text-dim">
-          Any genre, any era. At least 8 — the more the sharper.
+          Any genre, any era. At least 8 — the more the sharper. Deep cuts and
+          guilty pleasures teach us more than classics do.
         </p>
       </div>
 
@@ -190,9 +191,9 @@ export default function OnboardingFlow() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search any film…"
+        placeholder="Search any film ever made…"
         aria-label="Search films"
-        className="rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
+        className="rounded border-2 border-amber/60 bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
       />
 
       {results.length > 0 && (
@@ -217,6 +218,7 @@ export default function OnboardingFlow() {
         </ul>
       )}
 
+      <p className="eyebrow">Or grab from the shelf</p>
       <div className="grid grid-cols-4 gap-2">
         {STARTER_GRID.map((f) => {
           const on = picks.has(f.tmdbId);

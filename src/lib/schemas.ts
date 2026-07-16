@@ -4,7 +4,7 @@ import { SERVICES } from "./services";
 // ── API input schemas ───────────────────────────────────────────────
 
 export const OnboardingInput = z.object({
-  movieIds: z.array(z.number().int().positive()).min(8).max(40),
+  movieIds: z.array(z.number().int().positive()).min(8).max(60),
   services: z.array(z.enum(SERVICES)).max(SERVICES.length),
 });
 

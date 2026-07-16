@@ -229,6 +229,7 @@ Rules:
 - NEVER recommend anything on the exclusion list or in the loved list.
 - Each "reason" is ONE line (max ~25 words) tied to a specific taste thread or a specific loved film, e.g. "Because you loved The Room → the film-set chaos of Living in Oblivion."
 - At least half the candidates should be lesser-known films (obscurity 3+). Bias toward the requested obscurity range.
+- Mix eras: include at least 3 films from the last 10 years and avoid defaulting to the canonical "greatest of all time" lists — surface festival favorites, international picks, and under-the-radar releases the user has plausibly never heard of.
 - Spread across the user's taste threads; don't cluster on one.
 - obscurity_guess: your 1-5 estimate of how obscure the film is.
 - Respond with ONLY a JSON object, no prose, no markdown fences: {"recs":[{"title":"...","year":1990,"reason":"...","obscurity_guess":3}]}`;

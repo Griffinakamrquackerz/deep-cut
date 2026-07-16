@@ -4,14 +4,19 @@ import { mapTmdbProviders, SERVICES } from "@/lib/services";
 import { normalizeTitle, titleYearMatch } from "@/lib/tmdb";
 
 describe("M1 — starter grid", () => {
-  it("has exactly 40 films with unique tmdb ids", () => {
-    expect(STARTER_GRID).toHaveLength(40);
-    expect(new Set(STARTER_GRID.map((f) => f.tmdbId)).size).toBe(40);
+  it("has a broad shelf with unique tmdb ids", () => {
+    expect(STARTER_GRID.length).toBeGreaterThanOrEqual(60);
+    expect(new Set(STARTER_GRID.map((f) => f.tmdbId)).size).toBe(STARTER_GRID.length);
   });
 
-  it("spans eras from pre-1970 to post-2015", () => {
+  it("spans eras from pre-1970 through the 2020s", () => {
     expect(STARTER_GRID.some((f) => f.year < 1970)).toBe(true);
-    expect(STARTER_GRID.some((f) => f.year >= 2015)).toBe(true);
+    expect(STARTER_GRID.some((f) => f.year >= 2020)).toBe(true);
+  });
+
+  it("is not just a greatest-of-all-time wall — at least a third is 2014+", () => {
+    const recent = STARTER_GRID.filter((f) => f.year >= 2014).length;
+    expect(recent).toBeGreaterThanOrEqual(Math.floor(STARTER_GRID.length / 3));
   });
 });
 
