@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Poster from "@/components/Poster";
@@ -9,6 +9,7 @@ import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
 import ShowMore from "@/components/ShowMore";
 import LetterboxdImport from "@/components/LetterboxdImport";
+import { isMuted, setMuted, sfxChime } from "@/lib/sfx";
 
 interface MovieLite {
   id: number;
@@ -344,6 +345,15 @@ function SettingsSection({
   const [status, setStatus] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [pwStatus, setPwStatus] = useState<string | null>(null);
+  const [muted, setMutedState] = useState(true);
+  useEffect(() => setMutedState(isMuted()), []);
+
+  function toggleSound() {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+    if (!next) sfxChime(); // a little fanfare so they hear it working
+  }
 
   async function savePassword() {
     setPwStatus(null);
@@ -419,6 +429,31 @@ function SettingsSection({
           })}
         </div>
       </div>
+      <div>
+        <p className="eyebrow mb-2">Projection booth</p>
+        <button
+          onClick={toggleSound}
+          aria-pressed={!muted}
+          className="flex w-full items-center justify-between rounded border border-line bg-surface px-3 py-3"
+        >
+          <span className="text-left">
+            <span className="block font-mono text-xs uppercase tracking-wider text-cream">
+              {muted ? "🔇" : "🔊"} House sound
+            </span>
+            <span className="font-mono text-[0.6rem] text-dim">
+              clicks, chimes & confetti pops
+            </span>
+          </span>
+          <span
+            className={`rounded-full border px-3 py-1 font-mono text-[0.65rem] uppercase tracking-widest ${
+              muted ? "border-line text-dim" : "border-avail text-avail"
+            }`}
+          >
+            {muted ? "Off" : "On"}
+          </span>
+        </button>
+      </div>
+
       <button
         onClick={save}
         className="rounded bg-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg"
