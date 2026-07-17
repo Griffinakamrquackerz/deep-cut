@@ -23,6 +23,9 @@ interface Person {
 const personName = (p: Person) => p.display_name ?? (p.handle ? `@${p.handle}` : "someone");
 const profileHref = (p: { id: string; handle: string | null }) => `/u/${p.handle ?? p.id}`;
 
+const feedName = (actor: { id: string; handle: string | null; display_name: string | null }, myId: string) =>
+  actor.id === myId ? "You" : actorName(actor);
+
 export default function LobbyScreen({ myId }: { myId: string }) {
   const [view, setView] = useState<"feed" | "people">("feed");
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -211,7 +214,8 @@ export default function LobbyScreen({ myId }: { myId: string }) {
         <div className="ticket-edge rounded p-6 text-center">
           <p className="font-display text-2xl text-cream">QUIET IN HERE</p>
           <p className="mt-1 text-sm text-dim">
-            Follow people in the ★ People tab — their watches and mixtapes show up here.
+            Log a watch with “Seen it” or follow people in the ★ People tab — watches and
+            mixtapes light up this marquee.
           </p>
         </div>
       ) : (
@@ -230,7 +234,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
                       href={profileHref(item.actor)}
                       className="font-mono text-[0.7rem] text-amber underline decoration-amber/40"
                     >
-                      {actorName(item.actor)}
+                      {feedName(item.actor, myId)}
                     </Link>{" "}
                     {REACTION_LABEL[item.reaction] ?? item.reaction}{" "}
                     <Link href={`/m/${item.movie.id}`} className="text-cream underline">
@@ -241,12 +245,14 @@ export default function LobbyScreen({ myId }: { myId: string }) {
                       <span className="block italic text-cream/80">“{item.note}”</span>
                     ) : null}
                   </p>
-                  <button
-                    onClick={() => void addToWatchlist(item.movie.id)}
-                    className="shrink-0 rounded border border-line px-2 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
-                  >
-                    + watchlist
-                  </button>
+                  {item.actor.id !== myId && (
+                    <button
+                      onClick={() => void addToWatchlist(item.movie.id)}
+                      className="shrink-0 rounded border border-line px-2 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
+                    >
+                      + watchlist
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -256,7 +262,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
                     href={profileHref(item.actor)}
                     className="font-mono text-[0.7rem] text-amber underline decoration-amber/40"
                   >
-                    {actorName(item.actor)}
+                    {feedName(item.actor, myId)}
                   </Link>{" "}
                   sealed a mixtape:{" "}
                   <Link href={`/p/${item.shareSlug}`} className="text-cream underline">

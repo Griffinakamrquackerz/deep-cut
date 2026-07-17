@@ -37,28 +37,27 @@ export async function GET() {
     .select("followee_id")
     .eq("follower_id", user.id);
   const followees = (followRows ?? []).map((r) => r.followee_id);
+  // Your own watches and mixtapes belong on the marquee too — otherwise a
+  // new user who follows nobody stares at an empty room.
+  const actorIds = [user.id, ...followees];
 
   const [watches, playlists] = await Promise.all([
-    followees.length
-      ? db
-          .from("watch_logs")
-          .select(
-            "id, reaction, why, note, watched_at, users(id, handle, display_name), movies(id, title, year, poster_path, genres)",
-          )
-          .in("user_id", followees)
-          .order("watched_at", { ascending: false })
-          .limit(30)
-      : Promise.resolve({ data: [] as Row[] }),
-    followees.length
-      ? db
-          .from("playlists")
-          .select(
-            "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name), playlist_items(id)",
-          )
-          .in("owner_id", followees)
-          .order("created_at", { ascending: false })
-          .limit(20)
-      : Promise.resolve({ data: [] as Row[] }),
+    db
+      .from("watch_logs")
+      .select(
+        "id, reaction, why, note, watched_at, users(id, handle, display_name), movies(id, title, year, poster_path, genres)",
+      )
+      .in("user_id", actorIds)
+      .order("watched_at", { ascending: false })
+      .limit(30),
+    db
+      .from("playlists")
+      .select(
+        "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name), playlist_items(id)",
+      )
+      .in("owner_id", actorIds)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   const items: FeedItem[] = [];
