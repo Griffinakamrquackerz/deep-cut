@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
+import AdSlot from "@/components/AdSlot";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -84,8 +85,13 @@ export default function LobbyScreen({ myId }: { myId: string }) {
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {feed.map((item) => (
+          {feed.map((item, idx) => (
             <li key={`${item.kind}-${item.id}`} className="rounded border border-line bg-surface p-3">
+              {idx === 2 && (
+                <div className="mb-3">
+                  <AdSlot index={1} slot="lobby-feed" />
+                </div>
+              )}
               {item.kind === "watch" && (
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm text-dim">

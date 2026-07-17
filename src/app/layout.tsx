@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Bebas_Neue, IBM_Plex_Mono, Karla } from "next/font/google";
 import PwaSetup from "@/components/PwaSetup";
 import "./globals.css";
+
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 
 const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 const plexMono = IBM_Plex_Mono({
@@ -33,6 +36,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${bebas.variable} ${plexMono.variable} ${karla.variable}`}>
       <body className="min-h-dvh text-cream">
+        {ADSENSE_CLIENT && (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        )}
         <PwaSetup />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}
         <div className="reel-grain" aria-hidden />

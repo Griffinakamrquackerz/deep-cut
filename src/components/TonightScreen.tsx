@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Poster from "./Poster";
 import ObscurityDots from "./ObscurityDots";
@@ -8,6 +8,7 @@ import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
+import AdSlot from "./AdSlot";
 import Confetti from "./Confetti";
 import { sfxChime, sfxClick, sfxPop } from "@/lib/sfx";
 import { SERVICES, type Service } from "@/lib/services";
@@ -221,8 +222,13 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
             if (!m) return null;
             const avail = availableServices(rec);
             return (
+              <React.Fragment key={rec.id}>
+              {idx === 3 && (
+                <li>
+                  <AdSlot index={0} slot="tonight-feed" />
+                </li>
+              )}
               <li
-                key={rec.id}
                 className="film-card deal-in flex gap-3 rounded-lg p-3"
                 style={{ "--i": idx } as React.CSSProperties}
               >
@@ -286,6 +292,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
                   </div>
                 </div>
               </li>
+              </React.Fragment>
             );
           })}
         </ul>

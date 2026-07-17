@@ -7,6 +7,7 @@ import Poster from "@/components/Poster";
 import ServiceBadges from "@/components/ServiceBadges";
 import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
+import AdSlot from "@/components/AdSlot";
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -85,6 +86,8 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           </ul>
         )}
       </div>
+
+      <AdSlot index={2} slot="movie-page" />
 
       <p className="font-mono text-[0.55rem] text-dim/70">
         Metadata & streaming data: TMDB (JustWatch). This product uses the TMDB API but is not
