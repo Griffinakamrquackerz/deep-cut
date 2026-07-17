@@ -6,6 +6,7 @@ import ObscurityDots from "./ObscurityDots";
 import ServiceBadges from "./ServiceBadges";
 import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
+import FilmLeader from "./FilmLeader";
 import { SERVICES, type Service } from "@/lib/services";
 
 interface RecRow {
@@ -142,7 +143,9 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
     <section className="flex flex-col gap-4">
       <header>
         <p className="eyebrow">Tonight</p>
-        <h1 className="font-display text-4xl text-cream">MOVIES YOU HAVEN&apos;T MET YET</h1>
+        <h1 className="glow-amber font-display text-5xl leading-[0.95] text-amber">
+          MOVIES YOU HAVEN&apos;T MET YET
+        </h1>
       </header>
 
       <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
@@ -176,9 +179,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       {message && <p className="font-mono text-xs text-ticket">{message}</p>}
 
       {loading ? (
-        <p className="animate-pulse py-10 text-center font-mono text-xs text-dim">
-          rolling film…
-        </p>
+        <FilmLeader label="rolling film" />
       ) : visible.length === 0 ? (
         <div className="ticket-edge rounded p-6 text-center">
           <p className="font-display text-2xl text-cream">NOTHING ON THE MARQUEE</p>
@@ -208,7 +209,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
             if (!m) return null;
             const avail = availableServices(rec);
             return (
-              <li key={rec.id} className="flex gap-3 rounded border border-line bg-surface p-3">
+              <li key={rec.id} className="film-card flex gap-3 rounded-lg p-3">
                 <Link href={`/m/${m.id}`} className="w-24 shrink-0">
                   <Poster
                     posterPath={m.poster_path}

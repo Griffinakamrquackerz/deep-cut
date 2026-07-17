@@ -101,7 +101,7 @@ export default function PlaylistsScreen({
     return (
       <section className="flex flex-col gap-4">
         <p className="eyebrow">Mixtape sealed</p>
-        <h1 className="font-display text-4xl text-cream">SEND IT</h1>
+        <h1 className="glow-amber font-display text-4xl text-amber">SEND IT</h1>
         <div className="ticket-edge rounded bg-surface p-4">
           <p className="break-all font-mono text-xs text-amber">{shareLink}</p>
         </div>
@@ -132,7 +132,7 @@ export default function PlaylistsScreen({
     return (
       <section className="flex flex-col gap-4">
         <p className="eyebrow">New mixtape</p>
-        <h1 className="font-display text-4xl text-cream">MAKE A PLAYLIST</h1>
+        <h1 className="glow-amber font-display text-4xl text-amber">MAKE A PLAYLIST</h1>
         <input
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 80))}
@@ -230,7 +230,7 @@ export default function PlaylistsScreen({
       <header className="flex items-center justify-between">
         <div>
           <p className="eyebrow">Playlists</p>
-          <h1 className="font-display text-4xl text-cream">MOVIE MIXTAPES</h1>
+          <h1 className="glow-amber font-display text-4xl text-amber">MOVIE MIXTAPES</h1>
         </div>
         <button
           onClick={() => setCreating(true)}

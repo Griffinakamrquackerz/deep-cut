@@ -65,16 +65,20 @@ export default function YouScreen(props: {
       <header className="flex items-baseline justify-between">
         <div>
           <p className="eyebrow">You</p>
-          <h1 className="font-display text-4xl text-cream">
+          <h1 className="glow-amber font-display text-4xl text-amber">
             {props.handle ? `@${props.handle}` : (props.displayName ?? "YOUR TASTE")}
           </h1>
         </div>
       </header>
 
-      {/* Taste card */}
-      <div className="ticket-edge rounded bg-surface p-5">
-        <div className="flex items-baseline justify-between">
+      {/* Taste card — ticket stub */}
+      <div className="ticket-edge relative overflow-hidden rounded bg-surface p-5">
+        <div className="film-strip absolute inset-x-0 top-0" />
+        <div className="mt-2 flex items-baseline justify-between">
           <p className="eyebrow">Admit One · Taste Profile №{String(props.version).padStart(3, "0")}</p>
+          <span className="glow-ticket font-mono text-[0.6rem] tracking-widest text-ticket">
+            ● NOW SHOWING
+          </span>
         </div>
         {props.threads.length === 0 ? (
           <p className="mt-3 text-sm text-dim">

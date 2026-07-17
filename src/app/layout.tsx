@@ -32,9 +32,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${bebas.variable} ${plexMono.variable} ${karla.variable}`}>
-      <body className="min-h-dvh bg-bg text-cream">
+      <body className="min-h-dvh text-cream">
         <PwaSetup />
-        <div className="mx-auto min-h-dvh w-full max-w-md sm:max-w-lg md:max-w-2xl">
+        {/* Projected-film atmosphere — fixed, non-interactive overlays */}
+        <div className="reel-grain" aria-hidden />
+        <div className="reel-vignette" aria-hidden />
+        <div className="relative z-10 mx-auto min-h-dvh w-full max-w-md sm:max-w-lg md:max-w-2xl">
           {children}
         </div>
       </body>

@@ -66,7 +66,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
     <section className="flex flex-col gap-4">
       <header>
         <p className="eyebrow">The Lobby</p>
-        <h1 className="font-display text-4xl text-cream">WHAT FRIENDS ARE WATCHING</h1>
+        <h1 className="glow-amber font-display text-4xl text-amber">WHAT FRIENDS ARE WATCHING</h1>
       </header>
 
       {loading ? (

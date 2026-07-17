@@ -78,7 +78,7 @@ export default function PlaylistDetail({
           A mixtape from {ownerName}
           {recipientName ? ` · for ${recipientName}` : ""}
         </p>
-        <h1 className="font-display text-4xl text-cream">{name.toUpperCase()}</h1>
+        <h1 className="glow-amber font-display text-4xl text-amber">{name.toUpperCase()}</h1>
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface">
           <div className="h-full rounded-full bg-avail" style={{ width: `${pct}%` }} />
         </div>

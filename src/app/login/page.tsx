@@ -86,10 +86,17 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
-      <div className="text-center">
+      <div className="relative text-center">
+        {/* projector cone behind the marquee */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-56 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+          style={{ background: "radial-gradient(closest-side, rgba(255,180,84,0.22), transparent)" }}
+        />
         <p className="eyebrow mb-2">Admit One</p>
-        <h1 className="font-display text-6xl tracking-wide text-amber">DEEP CUT</h1>
-        <p className="mt-2 font-mono text-xs text-dim">Movies you haven&apos;t met yet.</p>
+        <h1 className="glow-amber font-display text-7xl tracking-wide text-amber">DEEP CUT</h1>
+        <div className="film-strip mx-auto mt-3 w-40" />
+        <p className="mt-3 font-mono text-xs text-dim">Movies you haven&apos;t met yet.</p>
       </div>
 
       <div className="flex w-full max-w-xs flex-col gap-3">

@@ -24,8 +24,8 @@ export default function TabBar() {
               key={t.href}
               href={t.href}
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[0.6rem] uppercase tracking-widest ${
-                active ? "text-amber" : "text-dim hover:text-cream"
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[0.6rem] uppercase tracking-widest transition-colors ${
+                active ? "text-amber [&>span]:glow-amber" : "text-dim hover:text-cream"
               }`}
             >
               <span aria-hidden className="text-base leading-none">
