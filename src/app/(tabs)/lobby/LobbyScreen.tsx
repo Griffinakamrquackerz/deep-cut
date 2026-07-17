@@ -5,6 +5,7 @@ import { actorName, type FeedItem } from "@/lib/feed";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import AdSlot from "@/components/AdSlot";
 import FollowButton from "@/components/FollowButton";
+import InviteButton from "@/components/InviteButton";
 import Poster from "@/components/Poster";
 import { sfxClick, sfxPop } from "@/lib/sfx";
 
@@ -169,9 +170,10 @@ export default function LobbyScreen({ myId }: { myId: string }) {
 
           {results !== null ? (
             results.length === 0 ? (
-              <p className="py-4 text-center text-sm text-dim">
-                Nobody by that name yet — invite them with a mixtape.
-              </p>
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <p className="text-sm text-dim">Nobody by that name yet — deal them in.</p>
+                <InviteButton />
+              </div>
             ) : (
               <ul className="flex flex-col gap-2">
                 {results.map((p) => (
@@ -212,6 +214,8 @@ export default function LobbyScreen({ myId }: { myId: string }) {
                   </ul>
                 )}
               </div>
+
+              <InviteButton card />
             </>
           )}
         </>
@@ -226,6 +230,9 @@ export default function LobbyScreen({ myId }: { myId: string }) {
             Log a watch with “Seen it” or follow people in the ★ People tab — watches and
             mixtapes light up this marquee.
           </p>
+          <div className="mt-3 flex justify-center">
+            <InviteButton />
+          </div>
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
