@@ -7,6 +7,7 @@ import ServiceBadges from "./ServiceBadges";
 import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
+import MarqueeBulbs from "./MarqueeBulbs";
 import { SERVICES, type Service } from "@/lib/services";
 
 interface RecRow {
@@ -142,8 +143,9 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   return (
     <section className="flex flex-col gap-4">
       <header>
-        <p className="eyebrow">Tonight</p>
-        <h1 className="glow-amber font-display text-5xl leading-[0.95] text-amber">
+        <MarqueeBulbs />
+        <p className="eyebrow mt-2">Tonight</p>
+        <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
           MOVIES YOU HAVEN&apos;T MET YET
         </h1>
       </header>
@@ -204,12 +206,16 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
-          {visible.map((rec) => {
+          {visible.map((rec, idx) => {
             const m = rec.movies;
             if (!m) return null;
             const avail = availableServices(rec);
             return (
-              <li key={rec.id} className="film-card flex gap-3 rounded-lg p-3">
+              <li
+                key={rec.id}
+                className="film-card deal-in flex gap-3 rounded-lg p-3"
+                style={{ "--i": idx } as React.CSSProperties}
+              >
                 <Link href={`/m/${m.id}`} className="w-24 shrink-0">
                   <Poster
                     posterPath={m.poster_path}
@@ -281,9 +287,9 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       <button
         onClick={deal}
         disabled={dealing}
-        className="rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-cream disabled:opacity-50"
+        className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
       >
-        {dealing ? "Dealing…" : "Deal me more"}
+        {dealing ? "Dealing…" : "★ Deal me more ★"}
       </button>
 
       {reacting && reacting.movies && (

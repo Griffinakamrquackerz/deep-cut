@@ -137,6 +137,133 @@ body {
   100% { background-position: -200% 0; }
 }
 
+/* ══════════ CAMP DEPARTMENT ══════════ */
+
+/* Neon sign flicker — the title buzzes like a half-dead motel VACANCY sign. */
+.neon-flicker {
+  animation: neon-flicker 4s infinite;
+}
+@keyframes neon-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow: 0 0 24px rgba(255, 180, 84, 0.5), 0 0 6px rgba(255, 180, 84, 0.7),
+      0 0 2px rgba(255, 180, 84, 0.9);
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+    opacity: 0.55;
+  }
+}
+
+/* Chasing marquee bulbs — a strip of theater lights that blink in sequence. */
+.marquee-bulbs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.marquee-bulbs > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-amber);
+  box-shadow: 0 0 8px 1px rgba(255, 180, 84, 0.8);
+  animation: bulb-blink 1.1s infinite steps(1);
+}
+.marquee-bulbs > i:nth-child(3n + 2) { animation-delay: 0.36s; }
+.marquee-bulbs > i:nth-child(3n) { animation-delay: 0.72s; }
+@keyframes bulb-blink {
+  0%, 40% { opacity: 1; }
+  41%, 100% { opacity: 0.22; box-shadow: 0 0 3px rgba(255, 180, 84, 0.3); }
+}
+
+/* Cards get dealt in — slide + fade, staggered by inline --i. */
+.deal-in {
+  opacity: 0;
+  animation: deal-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-1.2deg) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Carnival-button pulse for the primary "deal" action. */
+.pulse-cta {
+  position: relative;
+  overflow: hidden;
+  animation: cta-pulse 2.2s ease-in-out infinite;
+}
+.pulse-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.25) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: sheen-sweep 2.6s linear infinite;
+}
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(228, 87, 61, 0.5); transform: scale(1); }
+  50% { box-shadow: 0 0 22px 4px rgba(228, 87, 61, 0.45); transform: scale(1.015); }
+}
+
+/* Blinking "on air" record dot. */
+.blink { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0.15; } }
+
+/* Rubber-stamp badge — slightly rotated, distressed accent. */
+.stamp {
+  display: inline-block;
+  transform: rotate(-8deg);
+  border: 2px solid var(--color-ticket);
+  color: var(--color-ticket);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Poster wiggle on hover. */
+.wiggle:hover { animation: wiggle 0.4s ease-in-out; }
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+/* Red velvet curtains parting — one-time reveal on the login/entrance. */
+.curtain {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 52%;
+  z-index: 60;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, #5c1512 0 22px, #7a1c17 22px 44px);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.6);
+  animation-duration: 1.5s;
+  animation-timing-function: cubic-bezier(0.7, 0, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+.curtain-l { left: 0; transform-origin: left; animation-name: curtain-left; }
+.curtain-r { right: 0; transform-origin: right; animation-name: curtain-right; }
+@keyframes curtain-left {
+  0%, 25% { transform: translateX(0); }
+  100% { transform: translateX(-102%); }
+}
+@keyframes curtain-right {
+  0%, 25% { transform: translateX(0); }
+  100% { transform: translateX(102%); }
+}
+
 :focus-visible {
   outline: 2px solid var(--color-amber);
   outline-offset: 2px;
@@ -144,8 +271,21 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .reel-grain,
-  .sheen {
+  .sheen,
+  .neon-flicker,
+  .marquee-bulbs > i,
+  .deal-in,
+  .pulse-cta,
+  .pulse-cta::after,
+  .blink,
+  .curtain {
     animation: none !important;
+  }
+  .deal-in {
+    opacity: 1 !important;
+  }
+  .curtain {
+    display: none;
   }
   *,
   *::before,

@@ -77,7 +77,7 @@ export default function YouScreen(props: {
         <div className="mt-2 flex items-baseline justify-between">
           <p className="eyebrow">Admit One · Taste Profile №{String(props.version).padStart(3, "0")}</p>
           <span className="glow-ticket font-mono text-[0.6rem] tracking-widest text-ticket">
-            ● NOW SHOWING
+            <span className="blink">●</span> NOW SHOWING
           </span>
         </div>
         {props.threads.length === 0 ? (

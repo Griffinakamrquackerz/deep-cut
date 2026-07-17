@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import MarqueeBulbs from "@/components/MarqueeBulbs";
 
 type Mode = "signin" | "signup" | "magic" | "forgot";
 
@@ -86,6 +87,10 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
+      {/* Red velvet curtains part on entrance */}
+      <div className="curtain curtain-l" aria-hidden />
+      <div className="curtain curtain-r" aria-hidden />
+      <MarqueeBulbs count={16} />
       <div className="relative text-center">
         {/* projector cone behind the marquee */}
         <div
