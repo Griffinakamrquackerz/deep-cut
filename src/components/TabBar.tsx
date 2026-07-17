@@ -7,7 +7,10 @@ const LEFT_TABS = [
   { href: "/lobby", label: "Community", glyph: "🍿" },
 ] as const;
 
-const RIGHT_TABS = [{ href: "/you", label: "You", glyph: "🎟" }] as const;
+const RIGHT_TABS = [
+  { href: "/you", label: "You", glyph: "🎟" },
+  { href: "/settings", label: "Settings", glyph: "🎛" },
+] as const;
 
 function SideTab({
   href,
