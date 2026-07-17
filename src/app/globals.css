@@ -271,6 +271,11 @@ body {
 
 /* Poster wiggle on hover. */
 .wiggle:hover { animation: wiggle 0.4s ease-in-out; }
+
+/* Tab-bar Tonight reel — the dashed sprocket ring spins while it plays.
+   Transform-only, so it stays on the compositor. */
+.reel-spin { animation: reel-spin 7s linear infinite; }
+@keyframes reel-spin { to { transform: rotate(360deg); } }
 @keyframes wiggle {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-2deg); }
@@ -320,6 +325,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .reel-grain,
+  .reel-spin,
   .sheen,
   .neon-flicker,
   .marquee-bulbs > i,
