@@ -16,7 +16,6 @@ const CANONICAL_EVENTS = [
   "playlist_shared",
   "playlist_item_crossed",
   "taste_card_shared",
-  "take_posted",
   "follow_created",
 ];
 

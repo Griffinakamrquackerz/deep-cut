@@ -1,5 +1,5 @@
-// The Lobby feed is derived — a query over takes + playlist + watch activity
-// of followed users, merged and sorted. No feed table for MVP.
+// The Lobby feed is derived — a query over playlist + watch activity of
+// followed users, merged and sorted. No feed table for MVP.
 
 export interface FeedActor {
   id: string;
@@ -16,16 +16,6 @@ export interface FeedMovie {
 }
 
 export type FeedItem =
-  | {
-      kind: "take";
-      id: string;
-      at: string;
-      actor: FeedActor;
-      movie: FeedMovie;
-      body: string;
-      likes: number;
-      likedByMe: boolean;
-    }
   | {
       kind: "watch";
       id: string;

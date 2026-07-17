@@ -41,11 +41,6 @@ export const PlaylistItemUpdateInput = z.object({
   note: z.string().max(300).nullish(),
 });
 
-export const TakeInput = z.object({
-  movieId: z.number().int().positive(),
-  body: z.string().min(1).max(300),
-});
-
 export const FollowInput = z.object({ userId: z.string().uuid() });
 
 export const ExternalReadInput = z.object({

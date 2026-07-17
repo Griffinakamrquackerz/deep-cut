@@ -18,13 +18,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
   const user = await currentUser();
   const db = supabaseAdmin();
-  const [takes, reads, mine] = await Promise.all([
-    db
-      .from("takes")
-      .select("id, body, created_at, users(id, handle, display_name)")
-      .eq("movie_id", tmdbId)
-      .order("created_at", { ascending: false })
-      .limit(30),
+  const [reads, mine] = await Promise.all([
     db
       .from("external_reads")
       .select("id, title, url")
@@ -69,30 +63,6 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       <p className="text-sm leading-relaxed text-cream/90">{movie.overview}</p>
 
       {user && <MovieActions movieId={movie.id} title={movie.title} />}
-
-      <div>
-        <p className="eyebrow mb-2">Takes on this film</p>
-        {(takes.data ?? []).length === 0 ? (
-          <p className="text-sm text-dim">No takes yet. Be the first voice in the lobby.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {(takes.data ?? []).map((t) => {
-              const author = t.users as unknown as {
-                handle: string | null;
-                display_name: string | null;
-              } | null;
-              return (
-                <li key={t.id} className="rounded border border-line bg-surface p-3">
-                  <p className="font-mono text-[0.65rem] text-amber">
-                    {author?.handle ? `@${author.handle}` : (author?.display_name ?? "someone")}
-                  </p>
-                  <p className="mt-1 text-sm text-cream">{t.body}</p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
 
       <div>
         <p className="eyebrow mb-2">External reads</p>

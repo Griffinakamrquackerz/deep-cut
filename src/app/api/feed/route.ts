@@ -1,33 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { TakeInput } from "@/lib/schemas";
-import { cacheMovie } from "@/lib/tmdb";
 import { mergeFeed, type FeedItem, type FeedActor, type FeedMovie } from "@/lib/feed";
-import { track } from "@/lib/analytics";
-
-export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const parsed = TakeInput.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_input", details: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const movie = await cacheMovie(parsed.data.movieId).catch(() => null);
-  if (!movie) return NextResponse.json({ error: "unknown_movie" }, { status: 404 });
-
-  const { data, error } = await supabaseAdmin()
-    .from("takes")
-    .insert({ user_id: user.id, movie_id: movie.id, body: parsed.data.body })
-    .select("id")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await track(user.id, "take_posted", { takeId: data.id, movieId: movie.id });
-  return NextResponse.json({ id: data.id });
-}
 
 type Row = Record<string, unknown>;
 
@@ -52,7 +26,7 @@ function toMovie(m: unknown): FeedMovie | null {
   };
 }
 
-/** Derived Lobby feed: my follows' takes, watches, and new playlists (+ my own takes). */
+/** Derived Lobby feed: watches + new playlists from people you follow. */
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -63,18 +37,8 @@ export async function GET() {
     .select("followee_id")
     .eq("follower_id", user.id);
   const followees = (followRows ?? []).map((r) => r.followee_id);
-  const actors = [...followees, user.id];
 
-  const [takes, myLikes, watches, playlists] = await Promise.all([
-    db
-      .from("takes")
-      .select(
-        "id, body, created_at, users(id, handle, display_name), movies(id, title, year, poster_path, genres), take_likes(user_id)",
-      )
-      .in("user_id", actors)
-      .order("created_at", { ascending: false })
-      .limit(40),
-    db.from("take_likes").select("take_id").eq("user_id", user.id),
+  const [watches, playlists] = await Promise.all([
     followees.length
       ? db
           .from("watch_logs")
@@ -83,35 +47,21 @@ export async function GET() {
           )
           .in("user_id", followees)
           .order("watched_at", { ascending: false })
-          .limit(25)
+          .limit(30)
       : Promise.resolve({ data: [] as Row[] }),
     followees.length
       ? db
           .from("playlists")
-          .select("id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name), playlist_items(id)")
+          .select(
+            "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name), playlist_items(id)",
+          )
           .in("owner_id", followees)
           .order("created_at", { ascending: false })
-          .limit(15)
+          .limit(20)
       : Promise.resolve({ data: [] as Row[] }),
   ]);
 
-  const likedSet = new Set(((myLikes.data ?? []) as Row[]).map((r) => String(r.take_id)));
   const items: FeedItem[] = [];
-
-  for (const t of (takes.data ?? []) as Row[]) {
-    const movie = toMovie(t.movies);
-    if (!movie) continue;
-    items.push({
-      kind: "take",
-      id: String(t.id),
-      at: String(t.created_at),
-      actor: toActor(t.users),
-      movie,
-      body: String(t.body),
-      likes: Array.isArray(t.take_likes) ? t.take_likes.length : 0,
-      likedByMe: likedSet.has(String(t.id)),
-    });
-  }
 
   for (const w of (watches.data ?? []) as Row[]) {
     const movie = toMovie(w.movies);

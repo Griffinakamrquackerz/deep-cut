@@ -3,7 +3,7 @@
 //   onboarding_completed, profile_generated, rec_batch_dealt,
 //   rec_watchlisted, rec_seen, rec_dismissed, reason_tapped,
 //   playlist_created, playlist_shared, playlist_item_crossed,
-//   taste_card_shared, take_posted, follow_created
+//   taste_card_shared, follow_created
 import { supabaseAdmin } from "./supabase/admin";
 
 export async function track(
