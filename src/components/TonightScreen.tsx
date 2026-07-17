@@ -223,6 +223,17 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
           />
           my services only
         </label>
+        <button
+          onClick={deal}
+          disabled={dealing}
+          className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
+        >
+          {dealing
+            ? "Dealing…"
+            : vibe
+              ? `★ Deal me “${vibeByKey(vibe)?.label}” ★`
+              : "★ Deal me more ★"}
+        </button>
       </div>
 
       {message && <p className="font-mono text-xs text-ticket">{message}</p>}
@@ -248,7 +259,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
               </button>
             </>
           ) : (
-            <p className="mt-1 text-sm text-dim">Deal a fresh batch below.</p>
+            <p className="mt-1 text-sm text-dim">Deal a fresh batch above.</p>
           )}
         </div>
       ) : (
@@ -339,18 +350,6 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
           {recs.length - visible.length} more hidden by your filters
         </p>
       )}
-
-      <button
-        onClick={deal}
-        disabled={dealing}
-        className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
-      >
-        {dealing
-          ? "Dealing…"
-          : vibe
-            ? `★ Deal me “${vibeByKey(vibe)?.label}” ★`
-            : "★ Deal me more ★"}
-      </button>
 
       {reacting && reacting.movies && (
         <ReactionSheet
