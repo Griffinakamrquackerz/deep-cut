@@ -1,11 +1,22 @@
 import { redirect } from "next/navigation";
 import { currentUser, supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import TonightScreen from "@/components/TonightScreen";
+import Landing from "@/components/Landing";
 import type { Service } from "@/lib/services";
 
 export default async function TonightPage() {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!user) {
+    // Signed-out front door: sell the fantasy with a wall of real posters.
+    const { data } = await supabaseAdmin()
+      .from("movies")
+      .select("poster_path")
+      .not("poster_path", "is", null)
+      .order("popularity", { ascending: false })
+      .limit(12);
+    return <Landing posters={(data ?? []).map((r) => r.poster_path as string)} />;
+  }
 
   const supabase = await supabaseServer();
   const [{ count }, { data: svcRows }] = await Promise.all([

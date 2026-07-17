@@ -8,6 +8,7 @@ import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
 import ShowMore from "@/components/ShowMore";
+import LetterboxdImport from "@/components/LetterboxdImport";
 
 interface MovieLite {
   id: number;
@@ -63,6 +64,27 @@ export default function YouScreen(props: {
     window.open("/api/taste-card", "_blank");
   }
 
+  async function shareProfileLink() {
+    if (!props.handle) {
+      setMsg("Set a handle in Settings first — that's your marquee name.");
+      setTab("settings");
+      return;
+    }
+    const url = `${window.location.origin}/u/${props.handle}`;
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "profile_link_shared", props: {} }),
+    });
+    // Native share sheet on phones; clipboard everywhere else.
+    if (navigator.share) {
+      await navigator.share({ title: "My Deep Cut taste card", url }).catch(() => null);
+    } else {
+      await navigator.clipboard.writeText(url);
+      setMsg("Link copied — anyone can see your card, no account needed.");
+    }
+  }
+
   return (
     <section className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
@@ -102,10 +124,16 @@ export default function YouScreen(props: {
         )}
         <div className="mt-4 flex gap-2">
           <button
-            onClick={shareCard}
+            onClick={() => void shareProfileLink()}
             className="flex-1 rounded bg-amber px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
           >
-            Share as image
+            🎟 Share my card
+          </button>
+          <button
+            onClick={shareCard}
+            className="rounded border border-amber px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-amber"
+          >
+            As image
           </button>
           <button
             onClick={refreshProfile}
@@ -245,6 +273,7 @@ function LovedSection({
 
   return (
     <div className="flex flex-col gap-3">
+      <LetterboxdImport onDone={onChanged} />
       <input
         type="search"
         value={query}

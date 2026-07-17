@@ -87,7 +87,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     .map((r) => r.movies as unknown as MovieLite | null)
     .filter((m): m is MovieLite => !!m);
 
-  return (
+  const inner = (
     <section className="flex flex-col gap-5">
       <header>
         <MarqueeBulbs />
@@ -199,5 +199,24 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         </div>
       )}
     </section>
+  );
+
+  if (me) return inner;
+
+  // Signed-out visitors arriving from a shared link get the card plus a door in.
+  return (
+    <main className="px-4 pb-16 pt-6">
+      <Link href="/" className="mb-5 block text-center">
+        <span className="eyebrow">Deep Cut</span>
+        <span className="block font-display text-2xl text-amber">MOVIES YOU HAVEN&apos;T MET YET</span>
+      </Link>
+      {inner}
+      <Link
+        href="/login"
+        className="pulse-cta mt-8 block w-full rounded bg-ticket px-6 py-4 text-center font-mono text-sm font-medium uppercase tracking-[0.25em] text-cream"
+      >
+        🎟 Get your own taste card
+      </Link>
+    </main>
   );
 }
