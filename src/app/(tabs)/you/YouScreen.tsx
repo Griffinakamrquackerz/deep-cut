@@ -303,6 +303,19 @@ function SettingsSection({
   const [newHandle, setNewHandle] = useState(handle ?? "");
   const [selected, setSelected] = useState<Set<Service>>(new Set(services));
   const [status, setStatus] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwStatus, setPwStatus] = useState<string | null>(null);
+
+  async function savePassword() {
+    setPwStatus(null);
+    const { supabaseBrowser } = await import("@/lib/supabase/client");
+    const { error } = await supabaseBrowser().auth.updateUser({ password: newPassword });
+    if (error) setPwStatus(error.message);
+    else {
+      setPwStatus("Password set — you can now sign in without email links.");
+      setNewPassword("");
+    }
+  }
 
   async function save() {
     setStatus(null);
@@ -374,6 +387,32 @@ function SettingsSection({
         Save settings
       </button>
       {status && <p className="font-mono text-xs text-dim">{status}</p>}
+
+      <div className="mt-2 border-t border-line pt-4">
+        <p className="eyebrow mb-2">Password</p>
+        <p className="mb-2 text-xs text-dim">
+          Set one and you&apos;ll never need an email link to sign in again.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="password"
+            minLength={8}
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="New password (8+ chars)"
+            className="min-w-0 flex-1 rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
+          />
+          <button
+            disabled={newPassword.length < 8}
+            onClick={() => void savePassword()}
+            className="rounded border border-amber px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-amber disabled:opacity-40"
+          >
+            Set
+          </button>
+        </div>
+        {pwStatus && <p className="mt-2 font-mono text-xs text-dim">{pwStatus}</p>}
+      </div>
     </div>
   );
 }
