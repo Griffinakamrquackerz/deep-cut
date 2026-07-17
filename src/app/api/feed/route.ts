@@ -11,6 +11,7 @@ function toActor(u: unknown): FeedActor {
     id: String(x.id ?? ""),
     handle: (x.handle as string | null) ?? null,
     display_name: (x.display_name as string | null) ?? null,
+    avatar_url: (x.avatar_url as string | null) ?? null,
   };
 }
 
@@ -45,7 +46,7 @@ export async function GET() {
     db
       .from("watch_logs")
       .select(
-        "id, reaction, why, note, watched_at, users(id, handle, display_name), movies(id, title, year, poster_path, genres)",
+        "id, reaction, why, note, watched_at, users(id, handle, display_name, avatar_url), movies(id, title, year, poster_path, genres)",
       )
       .in("user_id", actorIds)
       .order("watched_at", { ascending: false })
@@ -53,7 +54,7 @@ export async function GET() {
     db
       .from("playlists")
       .select(
-        "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name), playlist_items(id)",
+        "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name, avatar_url), playlist_items(id)",
       )
       .in("owner_id", actorIds)
       .order("created_at", { ascending: false })

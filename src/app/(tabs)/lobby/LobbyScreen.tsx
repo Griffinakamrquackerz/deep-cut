@@ -7,6 +7,7 @@ import AdSlot from "@/components/AdSlot";
 import FollowButton from "@/components/FollowButton";
 import InviteButton from "@/components/InviteButton";
 import Poster from "@/components/Poster";
+import Avatar from "@/components/Avatar";
 import { sfxClick, sfxPop } from "@/lib/sfx";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -28,6 +29,7 @@ interface Person {
   id: string;
   handle: string | null;
   display_name: string | null;
+  avatar_url: string | null;
 }
 
 const personName = (p: Person) => p.display_name ?? (p.handle ? `@${p.handle}` : "someone");
@@ -107,13 +109,16 @@ export default function LobbyScreen({ myId }: { myId: string }) {
   function PersonRow({ p }: { p: Person }) {
     return (
       <li className="flex items-center justify-between gap-2 rounded border border-line bg-surface p-3">
-        <Link href={profileHref(p)} className="min-w-0">
+        <Link href={profileHref(p)} className="flex min-w-0 items-center gap-2.5">
+          <Avatar url={p.avatar_url} name={personName(p)} size="md" />
+          <span className="min-w-0">
           <span className="block truncate font-display text-lg text-cream">
             {personName(p)}
           </span>
           {p.handle && p.display_name && (
             <span className="font-mono text-[0.65rem] text-dim">@{p.handle}</span>
           )}
+          </span>
         </Link>
         {p.id !== myId && (
           <FollowButton userId={p.id} initiallyFollowing={following.includes(p.id)} />
@@ -267,11 +272,14 @@ export default function LobbyScreen({ myId }: { myId: string }) {
                       )}
                     </Link>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <p className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
-                        <Link href={profileHref(item.actor)} className="text-amber">
-                          {feedName(item.actor, myId)}
-                        </Link>{" "}
-                        {REACTION_LABEL[item.reaction] ?? item.reaction}
+                      <p className="flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-dim">
+                        <Avatar url={item.actor.avatar_url} name={feedName(item.actor, myId)} size="sm" />
+                        <span>
+                          <Link href={profileHref(item.actor)} className="text-amber">
+                            {feedName(item.actor, myId)}
+                          </Link>{" "}
+                          {REACTION_LABEL[item.reaction] ?? item.reaction}
+                        </span>
                       </p>
                       <Link
                         href={`/m/${item.movie.id}`}

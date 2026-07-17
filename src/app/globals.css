@@ -276,6 +276,70 @@ body {
    Transform-only, so it stays on the compositor. */
 .reel-spin { animation: reel-spin 7s linear infinite; }
 @keyframes reel-spin { to { transform: rotate(360deg); } }
+
+/* ── Profile themes (MySpace, but cinema) ─────────────────────────────
+   Each class re-tints the design tokens inside a member's public card.
+   Tailwind utilities read the vars, so descendants restyle for free. */
+.pt-noir {
+  --color-amber: #e8e4da;
+  --color-ticket: #b8b8b8;
+  --color-avail: #d6d6d6;
+}
+.pt-noir img { filter: grayscale(1) contrast(1.12); }
+.pt-giallo {
+  --color-amber: #ff4438;
+  --color-ticket: #ff6f5e;
+  --color-avail: #ffb3a7;
+}
+.pt-giallo img { filter: saturate(1.25) contrast(1.08); }
+.pt-technicolor {
+  --color-amber: #3ee8c2;
+  --color-ticket: #e84393;
+  --color-avail: #7ef0d4;
+}
+.pt-technicolor img { filter: saturate(1.45); }
+.pt-vhs {
+  --color-amber: #b78cff;
+  --color-ticket: #43d9ff;
+  --color-avail: #8be9fd;
+  position: relative;
+}
+.pt-vhs::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.14) 3px 4px);
+  mix-blend-mode: overlay;
+}
+.pt-vhs img { filter: saturate(1.15) hue-rotate(-8deg); }
+.pt-golden {
+  --color-amber: #f5d67b;
+  --color-ticket: #c08a3e;
+  --color-avail: #e8ce96;
+}
+.pt-golden img { filter: sepia(0.55) contrast(1.05); }
+
+/* Signature-film backdrop behind a profile header. */
+.signature-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.signature-backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(14px) brightness(0.55) !important;
+  transform: scale(1.15);
+}
+.signature-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(23, 18, 16, 0.25), var(--color-bg));
+}
 @keyframes wiggle {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-2deg); }

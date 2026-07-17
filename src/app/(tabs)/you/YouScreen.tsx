@@ -8,6 +8,7 @@ import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import ShowMore from "@/components/ShowMore";
 import LetterboxdImport from "@/components/LetterboxdImport";
+import Avatar from "@/components/Avatar";
 
 interface MovieLite {
   id: number;
@@ -23,6 +24,7 @@ interface Thread {
 }
 
 export default function YouScreen(props: {
+  avatarUrl: string | null;
   threads: Thread[];
   version: number;
   handle: string | null;
@@ -87,11 +89,14 @@ export default function YouScreen(props: {
     <section className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
         <MarqueeBulbs />
-        <div>
-          <p className="eyebrow">You</p>
-          <h1 className="glow-amber font-display text-4xl text-amber">
-            {props.handle ? `@${props.handle}` : (props.displayName ?? "YOUR TASTE")}
-          </h1>
+        <div className="flex items-center gap-3">
+          <Avatar url={props.avatarUrl} name={props.handle ?? props.displayName ?? "?"} size="lg" />
+          <div>
+            <p className="eyebrow">You</p>
+            <h1 className="glow-amber font-display text-4xl text-amber">
+              {props.handle ? `@${props.handle}` : (props.displayName ?? "YOUR TASTE")}
+            </h1>
+          </div>
         </div>
       </header>
 

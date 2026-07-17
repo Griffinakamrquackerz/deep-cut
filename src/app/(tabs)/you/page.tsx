@@ -11,7 +11,7 @@ export default async function YouPage() {
   const db = supabaseAdmin();
   const [profile, me, services, watchlist, loved, history] = await Promise.all([
     db.from("taste_profiles").select("threads, version, generated_at").eq("user_id", user.id).maybeSingle(),
-    db.from("users").select("handle, display_name").eq("id", user.id).maybeSingle(),
+    db.from("users").select("handle, display_name, avatar_url").eq("id", user.id).maybeSingle(),
     db.from("user_services").select("service").eq("user_id", user.id),
     db
       .from("recommendations")
@@ -37,6 +37,7 @@ export default async function YouPage() {
       threads={(profile.data?.threads ?? []) as Array<{ title: string; line: string }>}
       version={profile.data?.version ?? 0}
       handle={me.data?.handle ?? null}
+      avatarUrl={me.data?.avatar_url ?? null}
       displayName={me.data?.display_name ?? null}
       services={(services.data ?? []).map((r) => r.service as Service)}
       watchlist={JSON.parse(JSON.stringify(watchlist.data ?? []))}

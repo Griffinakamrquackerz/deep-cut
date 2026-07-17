@@ -5,6 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import Poster from "@/components/Poster";
 import FollowButton from "@/components/FollowButton";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
+import Avatar from "@/components/Avatar";
+import { themeClass } from "@/lib/themes";
 import ShowMore from "@/components/ShowMore";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -29,14 +31,24 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
   const { key } = await params;
   const db = supabaseAdmin();
 
-  const lookup = UUID_RE.test(key)
-    ? db.from("users").select("id, handle, display_name").eq("id", key).maybeSingle()
-    : db
-        .from("users")
-        .select("id, handle, display_name")
-        .eq("handle", key.toLowerCase())
-        .maybeSingle();
-  const { data: person } = await lookup;
+  // Style columns arrive with migration 0004 — retry with the legacy shape.
+  const cols = "id, handle, display_name, avatar_url, profile_theme, signature_movie_id";
+  const legacyCols = "id, handle, display_name, avatar_url";
+  const byId = UUID_RE.test(key);
+  const fetchPerson = async (columns: string) =>
+    byId
+      ? db.from("users").select(columns).eq("id", key).maybeSingle()
+      : db.from("users").select(columns).eq("handle", key.toLowerCase()).maybeSingle();
+  let { data: personRow, error: personErr } = await fetchPerson(cols);
+  if (personErr) ({ data: personRow } = await fetchPerson(legacyCols));
+  const person = personRow as unknown as {
+    id: string;
+    handle: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+    profile_theme?: string | null;
+    signature_movie_id?: number | null;
+  } | null;
   if (!person) notFound();
 
   const me = await currentUser();
@@ -81,6 +93,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         : Promise.resolve({ data: null }),
     ]);
 
+  const { data: sigMovie } = person.signature_movie_id
+    ? await db
+        .from("movies")
+        .select("id, title, year, poster_path")
+        .eq("id", person.signature_movie_id)
+        .maybeSingle()
+    : { data: null };
+
   const name = person.display_name ?? (person.handle ? `@${person.handle}` : "A film person");
   const threads = (profile.data?.threads ?? []) as Array<{ title: string; line: string }>;
   const lovedMovies = (loved.data ?? [])
@@ -88,33 +108,53 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     .filter((m): m is MovieLite => !!m);
 
   const inner = (
-    <section className="flex flex-col gap-5">
-      <header>
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">Member card</p>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="glow-amber font-display text-4xl leading-tight text-amber">
-              {name.toUpperCase()}
-            </h1>
-            {person.handle && person.display_name && (
-              <p className="font-mono text-xs text-dim">@{person.handle}</p>
-            )}
-            <p className="mt-1 font-mono text-[0.65rem] text-dim">
-              {followerCount.count ?? 0} follower{(followerCount.count ?? 0) === 1 ? "" : "s"} ·{" "}
-              following {followingCount.count ?? 0}
-            </p>
+    <section className={`${themeClass(person.profile_theme)} flex flex-col gap-5`}>
+      <header className="relative -mx-4 -mt-4 px-4 pb-4 pt-6">
+        {sigMovie?.poster_path && (
+          <div className="signature-backdrop" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`https://image.tmdb.org/t/p/w500${sigMovie.poster_path}`} alt="" />
           </div>
-          {isMe ? (
-            <Link
-              href="/you"
-              className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim"
-            >
-              This is you ★
-            </Link>
-          ) : me ? (
-            <FollowButton userId={person.id} initiallyFollowing={!!iFollow.data} size="lg" />
-          ) : null}
+        )}
+        <div className="relative">
+          <MarqueeBulbs />
+          <p className="eyebrow mt-2">Member card</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar url={person.avatar_url} name={name} size="lg" />
+              <div className="min-w-0">
+                <h1 className="glow-amber font-display text-4xl leading-tight text-amber">
+                  {name.toUpperCase()}
+                </h1>
+                {person.handle && person.display_name && (
+                  <p className="font-mono text-xs text-dim">@{person.handle}</p>
+                )}
+                <p className="mt-1 font-mono text-[0.65rem] text-dim">
+                  {followerCount.count ?? 0} follower{(followerCount.count ?? 0) === 1 ? "" : "s"} ·{" "}
+                  following {followingCount.count ?? 0}
+                </p>
+              </div>
+            </div>
+            {isMe ? (
+              <Link
+                href="/settings"
+                className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim"
+              >
+                Style it ✨
+              </Link>
+            ) : me ? (
+              <FollowButton userId={person.id} initiallyFollowing={!!iFollow.data} size="lg" />
+            ) : null}
+          </div>
+          {sigMovie && (
+            <p className="mt-3 font-mono text-[0.65rem] text-dim">
+              🎞 Signature film:{" "}
+              <Link href={`/m/${sigMovie.id}`} className="text-amber underline decoration-amber/40">
+                {sigMovie.title}
+              </Link>{" "}
+              {sigMovie.year ?? ""}
+            </p>
+          )}
         </div>
       </header>
 

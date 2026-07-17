@@ -6,6 +6,7 @@ export interface PersonRow {
   id: string;
   handle: string | null;
   display_name: string | null;
+  avatar_url: string | null;
 }
 
 /**
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
     if (!safe) return NextResponse.json({ results: [], followingIds });
     const { data, error } = await db
       .from("users")
-      .select("id, handle, display_name")
+      .select("id, handle, display_name, avatar_url")
       .or(`handle.ilike.%${safe}%,display_name.ilike.%${safe}%`)
       .neq("id", user.id)
       .limit(20);
@@ -42,11 +43,11 @@ export async function GET(request: Request) {
 
   const [followingRes, followersRes] = await Promise.all([
     followingIds.length
-      ? db.from("users").select("id, handle, display_name").in("id", followingIds)
+      ? db.from("users").select("id, handle, display_name, avatar_url").in("id", followingIds)
       : Promise.resolve({ data: [] as PersonRow[] }),
     db
       .from("follows")
-      .select("follower_id, users!follows_follower_id_fkey(id, handle, display_name)")
+      .select("follower_id, users!follows_follower_id_fkey(id, handle, display_name, avatar_url)")
       .eq("followee_id", user.id),
   ]);
 

@@ -5,6 +5,7 @@ export interface FeedActor {
   id: string;
   handle: string | null;
   display_name: string | null;
+  avatar_url?: string | null;
 }
 
 export interface FeedMovie {
