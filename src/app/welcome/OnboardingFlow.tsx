@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { STARTER_GRID } from "@/lib/starter-grid";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
+import InstallPrompt from "@/components/InstallPrompt";
 
 interface Pick {
   id: number;
@@ -11,7 +12,7 @@ interface Pick {
   poster_path?: string | null;
 }
 
-type Step = "films" | "services" | "printing" | "reveal";
+type Step = "films" | "services" | "printing" | "reveal" | "install";
 
 interface Thread {
   title: string;
@@ -112,10 +113,32 @@ export default function OnboardingFlow() {
           </ul>
         </div>
         <button
+          onClick={() => setStep("install")}
+          className="rounded bg-amber px-6 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg"
+        >
+          One last thing →
+        </button>
+      </main>
+    );
+  }
+
+  if (step === "install") {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 py-10">
+        <div className="w-full max-w-sm">
+          <InstallPrompt />
+        </div>
+        <button
           onClick={() => router.push("/")}
           className="rounded bg-amber px-6 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg"
         >
           Deal me movies →
+        </button>
+        <button
+          onClick={() => router.push("/")}
+          className="font-mono text-xs uppercase tracking-widest text-dim"
+        >
+          Skip for now
         </button>
       </main>
     );

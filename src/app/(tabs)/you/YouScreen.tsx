@@ -6,6 +6,7 @@ import Poster from "@/components/Poster";
 import ObscurityDots from "@/components/ObscurityDots";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
+import InstallPrompt from "@/components/InstallPrompt";
 
 interface MovieLite {
   id: number;
@@ -418,6 +419,10 @@ function SettingsSection({
           </button>
         </div>
         {pwStatus && <p className="mt-2 font-mono text-xs text-dim">{pwStatus}</p>}
+      </div>
+
+      <div className="mt-2">
+        <InstallPrompt compact />
       </div>
     </div>
   );
