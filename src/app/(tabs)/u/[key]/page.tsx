@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import Poster from "@/components/Poster";
 import FollowButton from "@/components/FollowButton";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
+import ShowMore from "@/components/ShowMore";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -49,19 +50,19 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         .select("movie_id, movies(id, title, year, poster_path, genres)")
         .eq("user_id", person.id)
         .order("added_at", { ascending: false })
-        .limit(12),
+        .limit(200),
       db
         .from("watch_logs")
         .select("id, reaction, note, watched_at, movies(id, title, year)")
         .eq("user_id", person.id)
         .order("watched_at", { ascending: false })
-        .limit(10),
+        .limit(100),
       db
         .from("playlists")
         .select("id, name, share_slug, created_at, playlist_items(id)")
         .eq("owner_id", person.id)
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(50),
       db
         .from("follows")
         .select("follower_id", { count: "exact", head: true })
@@ -135,8 +136,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
 
       {lovedMovies.length > 0 && (
         <div>
-          <p className="eyebrow mb-2">Films they love</p>
-          <div className="grid grid-cols-4 gap-2">
+          <p className="eyebrow mb-2">
+            Films they love ({lovedMovies.length})
+          </p>
+          <ShowMore initial={12} step={24} wrapperClassName="grid grid-cols-4 gap-2" label="Roll more posters">
             {lovedMovies.map((m) => (
               <Link key={m.id} href={`/m/${m.id}`} className="wiggle">
                 <Poster
@@ -147,7 +150,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
                 />
               </Link>
             ))}
-          </div>
+          </ShowMore>
         </div>
       )}
 
@@ -156,22 +159,22 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         {(watches.data ?? []).length === 0 ? (
           <p className="text-sm text-dim">Nothing logged yet.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ShowMore initial={8} step={16} wrapperClassName="flex flex-col gap-2" label="Roll more watches">
             {(watches.data ?? []).map((w) => {
               const m = w.movies as unknown as { id: number; title: string; year: number | null } | null;
               if (!m) return null;
               return (
-                <li key={w.id} className="rounded border border-line bg-surface p-3 text-sm">
+                <div key={w.id} className="rounded border border-line bg-surface p-3 text-sm">
                   <span className="text-dim">{REACTION_LABEL[w.reaction] ?? w.reaction} </span>
                   <Link href={`/m/${m.id}`} className="text-cream underline">
                     {m.title}
                   </Link>{" "}
                   <span className="font-mono text-xs text-dim">{m.year ?? ""}</span>
                   {w.note && <p className="mt-1 text-xs italic text-cream/80">“{w.note}”</p>}
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </ShowMore>
         )}
       </div>
 

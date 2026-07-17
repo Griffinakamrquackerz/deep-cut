@@ -7,6 +7,7 @@ import ObscurityDots from "@/components/ObscurityDots";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
+import ShowMore from "@/components/ShowMore";
 
 interface MovieLite {
   id: number;
@@ -161,13 +162,14 @@ export default function YouScreen(props: {
       {tab === "loved" && <LovedSection loved={props.loved} onChanged={() => router.refresh()} />}
 
       {tab === "history" && (
-        <ul className="flex flex-col gap-2">
+        <div>
           {props.history.length === 0 && (
-            <li className="text-center text-sm text-dim">No watches logged yet.</li>
+            <p className="text-center text-sm text-dim">No watches logged yet.</p>
           )}
+          <ShowMore initial={15} step={30} wrapperClassName="flex flex-col gap-2" label="Roll more watches">
           {props.history.map((h) =>
             h.movies ? (
-              <li key={h.id} className="flex items-center gap-3 rounded border border-line bg-surface p-2">
+              <div key={h.id} className="flex items-center gap-3 rounded border border-line bg-surface p-2">
                 <div className="w-10 shrink-0">
                   <Poster
                     posterPath={h.movies.poster_path}
@@ -186,10 +188,11 @@ export default function YouScreen(props: {
                   </p>
                   {h.note && <p className="truncate text-xs italic text-dim">“{h.note}”</p>}
                 </div>
-              </li>
+              </div>
             ) : null,
           )}
-        </ul>
+          </ShowMore>
+        </div>
       )}
 
       {tab === "settings" && (
@@ -271,10 +274,10 @@ function LovedSection({
           ))}
         </ul>
       )}
-      <ul className="grid grid-cols-3 gap-3">
+      <ShowMore initial={24} step={24} wrapperClassName="grid grid-cols-3 gap-3" label="Roll more posters">
         {loved.map((l) =>
           l.movies ? (
-            <li key={l.movie_id} className="relative">
+            <div key={l.movie_id} className="relative">
               <Link href={`/m/${l.movies.id}`}>
                 <Poster
                   posterPath={l.movies.poster_path}
@@ -290,10 +293,10 @@ function LovedSection({
               >
                 ✕
               </button>
-            </li>
+            </div>
           ) : null,
         )}
-      </ul>
+      </ShowMore>
     </div>
   );
 }

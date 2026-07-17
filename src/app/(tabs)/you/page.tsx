@@ -29,7 +29,7 @@ export default async function YouPage() {
       .select("id, reaction, why, note, watched_at, movies(id, title, year, poster_path, genres)")
       .eq("user_id", user.id)
       .order("watched_at", { ascending: false })
-      .limit(50),
+      .limit(200),
   ]);
 
   return (
