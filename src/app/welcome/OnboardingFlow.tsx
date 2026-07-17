@@ -12,7 +12,9 @@ interface Pick {
   poster_path?: string | null;
 }
 
-type Step = "films" | "services" | "printing" | "reveal" | "install";
+type Step = "films" | "services" | "name" | "printing" | "reveal" | "install";
+
+const HANDLE_RE = /^[a-z0-9_]{3,24}$/;
 
 interface Thread {
   title: string;
@@ -29,6 +31,9 @@ export default function OnboardingFlow() {
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<Record<number, string | null>>({});
+  const [handle, setHandle] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Poster art for the shelf — grid renders immediately, art fills in.
@@ -69,6 +74,33 @@ export default function OnboardingFlow() {
     }, 300);
   }, [query]);
 
+  async function saveNameAndFinish() {
+    const clean = handle.trim().toLowerCase();
+    if (!HANDLE_RE.test(clean)) {
+      setNameError("3–24 characters: letters, numbers, underscores.");
+      return;
+    }
+    setSavingName(true);
+    setNameError(null);
+    const res = await fetch("/api/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ handle: clean }),
+    });
+    if (res.status === 409) {
+      setNameError("That name's already on the marquee — try another.");
+      setSavingName(false);
+      return;
+    }
+    if (!res.ok) {
+      setNameError("Couldn't save that name. Try again.");
+      setSavingName(false);
+      return;
+    }
+    setSavingName(false);
+    await finish();
+  }
+
   async function finish() {
     setStep("printing");
     setError(null);
@@ -82,7 +114,7 @@ export default function OnboardingFlow() {
     });
     if (!res.ok) {
       setError("Something jammed the projector. Try again.");
-      setStep("services");
+      setStep("name");
       return;
     }
     // Build the taste profile — the magic moment.
@@ -163,7 +195,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 2 of 2</p>
+          <p className="eyebrow mb-1">Step 2 of 3</p>
           <h1 className="font-display text-4xl text-cream">WHERE DO YOU WATCH?</h1>
           <p className="mt-1 text-sm text-dim">
             We&apos;ll badge every rec that&apos;s watchable tonight.
@@ -203,10 +235,68 @@ export default function OnboardingFlow() {
             ← Back
           </button>
           <button
-            onClick={finish}
+            onClick={() => setStep("name")}
             className="flex-1 rounded bg-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg"
           >
-            Build my profile
+            Continue →
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (step === "name") {
+    return (
+      <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
+        <div>
+          <p className="eyebrow mb-1">Step 3 of 3</p>
+          <h1 className="font-display text-4xl text-cream">PICK YOUR MARQUEE NAME</h1>
+          <p className="mt-1 text-sm text-dim">
+            Your handle goes on your taste card and the community marquee — it&apos;s how
+            friends find you.
+          </p>
+        </div>
+        <div>
+          <div className="flex items-center gap-2 rounded border-2 border-amber/60 bg-surface px-3 py-2.5">
+            <span className="font-mono text-lg text-amber">@</span>
+            <input
+              value={handle}
+              onChange={(e) => {
+                setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                setNameError(null);
+              }}
+              placeholder="your_handle"
+              autoCapitalize="none"
+              autoCorrect="off"
+              maxLength={24}
+              aria-label="Choose your handle"
+              className="w-full bg-transparent text-lg text-cream outline-none placeholder:text-dim/60"
+            />
+          </div>
+          <p className="mt-1.5 font-mono text-[0.65rem] text-dim">
+            3–24 characters · letters, numbers, underscores
+          </p>
+          {nameError && <p className="mt-1 font-mono text-xs text-ticket">{nameError}</p>}
+        </div>
+        {handle.length >= 3 && (
+          <div className="ticket-edge rounded bg-surface p-4 text-center">
+            <p className="eyebrow">Now showing</p>
+            <p className="glow-amber font-display text-3xl text-amber">@{handle}</p>
+          </div>
+        )}
+        <div className="mt-auto flex gap-3">
+          <button
+            onClick={() => setStep("services")}
+            className="rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-dim"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => void saveNameAndFinish()}
+            disabled={savingName || handle.length < 3}
+            className="flex-1 rounded bg-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg disabled:opacity-40"
+          >
+            {savingName ? "Checking the marquee…" : "Sign it & build my profile"}
           </button>
         </div>
       </main>
@@ -217,7 +307,7 @@ export default function OnboardingFlow() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-4 py-8">
       <div>
-        <p className="eyebrow mb-1">Step 1 of 2</p>
+        <p className="eyebrow mb-1">Step 1 of 3</p>
         <h1 className="font-display text-4xl text-cream">PICK FILMS YOU LOVE</h1>
         <p className="mt-1 text-sm text-dim">
           Any genre, any era. At least 8 — the more the sharper. Deep cuts and
