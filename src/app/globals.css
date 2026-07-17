@@ -29,7 +29,6 @@ body {
     radial-gradient(120% 80% at 50% -10%, rgba(255, 180, 84, 0.10), transparent 55%),
     radial-gradient(90% 60% at 50% 110%, rgba(228, 87, 61, 0.06), transparent 60%),
     var(--color-bg);
-  background-attachment: fixed;
 }
 
 /* ── Projected-film atmosphere (fixed overlays, never interactive) ── */
@@ -141,18 +140,13 @@ body {
 
 /* Neon sign flicker — the title buzzes like a half-dead motel VACANCY sign. */
 .neon-flicker {
+  text-shadow: 0 0 24px rgba(255, 180, 84, 0.5), 0 0 6px rgba(255, 180, 84, 0.7),
+    0 0 2px rgba(255, 180, 84, 0.9);
   animation: neon-flicker 4s infinite;
 }
 @keyframes neon-flicker {
-  0%, 18%, 22%, 25%, 53%, 57%, 100% {
-    text-shadow: 0 0 24px rgba(255, 180, 84, 0.5), 0 0 6px rgba(255, 180, 84, 0.7),
-      0 0 2px rgba(255, 180, 84, 0.9);
-    opacity: 1;
-  }
-  20%, 24%, 55% {
-    text-shadow: none;
-    opacity: 0.55;
-  }
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.55; }
 }
 
 /* Chasing marquee bulbs — a strip of theater lights that blink in sequence. */
@@ -173,7 +167,7 @@ body {
 .marquee-bulbs > i:nth-child(3n) { animation-delay: 0.72s; }
 @keyframes bulb-blink {
   0%, 40% { opacity: 1; }
-  41%, 100% { opacity: 0.22; box-shadow: 0 0 3px rgba(255, 180, 84, 0.3); }
+  41%, 100% { opacity: 0.22; }
 }
 
 /* Cards get dealt in — slide + fade, staggered by inline --i. */
@@ -207,9 +201,10 @@ body {
   background-size: 250% 100%;
   animation: sheen-sweep 2.6s linear infinite;
 }
+.pulse-cta { box-shadow: 0 0 18px 2px rgba(228, 87, 61, 0.35); }
 @keyframes cta-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(228, 87, 61, 0.5); transform: scale(1); }
-  50% { box-shadow: 0 0 22px 4px rgba(228, 87, 61, 0.45); transform: scale(1.015); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
 }
 
 /* Blinking "on air" record dot. */
@@ -311,6 +306,16 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-amber);
   outline-offset: 2px;
+}
+
+/* Touch screens: freeze the grain and drop the blend — GPU compositing of a
+   full-screen blended, animated layer is the #1 scroll-jank source on iOS. */
+@media (hover: none) {
+  .reel-grain {
+    animation: none;
+    mix-blend-mode: normal;
+    opacity: 0.03;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

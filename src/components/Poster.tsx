@@ -40,6 +40,7 @@ export default function Poster({
         src={`https://image.tmdb.org/t/p/w342${posterPath}`}
         alt={`${title} poster`}
         loading="lazy"
+        decoding="async"
         className={`poster-frame aspect-[2/3] w-full object-cover ${className}`}
       />
     );
