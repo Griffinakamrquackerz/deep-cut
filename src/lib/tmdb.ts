@@ -185,6 +185,44 @@ interface TmdbProvidersPayload {
 }
 
 /** US streaming availability (flatrate + ad-supported + free), mapped to our enum. */
+export interface TmdbVideo {
+  key: string;
+  site: string;
+  type: string;
+  official: boolean;
+  name: string;
+  published_at?: string;
+}
+
+/**
+ * Pick the best YouTube trailer from a TMDB videos payload:
+ * official trailers > any trailer > official teaser > teaser; newest wins ties.
+ * Clips/featurettes/BTS are ignored — a wrong "trailer" is worse than none.
+ */
+export function pickBestVideo(videos: TmdbVideo[]): { key: string; name: string } | null {
+  const rank = (v: TmdbVideo) =>
+    (v.type === "Trailer" ? 0 : 2) + (v.official ? 0 : 1);
+  const candidates = videos
+    .filter((v) => v.site === "YouTube" && v.key && (v.type === "Trailer" || v.type === "Teaser"))
+    .sort(
+      (a, b) =>
+        rank(a) - rank(b) ||
+        (b.published_at ?? "").localeCompare(a.published_at ?? ""),
+    );
+  const best = candidates[0];
+  return best ? { key: best.key, name: best.name } : null;
+}
+
+/** Best YouTube trailer for a film, or null when TMDB has none. */
+export async function getMovieTrailer(
+  tmdbId: number,
+): Promise<{ key: string; name: string } | null> {
+  const data = await tmdbFetch<{ results: TmdbVideo[] }>(`/movie/${tmdbId}/videos`, {
+    language: "en-US",
+  });
+  return pickBestVideo(data?.results ?? []);
+}
+
 export async function getWatchProviders(tmdbId: number): Promise<Service[]> {
   const data = await tmdbFetch<TmdbProvidersPayload>(`/movie/${tmdbId}/watch/providers`);
   const us = data?.results?.US;

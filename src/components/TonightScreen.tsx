@@ -301,6 +301,18 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
                     {m.year ?? "—"}
                     {m.runtime ? ` · ${m.runtime} min` : ""}
                   </p>
+                  {m.genres.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {m.genres.slice(0, 3).map((g) => (
+                        <span
+                          key={g}
+                          className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-amber/80"
+                        >
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <RatingsBadges
                     className="mt-1"
                     ratings={{ tmdb: m.tmdb_rating, imdb: m.imdb_rating, rt: m.rt_rating }}

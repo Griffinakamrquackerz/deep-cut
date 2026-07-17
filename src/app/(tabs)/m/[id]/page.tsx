@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { cacheMovie } from "@/lib/tmdb";
+import { cacheMovie, getMovieTrailer } from "@/lib/tmdb";
 import { SERVICES, type Service } from "@/lib/services";
 import Poster from "@/components/Poster";
 import ServiceBadges from "@/components/ServiceBadges";
 import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
 import AdSlot from "@/components/AdSlot";
+import TrailerPlayer from "@/components/TrailerPlayer";
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,7 +20,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
   const user = await currentUser();
   const db = supabaseAdmin();
-  const [reads, mine] = await Promise.all([
+  const [reads, mine, trailer] = await Promise.all([
     db
       .from("external_reads")
       .select("id, title, url")
@@ -29,6 +30,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     user
       ? db.from("user_services").select("service").eq("user_id", user.id)
       : Promise.resolve({ data: [] }),
+    getMovieTrailer(tmdbId).catch(() => null), // best-effort — page works without one
   ]);
 
   const available = SERVICES.filter((s) => movie.providers[s]);
@@ -60,6 +62,13 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </div>
+
+      {trailer && (
+        <div>
+          <p className="eyebrow mb-2">Trailer</p>
+          <TrailerPlayer videoKey={trailer.key} title={movie.title} />
+        </div>
+      )}
 
       <p className="text-sm leading-relaxed text-cream/90">{movie.overview}</p>
 

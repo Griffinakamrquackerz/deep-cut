@@ -141,6 +141,12 @@ export default function PlaylistDetail({
                     </span>
                   </label>
 
+                  {m.genres.length > 0 && (
+                    <p className="font-mono text-[0.55rem] uppercase tracking-wider text-amber/70">
+                      {m.genres.slice(0, 3).join(" · ")}
+                    </p>
+                  )}
+
                   <div className="flex flex-wrap gap-1.5">
                     {REACTIONS.map((r) => (
                       <button
