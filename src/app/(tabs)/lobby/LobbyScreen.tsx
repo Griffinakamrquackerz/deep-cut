@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
+import MarqueeBulbs from "@/components/MarqueeBulbs";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -65,7 +66,8 @@ export default function LobbyScreen({ myId }: { myId: string }) {
   return (
     <section className="flex flex-col gap-4">
       <header>
-        <p className="eyebrow">The Lobby</p>
+        <MarqueeBulbs />
+        <p className="eyebrow mt-2">The Lobby</p>
         <h1 className="glow-amber font-display text-4xl text-amber">WHAT FRIENDS ARE WATCHING</h1>
       </header>
 

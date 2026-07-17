@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Poster from "@/components/Poster";
 import ObscurityDots from "@/components/ObscurityDots";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
+import MarqueeBulbs from "@/components/MarqueeBulbs";
 
 interface MovieLite {
   id: number;
@@ -62,7 +63,8 @@ export default function YouScreen(props: {
 
   return (
     <section className="flex flex-col gap-5">
-      <header className="flex items-baseline justify-between">
+      <header className="flex flex-col gap-2">
+        <MarqueeBulbs />
         <div>
           <p className="eyebrow">You</p>
           <h1 className="glow-amber font-display text-4xl text-amber">

@@ -8,6 +8,8 @@ import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
+import Confetti from "./Confetti";
+import { sfxChime, sfxClick, sfxPop } from "@/lib/sfx";
 import { SERVICES, type Service } from "@/lib/services";
 
 interface RecRow {
@@ -43,6 +45,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   const [mineOnly, setMineOnly] = useState(false);
   const [reacting, setReacting] = useState<RecRow | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [confetti, setConfetti] = useState(0);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/recs");
@@ -64,6 +67,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   }, [load]);
 
   async function deal() {
+    sfxClick();
     setDealing(true);
     setMessage(null);
     const res = await fetch("/api/recs", {
@@ -97,6 +101,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   }
 
   async function setStatus(rec: RecRow, status: string) {
+    if (status === "watchlisted") sfxPop();
     setRecs((prev) => prev.filter((r) => r.id !== rec.id));
     await fetch(`/api/recs/${rec.id}`, {
       method: "PATCH",
@@ -106,6 +111,10 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   }
 
   async function submitReaction(rec: RecRow, payload: ReactionPayload) {
+    if (payload.reaction === "loved" || payload.reaction === "loved_ironically") {
+      sfxChime();
+      setConfetti((c) => c + 1);
+    }
     await fetch("/api/logs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -142,6 +151,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
 
   return (
     <section className="flex flex-col gap-4">
+      <Confetti trigger={confetti} />
       <header>
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Tonight</p>
@@ -216,13 +226,16 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
                 className="film-card deal-in flex gap-3 rounded-lg p-3"
                 style={{ "--i": idx } as React.CSSProperties}
               >
-                <Link href={`/m/${m.id}`} className="w-24 shrink-0">
+                <Link href={`/m/${m.id}`} className="wiggle relative w-24 shrink-0">
                   <Poster
                     posterPath={m.poster_path}
                     title={m.title}
                     year={m.year}
                     genres={m.genres}
                   />
+                  {rec.obscurity === 5 && (
+                    <span className="stamp stamp-gold absolute -left-2 top-2">Rare find</span>
+                  )}
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-baseline justify-between gap-2">

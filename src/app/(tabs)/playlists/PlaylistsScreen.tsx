@@ -3,6 +3,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { playlistProgress } from "@/lib/slug";
+import MarqueeBulbs from "@/components/MarqueeBulbs";
+import Confetti from "@/components/Confetti";
+import { sfxPop } from "@/lib/sfx";
 
 interface PlaylistRow {
   id: string;
@@ -89,6 +92,7 @@ export default function PlaylistsScreen({
 
   async function copyLink() {
     if (!shareLink) return;
+    sfxPop();
     await navigator.clipboard.writeText(shareLink).catch(() => null);
     void fetch("/api/events", {
       method: "POST",
@@ -100,6 +104,7 @@ export default function PlaylistsScreen({
   if (shareLink) {
     return (
       <section className="flex flex-col gap-4">
+        <Confetti trigger={1} />
         <p className="eyebrow">Mixtape sealed</p>
         <h1 className="glow-amber font-display text-4xl text-amber">SEND IT</h1>
         <div className="ticket-edge rounded bg-surface p-4">
@@ -229,7 +234,8 @@ export default function PlaylistsScreen({
     <section className="flex flex-col gap-5">
       <header className="flex items-center justify-between">
         <div>
-          <p className="eyebrow">Playlists</p>
+          <MarqueeBulbs />
+          <p className="eyebrow mt-2">Playlists</p>
           <h1 className="glow-amber font-display text-4xl text-amber">MOVIE MIXTAPES</h1>
         </div>
         <button

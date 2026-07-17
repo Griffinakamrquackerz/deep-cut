@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Poster from "./Poster";
 import { playlistProgress } from "@/lib/slug";
+import Confetti from "./Confetti";
+import { sfxPop } from "@/lib/sfx";
 
 const REACTIONS = [
   { value: "loved", label: "♥ loved" },
@@ -46,6 +48,7 @@ export default function PlaylistDetail({
 }) {
   const [items, setItems] = useState(initialItems);
   const [noteDraft, setNoteDraft] = useState<Record<string, string>>({});
+  const [confetti, setConfetti] = useState(0);
   const { done, total, pct } = playlistProgress(items);
 
   async function update(itemId: string, patch: Record<string, unknown>) {
@@ -73,6 +76,7 @@ export default function PlaylistDetail({
 
   return (
     <section className="flex flex-col gap-4 px-4 py-8">
+      <Confetti trigger={confetti} />
       <header>
         <p className="eyebrow">
           A mixtape from {ownerName}
@@ -116,6 +120,12 @@ export default function PlaylistDetail({
                       checked={item.crossed_off}
                       onChange={(e) => {
                         if (requireLogin()) return;
+                        if (e.target.checked) {
+                          sfxPop();
+                          // last film crossed off → the whole tape is done
+                          const remaining = items.filter((x) => !x.crossed_off).length;
+                          if (remaining === 1) setConfetti((c) => c + 1);
+                        }
                         void update(item.id, { crossedOff: e.target.checked });
                       }}
                       className="mt-1 accent-avail"
