@@ -28,7 +28,22 @@ export default function OnboardingFlow() {
   const [services, setServices] = useState<Set<Service>>(new Set());
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [posters, setPosters] = useState<Record<number, string | null>>({});
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Poster art for the shelf — grid renders immediately, art fills in.
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/starter-grid")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.posters) setPosters(data.posters);
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggle = useCallback((p: Pick) => {
     setPicks((prev) => {
@@ -228,9 +243,21 @@ export default function OnboardingFlow() {
                   toggle(r);
                   setQuery("");
                 }}
-                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm"
               >
-                <span>
+                {r.poster_path ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`https://image.tmdb.org/t/p/w92${r.poster_path}`}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-12 w-8 shrink-0 rounded object-cover"
+                  />
+                ) : (
+                  <span className="h-12 w-8 shrink-0 rounded border border-line bg-bg" />
+                )}
+                <span className="min-w-0 flex-1 truncate">
                   {r.title}{" "}
                   <span className="font-mono text-xs text-dim">{r.year ?? ""}</span>
                 </span>
@@ -245,21 +272,59 @@ export default function OnboardingFlow() {
       <div className="grid grid-cols-4 gap-2">
         {STARTER_GRID.map((f) => {
           const on = picks.has(f.tmdbId);
+          const poster = posters[f.tmdbId];
           return (
             <button
               key={f.tmdbId}
-              onClick={() => toggle({ id: f.tmdbId, title: f.title, year: f.year })}
+              onClick={() =>
+                toggle({ id: f.tmdbId, title: f.title, year: f.year, poster_path: poster })
+              }
               aria-pressed={on}
-              className={`flex aspect-[2/3] flex-col justify-between rounded border p-1.5 text-left transition-colors ${
-                on ? "border-amber bg-surface" : "border-line bg-surface/60"
+              aria-label={`${f.title} (${f.year})`}
+              className={`relative aspect-[2/3] overflow-hidden rounded border text-left transition-colors ${
+                on ? "border-amber ring-1 ring-amber" : "border-line"
               }`}
             >
-              <span
-                className={`font-display text-[0.7rem] leading-tight ${on ? "text-amber" : "text-cream"}`}
-              >
-                {f.title}
-              </span>
-              <span className="font-mono text-[0.55rem] text-dim">{f.year}</span>
+              {poster ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://image.tmdb.org/t/p/w342${poster}`}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
+                      on ? "opacity-50" : ""
+                    }`}
+                  />
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-1.5 pb-1 pt-5">
+                    <span
+                      className={`block font-display text-[0.65rem] leading-tight ${
+                        on ? "text-amber" : "text-cream"
+                      }`}
+                    >
+                      {f.title}
+                    </span>
+                    <span className="font-mono text-[0.5rem] text-cream/60">{f.year}</span>
+                  </span>
+                </>
+              ) : (
+                <span className="flex h-full flex-col justify-between bg-surface/60 p-1.5">
+                  <span
+                    className={`font-display text-[0.7rem] leading-tight ${
+                      on ? "text-amber" : "text-cream"
+                    }`}
+                  >
+                    {f.title}
+                  </span>
+                  <span className="font-mono text-[0.55rem] text-dim">{f.year}</span>
+                </span>
+              )}
+              {on && (
+                <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber font-mono text-xs font-bold text-bg shadow">
+                  ✓
+                </span>
+              )}
             </button>
           );
         })}
