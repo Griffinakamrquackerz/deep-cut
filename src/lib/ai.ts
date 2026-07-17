@@ -278,6 +278,8 @@ export interface RecRequest {
   obscurityMax: number;
   /** User wants films watchable tonight — bias hard toward their services. */
   myServicesOnly?: boolean;
+  /** Tonight's mood — every candidate must fit it (label + steering hint). */
+  vibe?: { label: string; hint: string } | null;
 }
 
 export async function generateRecCandidates(
@@ -293,6 +295,9 @@ export async function generateRecCandidates(
     "\nSTREAMING SERVICES:",
     req.services.length ? req.services.join(", ") : "(unknown)",
     `\nREQUESTED OBSCURITY RANGE: ${req.obscurityMin}-${req.obscurityMax}`,
+    req.vibe
+      ? `\nTONIGHT'S VIBE: "${req.vibe.label}" — ${req.vibe.hint} EVERY candidate must fit this vibe; use the taste threads to pick WHICH films within it, and let each reason connect the vibe to their taste.`
+      : "",
     req.myServicesOnly && req.services.length
       ? `\nIMPORTANT: The user wants films they can watch TONIGHT. Strongly prefer films currently streaming on: ${req.services.join(", ")}. Well-known streaming-catalog staples beat unstreamable deep cuts here.`
       : "",

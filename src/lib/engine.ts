@@ -10,6 +10,7 @@ import {
 import { obscurityFromVoteCount } from "./obscurity";
 import { cacheMovie, discoverMovies, resolveTitleYear, TMDB_GENRE_IDS } from "./tmdb";
 import type { Service } from "./services";
+import { vibeByKey } from "./vibes";
 import { supabaseAdmin } from "./supabase/admin";
 import { track } from "./analytics";
 import type { TasteProfile } from "./schemas";
@@ -159,6 +160,8 @@ export interface DealOptions {
   obscurityMin: number;
   obscurityMax: number;
   myServicesOnly: boolean;
+  /** Optional vibe key (see vibes.ts) — constrains tonight's deal to a mood. */
+  vibe?: string | null;
 }
 
 /**
@@ -174,6 +177,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
     db.from("user_services").select("service").eq("user_id", userId),
   ]);
   const services = (svcRows.data ?? []).map((r) => r.service as string);
+  const vibe = vibeByKey(opts.vibe);
 
   const { data: batchRow } = await db
     .from("recommendations")
@@ -206,6 +210,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
       obscurityMin: opts.obscurityMin,
       obscurityMax: opts.obscurityMax,
       myServicesOnly: opts.myServicesOnly,
+      vibe: vibe ? { label: vibe.label, hint: vibe.hint } : null,
     });
     await db.from("ai_logs").insert({ user_id: userId, stage: "recs", raw });
 
@@ -271,14 +276,21 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
   // obscurity band + services, loosening constraints until the batch fills.
   try {
   if (!targetMet()) {
-    const genreIds = topGenreIds(lovedBriefs);
+    // A vibe overrides taste-genres for the vault pull — the mood is the point.
+    const genreIds = vibe ? vibe.genreIds : topGenreIds(lovedBriefs);
     const svc = services as Service[];
     const wantServices = opts.myServicesOnly && svc.length > 0;
     const threadTitle = profile.threads[0]?.title ?? "your taste";
 
+    // With a vibe set, never drop to genre-less attempts — an off-vibe film is
+    // worse than a short batch.
     const attempts: Array<{ genreIds?: number[]; services?: Service[] }> = wantServices
-      ? [{ genreIds, services: svc }, { services: svc }, { genreIds }, {}]
-      : [{ genreIds }, {}];
+      ? vibe
+        ? [{ genreIds, services: svc }, { genreIds }]
+        : [{ genreIds, services: svc }, { services: svc }, { genreIds }, {}]
+      : vibe
+        ? [{ genreIds }]
+        : [{ genreIds }, {}];
 
     let pagesUsed = 0;
     for (const attempt of attempts) {
@@ -309,9 +321,13 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
             excludedIds.add(movie.id);
             continue;
           }
-          const reason = `Vault pull for your “${threadTitle}” thread — ${
-            movie.genres.slice(0, 2).join("/") || "wild card"
-          }, ${movie.year ?? "year unknown"}.`;
+          const reason = vibe
+            ? `Vault pull for tonight's “${vibe.label}” vibe — ${
+                movie.genres.slice(0, 2).join("/") || "wild card"
+              }, ${movie.year ?? "year unknown"}.`
+            : `Vault pull for your “${threadTitle}” thread — ${
+                movie.genres.slice(0, 2).join("/") || "wild card"
+              }, ${movie.year ?? "year unknown"}.`;
           const { data: inserted, error } = await db
             .from("recommendations")
             .insert({
@@ -344,7 +360,11 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
     // Discover is best-effort — a fallback failure must never sink the deal.
   }
 
-  await track(userId, "rec_batch_dealt", { batch, count: survivors.length });
+  await track(userId, "rec_batch_dealt", {
+    batch,
+    count: survivors.length,
+    vibe: opts.vibe ?? null,
+  });
   return survivors;
 }
 

@@ -12,6 +12,7 @@ import AdSlot from "./AdSlot";
 import Confetti from "./Confetti";
 import { sfxChime, sfxClick, sfxPop } from "@/lib/sfx";
 import { SERVICES, type Service } from "@/lib/services";
+import { VIBES, vibeByKey } from "@/lib/vibes";
 
 interface RecRow {
   id: string;
@@ -44,6 +45,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   const [dealing, setDealing] = useState(false);
   const [depth, setDepth] = useState(1); // obscurity dial: minimum obscurity
   const [mineOnly, setMineOnly] = useState(false);
+  const [vibe, setVibe] = useState<string | null>(null);
   const [reacting, setReacting] = useState<RecRow | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confetti, setConfetti] = useState(0);
@@ -78,6 +80,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
         obscurityMin: depth,
         obscurityMax: 5,
         myServicesOnly: mineOnly,
+        vibe,
       }),
     });
     if (res.status === 429) {
@@ -94,7 +97,10 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
           "The engine came back empty — every candidate was already in your history or didn't check out. Widen the obscurity dial, uncheck 'my services only', or add more loved films and try again (this attempt didn't count against your daily limit).",
         );
       } else {
-        setMessage(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}.`);
+        const v = vibeByKey(vibe);
+        setMessage(
+          `Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` for “${v.label}”` : ""}.`,
+        );
       }
     }
     await load();
@@ -162,6 +168,36 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       </header>
 
       <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
+        <div>
+          <p className="eyebrow mb-1.5">Tonight I want…</p>
+          <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+            {VIBES.map((v) => {
+              const on = vibe === v.key;
+              return (
+                <button
+                  key={v.key}
+                  onClick={() => {
+                    sfxPop();
+                    setVibe(on ? null : v.key);
+                  }}
+                  aria-pressed={on}
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider transition-colors ${
+                    on
+                      ? "border-ticket bg-ticket/20 text-cream glow-ticket"
+                      : "border-line bg-surface text-dim"
+                  }`}
+                >
+                  {v.emoji} {v.label}
+                </button>
+              );
+            })}
+          </div>
+          {vibe && (
+            <p className="mt-1 font-mono text-[0.6rem] text-ticket">
+              Next deal is all “{vibeByKey(vibe)?.label}” — tap the chip again to clear.
+            </p>
+          )}
+        </div>
         <label className="flex items-center gap-3">
           <span className="eyebrow shrink-0">Obscurity</span>
           <input
@@ -309,7 +345,11 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
         disabled={dealing}
         className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
       >
-        {dealing ? "Dealing…" : "★ Deal me more ★"}
+        {dealing
+          ? "Dealing…"
+          : vibe
+            ? `★ Deal me “${vibeByKey(vibe)?.label}” ★`
+            : "★ Deal me more ★"}
       </button>
 
       {reacting && reacting.movies && (
