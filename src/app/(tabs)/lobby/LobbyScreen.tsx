@@ -1,17 +1,26 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import AdSlot from "@/components/AdSlot";
 import FollowButton from "@/components/FollowButton";
-import { sfxClick } from "@/lib/sfx";
+import Poster from "@/components/Poster";
+import { sfxClick, sfxPop } from "@/lib/sfx";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
-  fine: "thought it was fine",
+  fine: "was lukewarm on",
   not_for_me: "bounced off",
   loved_ironically: "ironically loved",
+};
+
+// Verdict stamps pressed onto the poster, like a ticket-taker's rubber stamp.
+const REACTION_STAMP: Record<string, { text: string; gold: boolean }> = {
+  loved: { text: "Loved it", gold: true },
+  loved_ironically: { text: "Camp classic", gold: true },
+  fine: { text: "It's fine", gold: false },
+  not_for_me: { text: "Walked out", gold: false },
 };
 
 interface Person {
@@ -117,7 +126,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
       <header>
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Community</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">
+        <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
           {view === "feed" ? "WHAT FRIENDS ARE WATCHING" : "FIND YOUR PEOPLE"}
         </h1>
       </header>
@@ -219,60 +228,100 @@ export default function LobbyScreen({ myId }: { myId: string }) {
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {feed.map((item, idx) => (
-            <li key={`${item.kind}-${item.id}`} className="rounded border border-line bg-surface p-3">
-              {idx === 2 && (
-                <div className="mb-3">
-                  <AdSlot index={1} slot="lobby-feed" />
-                </div>
-              )}
-              {item.kind === "watch" && (
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-dim">
-                    <Link
-                      href={profileHref(item.actor)}
-                      className="font-mono text-[0.7rem] text-amber underline decoration-amber/40"
-                    >
-                      {feedName(item.actor, myId)}
-                    </Link>{" "}
-                    {REACTION_LABEL[item.reaction] ?? item.reaction}{" "}
-                    <Link href={`/m/${item.movie.id}`} className="text-cream underline">
-                      {item.movie.title}
-                    </Link>
-                    {item.why ? ` — ${item.why}` : ""}
-                    {item.note ? (
-                      <span className="block italic text-cream/80">“{item.note}”</span>
-                    ) : null}
-                  </p>
-                  {item.actor.id !== myId && (
-                    <button
-                      onClick={() => void addToWatchlist(item.movie.id)}
-                      className="shrink-0 rounded border border-line px-2 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
-                    >
-                      + watchlist
-                    </button>
-                  )}
-                </div>
-              )}
+        <ul className="flex flex-col gap-4">
+          {feed.map((item, idx) => {
+            const stamp = item.kind === "watch" ? REACTION_STAMP[item.reaction] : null;
+            return (
+              <li key={`${item.kind}-${item.id}`}>
+                {idx === 2 && (
+                  <div className="mb-4">
+                    <AdSlot index={1} slot="lobby-feed" />
+                  </div>
+                )}
 
-              {item.kind === "playlist" && (
-                <p className="text-sm text-dim">
-                  <Link
-                    href={profileHref(item.actor)}
-                    className="font-mono text-[0.7rem] text-amber underline decoration-amber/40"
+                {item.kind === "watch" && (
+                  <div
+                    className="film-card deal-in flex gap-3 rounded-lg p-3"
+                    style={{ "--i": idx } as CSSProperties}
                   >
-                    {feedName(item.actor, myId)}
-                  </Link>{" "}
-                  sealed a mixtape:{" "}
-                  <Link href={`/p/${item.shareSlug}`} className="text-cream underline">
-                    {item.name}
-                  </Link>{" "}
-                  · {item.filmCount} films
-                </p>
-              )}
-            </li>
-          ))}
+                    <Link href={`/m/${item.movie.id}`} className="wiggle relative w-20 shrink-0">
+                      <Poster
+                        posterPath={item.movie.poster_path}
+                        title={item.movie.title}
+                        year={item.movie.year}
+                        genres={item.movie.genres}
+                      />
+                      {stamp && (
+                        <span
+                          className={`stamp absolute -left-2 top-2 ${stamp.gold ? "stamp-gold" : ""}`}
+                        >
+                          {stamp.text}
+                        </span>
+                      )}
+                    </Link>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <p className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
+                        <Link href={profileHref(item.actor)} className="text-amber">
+                          {feedName(item.actor, myId)}
+                        </Link>{" "}
+                        {REACTION_LABEL[item.reaction] ?? item.reaction}
+                      </p>
+                      <Link
+                        href={`/m/${item.movie.id}`}
+                        className="mt-0.5 font-display text-2xl leading-tight text-cream"
+                      >
+                        {item.movie.title}
+                      </Link>
+                      <p className="font-mono text-[0.6rem] text-dim">
+                        {item.movie.year ?? ""}
+                        {item.movie.genres.length
+                          ? ` · ${item.movie.genres.slice(0, 2).join(" / ")}`
+                          : ""}
+                        {item.why ? ` · for the ${item.why}` : ""}
+                      </p>
+                      {item.note && (
+                        <p className="mt-1.5 border-l-2 border-amber/50 pl-2 text-sm italic text-cream/85">
+                          “{item.note}”
+                        </p>
+                      )}
+                      {item.actor.id !== myId && (
+                        <div className="mt-auto pt-2">
+                          <button
+                            onClick={() => {
+                              sfxPop();
+                              void addToWatchlist(item.movie.id);
+                            }}
+                            className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
+                          >
+                            + Watchlist
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {item.kind === "playlist" && (
+                  <Link
+                    href={`/p/${item.shareSlug}`}
+                    className="ticket-edge deal-in block rounded bg-surface p-4"
+                    style={{ "--i": idx } as CSSProperties}
+                  >
+                    <p className="font-mono text-[0.65rem] uppercase tracking-widest text-ticket">
+                      ✉ Mixtape sealed by{" "}
+                      <span className="text-amber">{feedName(item.actor, myId)}</span>
+                    </p>
+                    <p className="mt-1 font-display text-2xl leading-tight text-cream">
+                      {item.name}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[0.6rem] text-dim">
+                      {item.filmCount} film{item.filmCount === 1 ? "" : "s"} inside — open it ↗
+                    </p>
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
