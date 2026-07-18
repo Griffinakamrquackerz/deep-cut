@@ -3,6 +3,7 @@ import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { mergeFeed, type FeedItem, type FeedActor, type FeedMovie } from "@/lib/feed";
 import { getBlockedIds } from "@/lib/safety";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
 
 type Row = Record<string, unknown>;
 
@@ -80,7 +81,11 @@ export async function GET() {
     });
   }
 
-  for (const p of (playlists.data ?? []) as Row[]) {
+  // Private mixtapes never surface in the feed, even from people you follow.
+  const plRows = (playlists.data ?? []) as Row[];
+  const vis = await getVisibilityMap(db, plRows.map((p) => String(p.id)));
+  for (const p of plRows) {
+    if (vis.get(String(p.id)) === false) continue;
     items.push({
       kind: "playlist",
       id: String(p.id),

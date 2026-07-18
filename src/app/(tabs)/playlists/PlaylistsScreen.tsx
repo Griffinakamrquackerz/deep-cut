@@ -14,6 +14,7 @@ interface PlaylistRow {
   share_slug: string;
   created_at: string;
   playlist_items: Array<{ crossed_off: boolean }>;
+  is_public?: boolean;
 }
 
 interface PoolFilm {
@@ -261,7 +262,14 @@ export default function PlaylistsScreen({
                   className="block rounded border border-line bg-surface p-3"
                 >
                   <div className="flex justify-between">
-                    <span className="font-display text-lg text-cream">{p.name}</span>
+                    <span className="flex items-center gap-2 font-display text-lg text-cream">
+                      {p.name}
+                      {p.is_public === false && (
+                        <span className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.5rem] uppercase tracking-widest text-dim">
+                          🔒 Private
+                        </span>
+                      )}
+                    </span>
                     {p.recipient_name && (
                       <span className="font-mono text-[0.65rem] text-dim">
                         for {p.recipient_name}

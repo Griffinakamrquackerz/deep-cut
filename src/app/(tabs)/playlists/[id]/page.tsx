@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
+import { siteUrl } from "@/lib/site";
 import PlaylistDetail, { type PlaylistItemView } from "@/components/PlaylistDetail";
 
 // Owner view: same detail UI + the share link and recipient activity.
@@ -25,8 +27,9 @@ export default async function PlaylistOwnerPage({
     .maybeSingle();
   if (!playlist) notFound();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const shareUrl = `${appUrl}/p/${playlist.share_slug}`;
+  const vis = await getVisibilityMap(db, [playlist.id as string]);
+  const isPublic = vis.get(playlist.id as string) ?? true;
+  const shareUrl = `${siteUrl()}/p/${playlist.share_slug}`;
 
   return (
     <div className="-mx-4 -mt-4">
@@ -39,6 +42,7 @@ export default async function PlaylistOwnerPage({
         </div>
       </div>
       <PlaylistDetail
+        playlistId={playlist.id as string}
         name={playlist.name}
         ownerName="you"
         recipientName={playlist.recipient_name}
@@ -46,6 +50,7 @@ export default async function PlaylistOwnerPage({
         items={JSON.parse(JSON.stringify(playlist.playlist_items ?? [])) as PlaylistItemView[]}
         viewerIsOwner
         viewerLoggedIn
+        isPublic={isPublic}
       />
     </div>
   );

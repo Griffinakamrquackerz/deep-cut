@@ -30,6 +30,7 @@ export interface PlaylistItemView {
 }
 
 export default function PlaylistDetail({
+  playlistId,
   name,
   ownerName,
   recipientName,
@@ -37,7 +38,9 @@ export default function PlaylistDetail({
   items: initialItems,
   viewerIsOwner,
   viewerLoggedIn,
+  isPublic: initialPublic = true,
 }: {
+  playlistId?: string;
   name: string;
   ownerName: string;
   recipientName: string | null;
@@ -45,11 +48,28 @@ export default function PlaylistDetail({
   items: PlaylistItemView[];
   viewerIsOwner: boolean;
   viewerLoggedIn: boolean;
+  isPublic?: boolean;
 }) {
   const [items, setItems] = useState(initialItems);
   const [noteDraft, setNoteDraft] = useState<Record<string, string>>({});
   const [confetti, setConfetti] = useState(0);
+  const [isPublic, setIsPublic] = useState(initialPublic);
+  const [visSaving, setVisSaving] = useState(false);
   const { done, total, pct } = playlistProgress(items);
+
+  async function toggleVisibility() {
+    if (!playlistId || visSaving) return;
+    const next = !isPublic;
+    setIsPublic(next); // optimistic
+    setVisSaving(true);
+    const res = await fetch("/api/playlists/visibility", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playlistId, isPublic: next }),
+    });
+    if (!res.ok) setIsPublic(!next); // revert on failure
+    setVisSaving(false);
+  }
 
   async function update(itemId: string, patch: Record<string, unknown>) {
     setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...normalize(patch) } : i)));
@@ -217,9 +237,37 @@ export default function PlaylistDetail({
         </Link>
       )}
       {viewerIsOwner && (
-        <p className="text-center font-mono text-[0.65rem] text-dim">
-          You made this tape. Reactions and notes above are your recipient&apos;s.
-        </p>
+        <div className="flex flex-col gap-2 border-t border-dashed border-line pt-4">
+          {playlistId && (
+            <button
+              onClick={() => void toggleVisibility()}
+              disabled={visSaving}
+              aria-pressed={!isPublic}
+              className="flex items-center justify-between rounded border border-line bg-surface px-3 py-3 disabled:opacity-60"
+            >
+              <span className="text-left">
+                <span className="block font-mono text-xs uppercase tracking-wider text-cream">
+                  {isPublic ? "🌐 Public mixtape" : "🔒 Private mixtape"}
+                </span>
+                <span className="font-mono text-[0.6rem] text-dim">
+                  {isPublic
+                    ? "on your profile & anyone with the link can open it"
+                    : "only you can see this — hidden from your profile & the link"}
+                </span>
+              </span>
+              <span
+                className={`rounded-full border px-3 py-1 font-mono text-[0.65rem] uppercase tracking-widest ${
+                  isPublic ? "border-avail text-avail" : "border-line text-dim"
+                }`}
+              >
+                {visSaving ? "…" : isPublic ? "Public" : "Private"}
+              </span>
+            </button>
+          )}
+          <p className="text-center font-mono text-[0.65rem] text-dim">
+            You made this tape. Reactions and notes above are your recipient&apos;s.
+          </p>
+        </div>
       )}
     </section>
   );

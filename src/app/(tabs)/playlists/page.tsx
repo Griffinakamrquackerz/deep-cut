@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
 import PlaylistsScreen from "./PlaylistsScreen";
 
 export default async function PlaylistsPage() {
@@ -35,9 +36,15 @@ export default async function PlaylistsPage() {
     }
   }
 
+  const sentVis = await getVisibilityMap(db, (sent.data ?? []).map((p) => p.id as string));
+  const sentWithVis = (sent.data ?? []).map((p) => ({
+    ...p,
+    is_public: sentVis.get(p.id as string) ?? true,
+  }));
+
   return (
     <PlaylistsScreen
-      sent={JSON.parse(JSON.stringify(sent.data ?? []))}
+      sent={JSON.parse(JSON.stringify(sentWithVis))}
       received={JSON.parse(JSON.stringify(received.data ?? []))}
       pickPool={[...dedupe.values()]}
     />

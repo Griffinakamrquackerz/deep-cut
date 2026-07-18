@@ -7,6 +7,7 @@ import { computeStreak } from "@/lib/streak";
 import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
 import { themeClass } from "@/lib/themes";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
 import ProfileView, { type MovieLite } from "@/components/ProfileView";
 
 export default async function YouPage() {
@@ -81,6 +82,9 @@ export default async function YouPage() {
     .map((r) => r.movies as unknown as MovieLite | null)
     .filter((m): m is MovieLite => !!m);
 
+  // Visibility for your mixtapes — shown to you with a Private badge.
+  const plVis = await getVisibilityMap(db, (playlists.data ?? []).map((p) => p.id as string));
+
   return (
     <section className={`${themeClass(style.theme)} flex flex-col gap-5`}>
       {/* Your card — the exact member view everyone else sees */}
@@ -116,6 +120,7 @@ export default async function YouPage() {
           name: p.name as string,
           share_slug: p.share_slug as string,
           itemCount: Array.isArray(p.playlist_items) ? p.playlist_items.length : 0,
+          isPublic: plVis.get(p.id as string) ?? true,
         }))}
         followerCount={followerCount.count ?? 0}
         followingCount={followingCount.count ?? 0}

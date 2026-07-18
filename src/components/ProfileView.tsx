@@ -47,7 +47,13 @@ export interface ProfileViewData {
     note: string | null;
     movies: { id: number; title: string; year: number | null } | null;
   }>;
-  playlists: Array<{ id: string; name: string; share_slug: string; itemCount: number }>;
+  playlists: Array<{
+    id: string;
+    name: string;
+    share_slug: string;
+    itemCount: number;
+    isPublic: boolean;
+  }>;
   followerCount: number;
   followingCount: number;
   isMe: boolean;
@@ -185,7 +191,14 @@ export default function ProfileView(data: ProfileViewData) {
                   href={`/p/${p.share_slug}`}
                   className="flex items-center justify-between rounded border border-line bg-surface p-3"
                 >
-                  <span className="font-display text-lg text-cream">{p.name}</span>
+                  <span className="flex items-center gap-2 font-display text-lg text-cream">
+                    {p.name}
+                    {data.isMe && !p.isPublic && (
+                      <span className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.5rem] uppercase tracking-widest text-dim">
+                        🔒 Private
+                      </span>
+                    )}
+                  </span>
                   <span className="font-mono text-[0.65rem] text-dim">{p.itemCount} films ↗</span>
                 </Link>
               </li>

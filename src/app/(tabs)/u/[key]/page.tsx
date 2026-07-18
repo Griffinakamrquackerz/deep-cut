@@ -6,6 +6,7 @@ import { themeClass } from "@/lib/themes";
 import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
 import { computeTasteStats } from "@/lib/rank";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
 import ProfileView, { type MovieLite } from "@/components/ProfileView";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -101,6 +102,18 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     .map((r) => r.movies as unknown as MovieLite | null)
     .filter((m): m is MovieLite => !!m);
 
+  // Private mixtapes only show to their owner.
+  const plVis = await getVisibilityMap(db, (playlists.data ?? []).map((p) => p.id as string));
+  const playlistsForView = (playlists.data ?? [])
+    .map((p) => ({
+      id: p.id as string,
+      name: p.name as string,
+      share_slug: p.share_slug as string,
+      itemCount: Array.isArray(p.playlist_items) ? p.playlist_items.length : 0,
+      isPublic: plVis.get(p.id as string) ?? true,
+    }))
+    .filter((p) => isMe || p.isPublic);
+
   const inner = (
     <section className={`${themeClass(style.theme)} flex flex-col gap-5`}>
       <ProfileView
@@ -130,12 +143,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
           note: (w.note as string | null) ?? null,
           movies: (w.movies as unknown as { id: number; title: string; year: number | null } | null) ?? null,
         }))}
-        playlists={(playlists.data ?? []).map((p) => ({
-          id: p.id as string,
-          name: p.name as string,
-          share_slug: p.share_slug as string,
-          itemCount: Array.isArray(p.playlist_items) ? p.playlist_items.length : 0,
-        }))}
+        playlists={playlistsForView}
         followerCount={followerCount.count ?? 0}
         followingCount={followingCount.count ?? 0}
         isMe={isMe}
