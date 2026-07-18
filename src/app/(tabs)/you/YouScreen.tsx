@@ -12,6 +12,7 @@ import Avatar from "@/components/Avatar";
 import ProjectionistCard from "@/components/ProjectionistCard";
 import StreakBadge from "@/components/StreakBadge";
 import SignatureShrine from "@/components/SignatureShrine";
+import { themeClass } from "@/lib/themes";
 import type { StreakStats } from "@/lib/streak";
 import RankUp from "@/components/RankUp";
 import type { TasteStats } from "@/lib/rank";
@@ -39,6 +40,7 @@ export default function YouScreen(props: {
     posterPath: string | null;
     stills: string[];
   } | null;
+  theme: string | null;
   avatarUrl: string | null;
   threads: Thread[];
   version: number;
@@ -101,7 +103,7 @@ export default function YouScreen(props: {
   }
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className={`${themeClass(props.theme)} flex flex-col gap-5`}>
       <header className="flex flex-col gap-2">
         <MarqueeBulbs />
         <div className="flex items-center gap-3">

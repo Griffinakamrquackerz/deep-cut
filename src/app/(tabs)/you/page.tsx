@@ -87,6 +87,7 @@ export default async function YouPage() {
       stats={stats}
       streak={streak}
       signature={signature}
+      theme={style.theme}
       threads={(profile.data?.threads ?? []) as Array<{ title: string; line: string }>}
       version={profile.data?.version ?? 0}
       handle={me.data?.handle ?? null}
