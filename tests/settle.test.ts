@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   SETTLE_POOL,
   SETTLE_QUESTIONS,
+  candidatesToFilms,
+  poolQueryFor,
   rankVerdicts,
   scoreFilm,
+  type PoolCandidate,
   type SettleAnswers,
   type SettleFilm,
 } from "@/lib/settle";
@@ -120,5 +123,53 @@ describe("verdicts", () => {
   it("mentions the runtime when a short-wanting pair gets a sub-100 film", () => {
     const v = rankVerdicts(p1, p2)[0];
     if (v.film.min < 100) expect(v.why).toMatch(/minutes/);
+  });
+
+  it("dedupes repeated titles across a blended pool", () => {
+    const dupe = SETTLE_POOL[0];
+    const ranked = rankVerdicts(p1, p2, [dupe, ...SETTLE_POOL]);
+    const keys = ranked.map((v) => `${v.film.title}|${v.film.year}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("real-data pool mapping", () => {
+  const cand = (over: Partial<PoolCandidate>): PoolCandidate => ({
+    id: 1,
+    title: "Real Film",
+    year: 2019,
+    poster_path: "/p.jpg",
+    overview: "A tense night. Then it gets worse.",
+    genre_ids: [27, 53],
+    vote_count: 3000,
+    popularity: 120,
+    ...over,
+  });
+
+  it("derives mood from genre ids and carries poster + tmdbId through", () => {
+    const [f] = candidatesToFilms([cand({})], false);
+    expect(f.mood).toBe("scared");
+    expect(f.tmdbId).toBe(1);
+    expect(f.posterPath).toBe("/p.jpg");
+    expect(f.vibe).toBe("A tense night.");
+  });
+
+  it("marks the runtime band from the short flag so scoring can use it", () => {
+    expect(candidatesToFilms([cand({})], true)[0].min).toBeLessThan(100);
+    expect(candidatesToFilms([cand({})], false)[0].min).toBeGreaterThanOrEqual(100);
+  });
+
+  it("drops candidates with no year and produces scorable films", () => {
+    const films = candidatesToFilms([cand({}), cand({ id: 2, year: null })], false);
+    expect(films).toHaveLength(1);
+    const p = player({ mood: "scared" });
+    expect(scoreFilm(films[0], p, p)).toBeGreaterThan(0);
+  });
+
+  it("poolQueryFor unions both moods' genres and flags either-short", () => {
+    const q = poolQueryFor(player({ mood: "laugh" }), player({ mood: "scared", wantsShort: true }));
+    expect(q.genreIds).toContain(35); // comedy
+    expect(q.genreIds).toContain(27); // horror
+    expect(q.eitherShort).toBe(true);
   });
 });

@@ -14,15 +14,23 @@ export default function VerdictPoster({
   title,
   year,
   genres,
+  knownPoster,
 }: {
   title: string;
   year: number;
   genres: string[];
+  knownPoster?: string | null; // real-data films arrive with their poster
 }) {
   const key = `${title}|${year}`;
-  const [posterPath, setPosterPath] = useState<string | null>(posterCache.get(key) ?? null);
+  const [posterPath, setPosterPath] = useState<string | null>(
+    knownPoster ?? posterCache.get(key) ?? null,
+  );
 
   useEffect(() => {
+    if (knownPoster) {
+      setPosterPath(knownPoster);
+      return;
+    }
     if (posterCache.has(key)) {
       setPosterPath(posterCache.get(key) ?? null);
       return;
@@ -46,7 +54,7 @@ export default function VerdictPoster({
     return () => {
       cancelled = true;
     };
-  }, [key, title, year]);
+  }, [key, title, year, knownPoster]);
 
   return <Poster posterPath={posterPath} title={title} year={year} genres={genres} />;
 }

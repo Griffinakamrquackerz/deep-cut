@@ -410,6 +410,67 @@ export interface DiscoverResult {
   popularity: number;
 }
 
+export interface SettleCandidate {
+  id: number;
+  title: string;
+  year: number | null;
+  poster_path: string | null;
+  overview: string;
+  genre_ids: number[];
+  vote_count: number;
+  popularity: number;
+}
+
+/**
+ * Richer discover for the Settle It pool — returns the fields the couch
+ * needs (title, poster, overview, genres) with runtime filtered at query
+ * time so results always respect a "keep it short" constraint.
+ */
+export async function discoverSettleCandidates(opts: {
+  genreIds: number[];
+  obscurityMin: number;
+  obscurityMax: number;
+  maxRuntime?: number;
+  page?: number;
+}): Promise<SettleCandidate[]> {
+  const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
+  const qs: Record<string, string> = {
+    include_adult: "false",
+    include_video: "false",
+    language: "en-US",
+    sort_by: "popularity.desc",
+    "vote_count.gte": String(Math.max(band.gte, 200)), // real films only
+    page: String(opts.page ?? 1),
+  };
+  if (band.lte != null) qs["vote_count.lte"] = String(band.lte);
+  if (opts.genreIds.length) qs.with_genres = opts.genreIds.join("|");
+  if (opts.maxRuntime) qs["with_runtime.lte"] = String(opts.maxRuntime);
+
+  interface Payload {
+    results?: Array<{
+      id: number;
+      title: string;
+      release_date?: string;
+      poster_path: string | null;
+      overview: string;
+      genre_ids?: number[];
+      vote_count: number;
+      popularity: number;
+    }>;
+  }
+  const data = await tmdbFetch<Payload>("/discover/movie", qs).catch(() => null);
+  return (data?.results ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    year: r.release_date ? Number(r.release_date.slice(0, 4)) : null,
+    poster_path: r.poster_path,
+    overview: r.overview ?? "",
+    genre_ids: r.genre_ids ?? [],
+    vote_count: r.vote_count,
+    popularity: r.popularity,
+  }));
+}
+
 export async function discoverMovies(opts: DiscoverOpts): Promise<DiscoverResult[]> {
   const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
   const qs: Record<string, string> = {

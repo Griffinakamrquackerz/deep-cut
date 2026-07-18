@@ -1,21 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FilmLeader from "@/components/FilmLeader";
 import VerdictPoster from "./VerdictPoster";
+import { sfxClick, sfxGavel, sfxPop, haptic } from "@/lib/sfx";
 import {
   SETTLE_QUESTIONS,
+  SETTLE_POOL,
+  candidatesToFilms,
+  poolQueryFor,
   rankVerdicts,
   type Mood,
   type SettleAnswers,
   type Verdict,
 } from "@/lib/settle";
 
-type Stage = "intro" | "quiz1" | "handoff" | "quiz2" | "computing" | "verdict" | "done";
-
-// Raw tap values collected per player, keyed by question key.
+type Stage = "intro" | "quiz1" | "handoff" | "quiz2" | "computing" | "verdict" | "exhibit" | "done";
 type Sheet = Partial<Record<(typeof SETTLE_QUESTIONS)[number]["key"], unknown>>;
+interface Enrich {
+  runtime: number | null;
+  streaming: string[];
+}
 
 function toAnswers(name: string, sheet: Sheet): SettleAnswers {
   return {
@@ -28,7 +34,31 @@ function toAnswers(name: string, sheet: Sheet): SettleAnswers {
   };
 }
 
-/** 5 progress bulbs — lit up to the current question. */
+/** Build the ranked pool: TMDB real-data blended with curated house picks. */
+async function buildVerdicts(p1: SettleAnswers, p2: SettleAnswers): Promise<Verdict[]> {
+  const q = poolQueryFor(p1, p2);
+  try {
+    const res = await fetch("/api/settle/pool", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        genreIds: q.genreIds,
+        obscurityMin: q.obscurityMin,
+        obscurityMax: q.obscurityMax,
+        eitherShort: q.eitherShort,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const real = candidatesToFilms(data.candidates ?? [], q.eitherShort);
+      if (real.length >= 6) return rankVerdicts(p1, p2, [...real, ...SETTLE_POOL]);
+    }
+  } catch {
+    /* fall through to curated */
+  }
+  return rankVerdicts(p1, p2); // offline / error → the curated docket still rules
+}
+
 function ProgressBulbs({ at }: { at: number }) {
   return (
     <div className="flex justify-center gap-2.5" aria-label={`Question ${at + 1} of 5`}>
@@ -45,23 +75,17 @@ function ProgressBulbs({ at }: { at: number }) {
   );
 }
 
-function Quiz({
-  player,
-  onDone,
-}: {
-  player: string;
-  onDone: (sheet: Sheet) => void;
-}) {
+function Quiz({ player, onDone }: { player: string; onDone: (sheet: Sheet) => void }) {
   const [qi, setQi] = useState(0);
   const [sheet, setSheet] = useState<Sheet>({});
   const [picked, setPicked] = useState<number | null>(null);
   const q = SETTLE_QUESTIONS[qi];
 
   function answer(optIdx: number) {
-    if (picked !== null) return; // ignore double-taps mid-transition
+    if (picked !== null) return;
     setPicked(optIdx);
+    haptic(10);
     const next: Sheet = { ...sheet, [q.key]: q.options[optIdx].value };
-    // Brief solid-fill beat so the selection is unambiguous, then advance.
     setTimeout(() => {
       setPicked(null);
       if (qi === SETTLE_QUESTIONS.length - 1) onDone(next);
@@ -103,40 +127,110 @@ function Quiz({
 
 export default function SettleFlow() {
   const [stage, setStage] = useState<Stage>("intro");
+  const [bestOf3, setBestOf3] = useState(false);
   const [p1Name, setP1Name] = useState("");
   const [p2Name, setP2Name] = useState("");
   const [p1, setP1] = useState<SettleAnswers | null>(null);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
-  const [vi, setVi] = useState(0); // which verdict is on the table
+  const [vi, setVi] = useState(0); // verdict on the table (single mode)
+  const [enrich, setEnrich] = useState<Record<number, Enrich>>({});
+
+  // Best-of-3 state
+  const [exhibitIdx, setExhibitIdx] = useState(0);
+  const [finalists, setFinalists] = useState<number[]>([]);
 
   const name1 = p1Name.trim() || "Player 1";
   const name2 = p2Name.trim() || "Player 2";
 
-  function finishP2(sheet: Sheet) {
+  const current = stage === "exhibit" ? verdicts[exhibitIdx] : verdicts[vi];
+
+  // Gavel + buzz when a ruling hits the table.
+  useEffect(() => {
+    if (stage === "verdict") {
+      sfxGavel();
+      haptic([40, 60, 40]);
+    }
+  }, [stage, vi]);
+
+  // Enrich the shown real-data film with real runtime + streaming.
+  useEffect(() => {
+    const film = current?.film;
+    if (!film?.tmdbId || enrich[film.tmdbId]) return;
+    let cancelled = false;
+    void fetch(`/api/settle/film?id=${film.tmdbId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d && film.tmdbId)
+          setEnrich((e) => ({ ...e, [film.tmdbId!]: { runtime: d.runtime, streaming: d.streaming ?? [] } }));
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.film.tmdbId]);
+
+  async function finishP2(sheet: Sheet) {
     if (!p1) return;
     const p2 = toAnswers(name2, sheet);
-    setVerdicts(rankVerdicts(p1, p2));
-    setVi(0);
     setStage("computing");
-    setTimeout(() => setStage("verdict"), 1200);
+    const ranked = await buildVerdicts(p1, p2);
+    setVerdicts(ranked);
+    setVi(0);
+    setExhibitIdx(0);
+    setFinalists([]);
+    // Short drumroll regardless of how fast the pool resolved.
+    setTimeout(() => setStage(bestOf3 ? "exhibit" : "verdict"), 700);
   }
 
   function reset() {
     setP1(null);
     setVerdicts([]);
     setVi(0);
+    setExhibitIdx(0);
+    setFinalists([]);
     setStage("intro");
   }
 
+  async function shareRuling(film: { title: string; year: number }) {
+    sfxPop();
+    const url = typeof window !== "undefined" ? window.location.origin + "/settle" : "";
+    const text = `⚖️ The house says we're watching ${film.title} (${film.year}). Settle yours:`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ title: "Settle It — Deep Cut", text, url }).catch(() => null);
+    } else if (typeof navigator !== "undefined") {
+      await navigator.clipboard.writeText(`${text} ${url}`).catch(() => null);
+    }
+  }
+
+  // ── Best-of-3 voting ──────────────────────────────────────────────
+  function voteExhibit(keep: boolean) {
+    if (keep) {
+      sfxPop();
+      haptic(20);
+    } else {
+      haptic(8);
+    }
+    const nextFinalists = keep ? [...finalists, exhibitIdx] : finalists;
+    setFinalists(nextFinalists);
+    if (exhibitIdx >= 2) {
+      // The house rules: best kept exhibit, else it overrules with its #1.
+      const winner = nextFinalists.length ? Math.min(...nextFinalists) : 0;
+      setVi(winner);
+      setStage("verdict");
+    } else {
+      setExhibitIdx((i) => i + 1);
+    }
+  }
+
+  // ── INTRO ─────────────────────────────────────────────────────────
   if (stage === "intro") {
     return (
       <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
         <header className="text-center">
           <MarqueeBulbs />
           <p className="eyebrow mt-3">Deep Cut presents</p>
-          <h1 className="neon-flicker font-display text-6xl leading-[0.9] text-amber">
-            SETTLE IT
-          </h1>
+          <h1 className="neon-flicker font-display text-6xl leading-[0.9] text-amber">SETTLE IT</h1>
           <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-dim">
             Two of you, one phone, one movie. Nobody compromises out loud.
           </p>
@@ -160,8 +254,37 @@ export default function SettleFlow() {
             className="rounded border border-line bg-surface px-3 py-3 text-center text-cream placeholder:text-dim/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
           />
           <button
-            onClick={() => setStage("quiz1")}
-            className="pulse-cta mt-2 rounded bg-ticket px-6 py-4 font-mono text-sm font-medium uppercase tracking-[0.25em] text-cream"
+            onClick={() => {
+              sfxPop();
+              setBestOf3((b) => !b);
+            }}
+            aria-pressed={bestOf3}
+            className={`flex items-center justify-between rounded border px-3 py-2.5 ${
+              bestOf3 ? "border-amber bg-surface" : "border-line bg-surface"
+            }`}
+          >
+            <span className="text-left">
+              <span className="block font-mono text-xs uppercase tracking-wider text-cream">
+                ⚖️ Best of 3
+              </span>
+              <span className="font-mono text-[0.6rem] text-dim">
+                the house deals 3, you keep the keepers
+              </span>
+            </span>
+            <span
+              className={`rounded-full border px-3 py-1 font-mono text-[0.65rem] uppercase ${
+                bestOf3 ? "border-amber text-amber" : "border-line text-dim"
+              }`}
+            >
+              {bestOf3 ? "On" : "Off"}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              sfxClick();
+              setStage("quiz1");
+            }}
+            className="pulse-cta mt-1 rounded bg-ticket px-6 py-4 font-mono text-sm font-medium uppercase tracking-[0.25em] text-cream"
           >
             ★ Start the standoff ★
           </button>
@@ -189,9 +312,7 @@ export default function SettleFlow() {
         <div className="film-strip w-full" aria-hidden />
         <div>
           <p className="eyebrow">Intermission</p>
-          <h1 className="glow-amber font-display text-5xl leading-[0.95] text-amber">
-            PASS THE PHONE
-          </h1>
+          <h1 className="glow-amber font-display text-5xl leading-[0.95] text-amber">PASS THE PHONE</h1>
           <p className="mt-3 text-sm text-dim">
             {name1}, your testimony is sealed. 🤐
             <br />
@@ -199,7 +320,11 @@ export default function SettleFlow() {
           </p>
         </div>
         <button
-          onClick={() => setStage("quiz2")}
+          onClick={() => {
+            sfxClick();
+            haptic(15);
+            setStage("quiz2");
+          }}
           className="pulse-cta w-full max-w-sm rounded bg-ticket px-6 py-4 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream"
         >
           I&apos;m {name2} — deal me in
@@ -241,34 +366,35 @@ export default function SettleFlow() {
     );
   }
 
-  // stage === "verdict"
-  const v = verdicts[vi];
-  if (!v) return null;
-  const { film } = v;
+  if (!current) return null;
+  const { film } = current;
+  const ext = film.tmdbId ? enrich[film.tmdbId] : undefined;
+  const runtime = ext?.runtime ?? (film.tmdbId ? null : film.min);
+  const streaming = film.tmdbId ? (ext?.streaming ?? []) : film.streaming;
 
-  return (
-    <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
-      <header className="text-center">
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">The house rules</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">THE VERDICT</h1>
-      </header>
-
-      <div className="film-card mx-auto flex w-full max-w-sm gap-4 rounded-lg p-4">
-        <div className="w-28 shrink-0">
-          <VerdictPoster title={film.title} year={film.year} genres={film.genres} />
-        </div>
-        <div className="min-w-0">
-          <p className="font-display text-2xl leading-tight text-cream">{film.title}</p>
-          <p className="font-mono text-[0.65rem] text-dim">
-            {film.year} · {film.min} min
-          </p>
-          <p className="mt-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-amber/80">
-            {film.genres.join(" · ")}
-          </p>
-          <p className="mt-2 text-sm italic text-amber">{film.vibe}</p>
+  const FilmCard = (
+    <div className="film-card mx-auto flex w-full max-w-sm gap-4 rounded-lg p-4">
+      <div className="w-28 shrink-0">
+        <VerdictPoster
+          title={film.title}
+          year={film.year}
+          genres={film.genres}
+          knownPoster={film.posterPath}
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="font-display text-2xl leading-tight text-cream">{film.title}</p>
+        <p className="font-mono text-[0.65rem] text-dim">
+          {film.year}
+          {runtime ? ` · ${runtime} min` : ""}
+        </p>
+        <p className="mt-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-amber/80">
+          {film.genres.join(" · ")}
+        </p>
+        <p className="mt-2 text-sm italic text-amber">{film.vibe}</p>
+        {streaming.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {film.streaming.map((s) => (
+            {streaming.map((s) => (
               <span
                 key={s}
                 className="rounded-sm border border-avail/60 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-avail"
@@ -277,28 +403,102 @@ export default function SettleFlow() {
               </span>
             ))}
           </div>
-        </div>
+        )}
       </div>
+    </div>
+  );
+
+  // ── BEST-OF-3 EXHIBIT ─────────────────────────────────────────────
+  if (stage === "exhibit") {
+    return (
+      <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
+        <header className="text-center">
+          <MarqueeBulbs />
+          <p className="eyebrow mt-2">The docket · best of 3</p>
+          <h1 className="glow-amber font-display text-4xl text-amber">
+            EXHIBIT {["A", "B", "C"][exhibitIdx]}
+          </h1>
+          <p className="mt-1 font-mono text-[0.65rem] text-dim">
+            {finalists.length} kept · {exhibitIdx + 1} of 3
+          </p>
+        </header>
+        {FilmCard}
+        <div className="ticket-edge mx-auto w-full max-w-sm rounded bg-surface p-4">
+          <p className="eyebrow mb-1 text-ticket">The house submits</p>
+          <p className="text-sm leading-relaxed text-cream">{current.why}</p>
+        </div>
+        <div className="mx-auto flex w-full max-w-sm gap-2.5">
+          <button
+            onClick={() => voteExhibit(false)}
+            className="flex-1 rounded border border-line px-5 py-3.5 font-mono text-xs uppercase tracking-widest text-dim active:bg-line"
+          >
+            👎 Toss it
+          </button>
+          <button
+            onClick={() => voteExhibit(true)}
+            className="flex-1 rounded bg-amber px-5 py-3.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
+          >
+            👍 Keep it
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // ── VERDICT (single mode, or best-of-3 final ruling) ──────────────
+  const isRuling = bestOf3;
+  return (
+    <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
+      <header className="text-center">
+        <MarqueeBulbs />
+        <p className="eyebrow mt-2">The house rules</p>
+        <h1 className="glow-amber font-display text-4xl text-amber">
+          {isRuling ? "THE RULING" : "THE VERDICT"}
+        </h1>
+        {isRuling && (
+          <p className="mt-1 font-mono text-[0.65rem] text-dim">
+            {finalists.length
+              ? `you kept ${finalists.length} — the house picks the best`
+              : "you tossed all three — the house overrules"}
+          </p>
+        )}
+      </header>
+
+      {FilmCard}
 
       <div className="ticket-edge mx-auto w-full max-w-sm rounded bg-surface p-4">
         <p className="eyebrow mb-1 text-ticket">Why this settles it</p>
-        <p className="text-sm leading-relaxed text-cream">{v.why}</p>
+        <p className="text-sm leading-relaxed text-cream">{current.why}</p>
       </div>
 
       <div className="mx-auto flex w-full max-w-sm flex-col gap-2.5">
         <button
-          onClick={() => setStage("done")}
+          onClick={() => {
+            sfxPop();
+            setStage("done");
+          }}
           className="pulse-cta rounded bg-ticket px-5 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream"
         >
           ★ That&apos;ll do ★
         </button>
         <button
-          onClick={() => setVi((i) => Math.min(i + 1, verdicts.length - 1))}
-          disabled={vi >= verdicts.length - 1}
-          className="rounded border border-amber px-5 py-3 font-mono text-xs uppercase tracking-widest text-amber disabled:opacity-40"
+          onClick={() => void shareRuling(film)}
+          className="rounded border border-amber px-5 py-3 font-mono text-xs uppercase tracking-widest text-amber"
         >
-          Deal a different verdict
+          📸 Share the ruling
         </button>
+        {!isRuling && (
+          <button
+            onClick={() => {
+              sfxClick();
+              setVi((i) => Math.min(i + 1, verdicts.length - 1));
+            }}
+            disabled={vi >= verdicts.length - 1}
+            className="rounded border border-line px-5 py-3 font-mono text-xs uppercase tracking-widest text-dim disabled:opacity-40"
+          >
+            Deal a different verdict
+          </button>
+        )}
         <button
           onClick={reset}
           className="rounded border border-line px-5 py-3 font-mono text-xs uppercase tracking-widest text-dim"

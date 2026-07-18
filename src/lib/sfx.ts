@@ -57,3 +57,21 @@ export function sfxChime() {
 export function sfxPop() {
   blip(440, 70, "sine", 0.05);
 }
+
+/** Wooden gavel bang — two quick low knocks for the Settle It verdict. */
+export function sfxGavel() {
+  blip(150, 90, "square", 0.09);
+  setTimeout(() => blip(110, 130, "square", 0.1), 110);
+}
+
+/** Best-effort haptic tap on phones that support the Vibration API. */
+export function haptic(pattern: number | number[] = 12) {
+  if (isMuted()) return; // the mute switch also silences buzz — one control
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* unsupported — ignore */
+    }
+  }
+}

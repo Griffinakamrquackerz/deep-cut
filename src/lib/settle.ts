@@ -26,6 +26,8 @@ export interface SettleFilm {
   vibe: string; // the marquee hook line
   whyTrait: string; // resolving trait for the "why this settles it" line
   streaming: string[];
+  tmdbId?: number; // set for real-data films — poster comes free, no search
+  posterPath?: string | null;
 }
 
 // ── The five questions (ticket content, verbatim) ───────────────────
@@ -108,6 +110,81 @@ export const SETTLE_POOL: SettleFilm[] = [
   { title: "Marcel the Shell with Shoes On", year: 2021, min: 90, genres: ["Animation", "Comedy", "Drama"], mood: "feel", brain: 0, obscurity: 2, canonical: false, houseConviction: 4, vibe: "One-inch shell, enormous heart.", whyTrait: "it's gentle enough for no brain and sweet enough to fix the argument", streaming: ["Netflix"] },
 ];
 
+// ── Real-data pool: map a couch to a TMDB query, films back to SettleFilm ──
+
+// TMDB genre ids per mood (union of both players' moods seeds the query).
+export const MOOD_GENRES: Record<Mood, number[]> = {
+  laugh: [35], // Comedy
+  scared: [27, 53], // Horror, Thriller
+  feel: [18, 10749], // Drama, Romance
+};
+
+const GENRE_NAME: Record<number, string> = {
+  28: "action", 12: "adventure", 16: "animated", 35: "comedy", 80: "crime",
+  99: "documentary", 18: "drama", 10751: "family", 14: "fantasy", 36: "history",
+  27: "horror", 10402: "musical", 9648: "mystery", 10749: "romance",
+  878: "sci-fi", 53: "thriller", 10752: "war", 37: "western",
+};
+
+const BRAINY_GENRES = new Set([9648, 878, 53, 80]); // mystery, sci-fi, thriller, crime
+const LIGHT_GENRES = new Set([35, 10751, 16, 10402]); // comedy, family, animation, music
+
+export interface PoolCandidate {
+  id: number;
+  title: string;
+  year: number | null;
+  poster_path: string | null;
+  overview: string;
+  genre_ids: number[];
+  vote_count: number;
+  popularity: number;
+}
+
+function obscurityFromVotes(votes: number): 0 | 1 | 2 | 3 | 4 {
+  if (votes > 12000) return 0;
+  if (votes > 5000) return 1;
+  if (votes > 2000) return 2;
+  if (votes > 700) return 3;
+  return 4;
+}
+
+/** Turn TMDB candidates into scorable SettleFilms with derived, honest tags. */
+export function candidatesToFilms(cands: PoolCandidate[], eitherShort: boolean): SettleFilm[] {
+  return cands
+    .filter((c) => c.title && c.year)
+    .map((c): SettleFilm => {
+      const ids = c.genre_ids;
+      const mood: Mood = ids.includes(27) || ids.includes(53) ? "scared" : ids.includes(35) ? "laugh" : "feel";
+      const brain: 0 | 1 | 2 = ids.some((g) => BRAINY_GENRES.has(g))
+        ? 2
+        : ids.some((g) => LIGHT_GENRES.has(g))
+          ? 0
+          : 1;
+      const obscurity = obscurityFromVotes(c.vote_count);
+      const genreName = GENRE_NAME[ids[0]] ?? "one";
+      const secondGenre = ids[1] ? GENRE_NAME[ids[1]] : null;
+      const label = secondGenre ? `${genreName}-${secondGenre}` : genreName;
+      return {
+        title: c.title,
+        year: c.year!,
+        // Query already runtime-filtered when short was asked; real value is
+        // fetched lazily for display. Scoring only needs the band.
+        min: eitherShort ? 95 : 108,
+        genres: [genreName, secondGenre].filter(Boolean).map((g) => g![0].toUpperCase() + g!.slice(1)) as string[],
+        mood,
+        brain,
+        obscurity,
+        canonical: c.vote_count > 9000,
+        houseConviction: Math.min(5, Math.max(1, Math.round(c.popularity / 40))) as 1 | 2 | 3 | 4 | 5,
+        vibe: c.overview ? c.overview.split(". ")[0].replace(/\.$/, "") + "." : `A ${label} the house stands behind.`,
+        whyTrait: `a ${label} both of you can live with`,
+        streaming: [],
+        tmdbId: c.id,
+        posterPath: c.poster_path,
+      };
+    });
+}
+
 // ── Scoring (ticket §3, implemented exactly) ────────────────────────
 export interface Verdict {
   film: SettleFilm;
@@ -165,10 +242,37 @@ export function scoreFilm(film: SettleFilm, p1: SettleAnswers, p2: SettleAnswers
 }
 
 /** Every film ranked best-first; index into this for re-rolls. */
-export function rankVerdicts(p1: SettleAnswers, p2: SettleAnswers): Verdict[] {
-  return SETTLE_POOL.map((film) => ({
-    film,
-    score: scoreFilm(film, p1, p2),
-    why: whyLine(p1, p2, film),
-  })).sort((a, b) => b.score - a.score || a.film.title.localeCompare(b.film.title));
+export function rankVerdicts(
+  p1: SettleAnswers,
+  p2: SettleAnswers,
+  pool: SettleFilm[] = SETTLE_POOL,
+): Verdict[] {
+  const seen = new Set<string>();
+  return pool
+    .map((film) => ({
+      film,
+      score: scoreFilm(film, p1, p2),
+      why: whyLine(p1, p2, film),
+    }))
+    .sort((a, b) => b.score - a.score || a.film.title.localeCompare(b.film.title))
+    .filter((v) => {
+      // Real-data pages can repeat titles across genres — dedupe.
+      const k = `${v.film.title}|${v.film.year}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
+/** Genre ids to seed a TMDB query from both players' moods + obscurity dial. */
+export function poolQueryFor(p1: SettleAnswers, p2: SettleAnswers) {
+  const genreIds = Array.from(new Set([...MOOD_GENRES[p1.mood], ...MOOD_GENRES[p2.mood]]));
+  const target = (p1.obscurity + p2.obscurity) / 2; // 0..4
+  return {
+    genreIds,
+    // widen a touch around the averaged dial so there's always a pool
+    obscurityMin: Math.max(1, Math.round(target) - 1) as number,
+    obscurityMax: Math.min(5, Math.round(target) + 2) as number,
+    eitherShort: p1.wantsShort || p2.wantsShort,
+  };
 }
