@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { mergeFeed, type FeedItem, type FeedActor, type FeedMovie } from "@/lib/feed";
+import { getBlockedIds } from "@/lib/safety";
 
 type Row = Record<string, unknown>;
 
@@ -40,7 +41,8 @@ export async function GET() {
   const followees = (followRows ?? []).map((r) => r.followee_id);
   // Your own watches and mixtapes belong on the marquee too — otherwise a
   // new user who follows nobody stares at an empty room.
-  const actorIds = [user.id, ...followees];
+  const blocked = await getBlockedIds(user.id);
+  const actorIds = [user.id, ...followees.filter((id) => !blocked.has(id))];
 
   const [watches, playlists] = await Promise.all([
     db

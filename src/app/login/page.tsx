@@ -215,6 +215,11 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+      <p className="mt-6 text-center font-mono text-[0.6rem] text-dim/80">
+        By taking a seat you agree to the{" "}
+        <a href="/terms" className="underline">Terms</a> &{" "}
+        <a href="/privacy" className="underline">Privacy Policy</a>
+      </p>
     </main>
   );
 }

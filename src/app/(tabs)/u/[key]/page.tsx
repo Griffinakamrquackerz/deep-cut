@@ -12,6 +12,7 @@ import { getMovieStills } from "@/lib/tmdb";
 import SignatureShrine from "@/components/SignatureShrine";
 import ShowMore from "@/components/ShowMore";
 import ProjectionistCard from "@/components/ProjectionistCard";
+import SafetyActions from "@/components/SafetyActions";
 import { computeTasteStats } from "@/lib/rank";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -251,6 +252,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
           </ul>
         </div>
       )}
+      {me && !isMe && <SafetyActions userId={person.id} name={name} />}
     </section>
   );
 

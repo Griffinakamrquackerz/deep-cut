@@ -379,6 +379,62 @@ export default function SettingsScreen({
       <div className="mt-2">
         <InstallPrompt compact />
       </div>
+
+      <p className="mt-2 text-center font-mono text-[0.6rem] text-dim/80">
+        <a href="/terms" className="underline">Terms of Use</a> ·{" "}
+        <a href="/privacy" className="underline">Privacy Policy</a>
+      </p>
+
+      <DangerZone />
     </section>
+  );
+}
+
+/** App Store 5.1.1(v): in-app account deletion, gated by a typed confirm. */
+function DangerZone() {
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setError(null);
+    const res = await fetch("/api/account", { method: "DELETE" });
+    if (res.ok) {
+      window.location.href = "/login";
+    } else {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ? String(data.error).slice(0, 160) : "Deletion failed — try again.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded border border-ticket/50 p-4">
+      <p className="eyebrow mb-1 text-ticket">Leave the theater</p>
+      <p className="text-xs leading-relaxed text-dim">
+        Deletes your account and everything with it — taste profile, loved films, watch
+        history, mixtapes, follows. This cannot be undone; there is no lost &amp; found.
+      </p>
+      <div className="mt-3 flex gap-2">
+        <input
+          value={confirmText}
+          onChange={(e) => setConfirmText(e.target.value)}
+          placeholder={`Type DELETE to confirm`}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          aria-label="Type DELETE to confirm account deletion"
+          className="min-w-0 flex-1 rounded border border-line bg-surface px-3 py-2.5 font-mono text-xs text-cream placeholder:text-dim/60"
+        />
+        <button
+          disabled={confirmText !== "DELETE" || deleting}
+          onClick={() => void deleteAccount()}
+          className="rounded border border-ticket px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-ticket disabled:opacity-40"
+        >
+          {deleting ? "Burning the reel…" : "Delete account"}
+        </button>
+      </div>
+      {error && <p className="mt-2 font-mono text-xs text-ticket">{error}</p>}
+    </div>
   );
 }

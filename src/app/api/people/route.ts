@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getBlockedIds } from "@/lib/safety";
 
 export interface PersonRow {
   id: string;
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
     .select("followee_id")
     .eq("follower_id", user.id);
   const followingIds = (followRows ?? []).map((r) => r.followee_id as string);
+  const blocked = await getBlockedIds(user.id);
 
   if (q) {
     // ilike pattern chars would let a query escape its wildcard slot.
@@ -38,7 +40,8 @@ export async function GET(request: Request) {
       .neq("id", user.id)
       .limit(20);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ results: (data ?? []) as PersonRow[], followingIds });
+    const results = ((data ?? []) as PersonRow[]).filter((r) => !blocked.has(r.id));
+    return NextResponse.json({ results, followingIds });
   }
 
   const [followingRes, followersRes] = await Promise.all([
@@ -53,7 +56,7 @@ export async function GET(request: Request) {
 
   const followers = ((followersRes.data ?? []) as Array<Record<string, unknown>>)
     .map((r) => r.users as unknown as PersonRow | null)
-    .filter((u): u is PersonRow => !!u);
+    .filter((u): u is PersonRow => !!u && !blocked.has(u.id));
 
   return NextResponse.json({
     following: (followingRes.data ?? []) as PersonRow[],

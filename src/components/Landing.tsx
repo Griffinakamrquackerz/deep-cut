@@ -158,6 +158,10 @@ export default function Landing({ posters }: { posters: string[] }) {
             Metadata & streaming data: TMDB (JustWatch). This product uses the TMDB API but is
             not endorsed or certified by TMDB.
           </p>
+          <p className="mt-2 font-mono text-[0.6rem] text-dim/80">
+            <Link href="/terms" className="underline">Terms</Link> ·{" "}
+            <Link href="/privacy" className="underline">Privacy</Link>
+          </p>
         </footer>
       </div>
     </main>
