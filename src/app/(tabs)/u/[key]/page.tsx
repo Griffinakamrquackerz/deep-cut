@@ -11,6 +11,8 @@ import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
 import SignatureShrine from "@/components/SignatureShrine";
 import ShowMore from "@/components/ShowMore";
+import ProjectionistCard from "@/components/ProjectionistCard";
+import { computeTasteStats } from "@/lib/rank";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -65,13 +67,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
       db.from("taste_profiles").select("threads").eq("user_id", person.id).maybeSingle(),
       db
         .from("loved_movies")
-        .select("movie_id, movies(id, title, year, poster_path, genres)")
+        .select("movie_id, movies(id, title, year, poster_path, genres, vote_count)")
         .eq("user_id", person.id)
         .order("added_at", { ascending: false })
         .limit(200),
       db
         .from("watch_logs")
-        .select("id, reaction, note, watched_at, movies(id, title, year)")
+        .select("id, reaction, note, watched_at, movies(id, title, year, vote_count)")
         .eq("user_id", person.id)
         .order("watched_at", { ascending: false })
         .limit(100),
@@ -109,6 +111,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         getMovieStills(style.signatureMovieId).catch(() => [] as string[]),
       ])
     : [{ data: null }, [] as string[]];
+
+  const tasteVotes = [...(loved.data ?? []), ...(watches.data ?? [])]
+    .map((r) => r.movies as unknown as { id: number; vote_count: number | null } | null)
+    .filter((m): m is { id: number; vote_count: number | null } => !!m);
+  const stats = computeTasteStats(tasteVotes);
 
   const name = person.display_name ?? (person.handle ? `@${person.handle}` : "A film person");
   const threads = (profile.data?.threads ?? []) as Array<{ title: string; line: string }>;
@@ -161,6 +168,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
           posterPath={sigMovie.poster_path}
         />
       )}
+
+      <ProjectionistCard stats={stats} />
 
       {threads.length > 0 && (
         <div className="ticket-edge rounded bg-surface p-4">

@@ -3,6 +3,7 @@ import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import YouScreen from "./YouScreen";
 import type { Service } from "@/lib/services";
+import { computeTasteStats } from "@/lib/rank";
 
 export default async function YouPage() {
   const user = await currentUser();
@@ -21,19 +22,25 @@ export default async function YouPage() {
       .order("created_at", { ascending: false }),
     db
       .from("loved_movies")
-      .select("movie_id, movies(id, title, year, poster_path, genres)")
+      .select("movie_id, movies(id, title, year, poster_path, genres, vote_count)")
       .eq("user_id", user.id)
       .order("added_at", { ascending: false }),
     db
       .from("watch_logs")
-      .select("id, reaction, why, note, watched_at, movies(id, title, year, poster_path, genres)")
+      .select("id, reaction, why, note, watched_at, movies(id, title, year, poster_path, genres, vote_count)")
       .eq("user_id", user.id)
       .order("watched_at", { ascending: false })
       .limit(200),
   ]);
 
+  const votes = [...(loved.data ?? []), ...(history.data ?? [])]
+    .map((r) => r.movies as unknown as { id: number; vote_count: number | null } | null)
+    .filter((m): m is { id: number; vote_count: number | null } => !!m);
+  const stats = computeTasteStats(votes);
+
   return (
     <YouScreen
+      stats={stats}
       threads={(profile.data?.threads ?? []) as Array<{ title: string; line: string }>}
       version={profile.data?.version ?? 0}
       handle={me.data?.handle ?? null}

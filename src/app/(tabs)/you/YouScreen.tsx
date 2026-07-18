@@ -9,6 +9,9 @@ import MarqueeBulbs from "@/components/MarqueeBulbs";
 import ShowMore from "@/components/ShowMore";
 import LetterboxdImport from "@/components/LetterboxdImport";
 import Avatar from "@/components/Avatar";
+import ProjectionistCard from "@/components/ProjectionistCard";
+import RankUp from "@/components/RankUp";
+import type { TasteStats } from "@/lib/rank";
 
 interface MovieLite {
   id: number;
@@ -24,6 +27,7 @@ interface Thread {
 }
 
 export default function YouScreen(props: {
+  stats: TasteStats;
   avatarUrl: string | null;
   threads: Thread[];
   version: number;
@@ -148,6 +152,9 @@ export default function YouScreen(props: {
         </div>
         {msg && <p className="mt-2 font-mono text-xs text-ticket">{msg}</p>}
       </div>
+
+      <RankUp rankTitle={props.stats.rank.title} glyph={props.stats.rank.glyph} />
+      <ProjectionistCard stats={props.stats} isMe />
 
       {/* Section tabs */}
       <div className="flex gap-1 rounded border border-line bg-surface p-1">
