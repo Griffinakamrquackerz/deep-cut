@@ -4,17 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Poster from "@/components/Poster";
 import ObscurityDots from "@/components/ObscurityDots";
-import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import ShowMore from "@/components/ShowMore";
 import LetterboxdImport from "@/components/LetterboxdImport";
-import Avatar from "@/components/Avatar";
-import ProjectionistCard from "@/components/ProjectionistCard";
 import StreakBadge from "@/components/StreakBadge";
-import SignatureShrine from "@/components/SignatureShrine";
-import { themeClass } from "@/lib/themes";
-import type { StreakStats } from "@/lib/streak";
 import RankUp from "@/components/RankUp";
+import type { StreakStats } from "@/lib/streak";
 import type { TasteStats } from "@/lib/rank";
 
 interface MovieLite {
@@ -25,41 +19,20 @@ interface MovieLite {
   genres: string[];
 }
 
-interface Thread {
-  title: string;
-  line: string;
-}
-
+/**
+ * Your booth — the management tools that sit BELOW the profile view on the You
+ * tab. The profile itself (member card, shrine, rank, taste, loved, watches,
+ * mixtapes) is rendered by the shared ProfileView so your tab looks exactly
+ * like your public page; this is just where you shape it.
+ */
 export default function YouScreen(props: {
   stats: TasteStats;
   streak: StreakStats;
-  signature: {
-    id: number;
-    title: string;
-    year: number | null;
-    posterPath: string | null;
-    stills: string[];
-  } | null;
-  theme: string | null;
-  avatarUrl: string | null;
-  threads: Thread[];
-  version: number;
   handle: string | null;
-  displayName: string | null;
-  services: Service[];
   watchlist: Array<{ id: string; reason: string; obscurity: number; movies: MovieLite | null }>;
   loved: Array<{ movie_id: number; movies: MovieLite | null }>;
-  history: Array<{
-    id: string;
-    reaction: string;
-    why: string | null;
-    note: string | null;
-    watched_at: string;
-    movies: MovieLite | null;
-  }>;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"watchlist" | "loved" | "history">("watchlist");
   const [refreshing, setRefreshing] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -93,7 +66,6 @@ export default function YouScreen(props: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "profile_link_shared", props: {} }),
     });
-    // Native share sheet on phones; clipboard everywhere else.
     if (navigator.share) {
       await navigator.share({ title: "My Deep Cut taste card", url }).catch(() => null);
     } else {
@@ -103,129 +75,41 @@ export default function YouScreen(props: {
   }
 
   return (
-    <section className={`${themeClass(props.theme)} flex flex-col gap-5`}>
-      <header className="flex flex-col gap-2">
-        <MarqueeBulbs />
-        <div className="flex items-center gap-3">
-          <Avatar url={props.avatarUrl} name={props.handle ?? props.displayName ?? "?"} size="lg" />
-          <div>
-            <p className="eyebrow">You</p>
-            <h1 className="glow-amber font-display text-4xl text-amber">
-              {props.handle ? `@${props.handle}` : (props.displayName ?? "YOUR TASTE")}
-            </h1>
-          </div>
-        </div>
-      </header>
-
-      {/* Signature film — the shrine that fronts your public profile */}
-      {props.signature ? (
-        <div>
-          <div className="mb-2 flex items-baseline justify-between">
-            <p className="eyebrow">Your signature film</p>
-            <Link
-              href="/settings"
-              className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
-            >
-              Change ↗
-            </Link>
-          </div>
-          <SignatureShrine
-            movieId={props.signature.id}
-            title={props.signature.title}
-            year={props.signature.year}
-            stills={props.signature.stills}
-            posterPath={props.signature.posterPath}
-          />
-        </div>
-      ) : (
-        <Link
-          href="/settings"
-          className="flex items-center justify-between rounded border border-dashed border-line bg-surface/50 p-4"
-        >
-          <span>
-            <span className="block font-mono text-xs uppercase tracking-widest text-amber">
-              ✦ Pick your signature film
-            </span>
-            <span className="font-mono text-[0.6rem] text-dim">
-              the one that says everything — front and center on your profile
-            </span>
-          </span>
-          <span className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
-            Settings ↗
-          </span>
-        </Link>
-      )}
-
-      {/* Taste card — ticket stub */}
-      <div className="ticket-edge relative overflow-hidden rounded bg-surface p-5">
-        <div className="film-strip absolute inset-x-0 top-0" />
-        <div className="mt-2 flex items-baseline justify-between">
-          <p className="eyebrow">Admit One · Taste Profile №{String(props.version).padStart(3, "0")}</p>
-          <span className="glow-ticket font-mono text-[0.6rem] tracking-widest text-ticket">
-            <span className="blink">●</span> NOW SHOWING
-          </span>
-        </div>
-        {props.threads.length === 0 ? (
-          <p className="mt-3 text-sm text-dim">
-            No profile yet — pick some films you love on the Tonight tab.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-3">
-            {props.threads.map((t, i) => (
-              <li key={t.title}>
-                <p className="font-mono text-xs uppercase tracking-widest text-ticket">
-                  {String(i + 1).padStart(2, "0")} · {t.title}
-                </p>
-                <p className="mt-0.5 text-sm text-cream">{t.line}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => void shareProfileLink()}
-            className="flex-1 rounded bg-amber px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
-          >
-            🎟 Share my card
-          </button>
-          <button
-            onClick={shareCard}
-            className="rounded border border-amber px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-amber"
-          >
-            As image
-          </button>
-          <button
-            onClick={refreshProfile}
-            disabled={refreshing}
-            className="rounded border border-line px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-dim disabled:opacity-50"
-          >
-            {refreshing ? "…" : "Refresh"}
-          </button>
-        </div>
-        {msg && <p className="mt-2 font-mono text-xs text-ticket">{msg}</p>}
-      </div>
-
+    <div className="mt-1 flex flex-col gap-5 border-t border-dashed border-line pt-6">
+      {/* Promotion ceremony (fires only when your rank title changes) */}
       <RankUp rankTitle={props.stats.rank.title} glyph={props.stats.rank.glyph} />
+
+      <p className="eyebrow">Your booth · manage your card</p>
+
       <StreakBadge streak={props.streak} />
-      <ProjectionistCard stats={props.stats} isMe />
 
-      {/* Section tabs */}
-      <div className="flex gap-1 rounded border border-line bg-surface p-1">
-        {(["watchlist", "loved", "history"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            aria-pressed={tab === t}
-            className={`flex-1 rounded px-2 py-2 font-mono text-[0.65rem] uppercase tracking-wider ${
-              tab === t ? "bg-bg text-amber" : "text-dim"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
+      {/* Share + refresh toolbar */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => void shareProfileLink()}
+          className="flex-1 rounded bg-amber px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
+        >
+          🎟 Share my card
+        </button>
+        <button
+          onClick={shareCard}
+          className="rounded border border-amber px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-amber"
+        >
+          As image
+        </button>
+        <button
+          onClick={refreshProfile}
+          disabled={refreshing}
+          className="rounded border border-line px-3 py-2.5 font-mono text-xs uppercase tracking-widest text-dim disabled:opacity-50"
+        >
+          {refreshing ? "…" : "Refresh taste"}
+        </button>
       </div>
+      {msg && <p className="font-mono text-xs text-ticket">{msg}</p>}
 
-      {tab === "watchlist" && (
+      {/* Watchlist — saved picks, unique to your tab */}
+      <div>
+        <p className="eyebrow mb-2">Your watchlist</p>
         <ul className="grid grid-cols-3 gap-3">
           {props.watchlist.length === 0 && (
             <li className="col-span-3 text-center text-sm text-dim">
@@ -248,45 +132,14 @@ export default function YouScreen(props: {
             ) : null,
           )}
         </ul>
-      )}
+      </div>
 
-      {tab === "loved" && <LovedSection loved={props.loved} onChanged={() => router.refresh()} />}
-
-      {tab === "history" && (
-        <div>
-          {props.history.length === 0 && (
-            <p className="text-center text-sm text-dim">No watches logged yet.</p>
-          )}
-          <ShowMore initial={15} step={30} wrapperClassName="flex flex-col gap-2" label="Roll more watches">
-          {props.history.map((h) =>
-            h.movies ? (
-              <div key={h.id} className="flex items-center gap-3 rounded border border-line bg-surface p-2">
-                <div className="w-10 shrink-0">
-                  <Poster
-                    posterPath={h.movies.poster_path}
-                    title={h.movies.title}
-                    genres={h.movies.genres}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm text-cream">
-                    {h.movies.title}{" "}
-                    <span className="font-mono text-xs text-dim">{h.movies.year ?? ""}</span>
-                  </p>
-                  <p className="font-mono text-[0.65rem] uppercase tracking-wider text-amber">
-                    {h.reaction.replaceAll("_", " ")}
-                    {h.why ? ` · ${h.why}` : ""}
-                  </p>
-                  {h.note && <p className="truncate text-xs italic text-dim">“{h.note}”</p>}
-                </div>
-              </div>
-            ) : null,
-          )}
-          </ShowMore>
-        </div>
-      )}
-
-    </section>
+      {/* Shape your taste — add/remove loved films + import */}
+      <div>
+        <p className="eyebrow mb-2">Shape your taste</p>
+        <LovedSection loved={props.loved} onChanged={() => router.refresh()} />
+      </div>
+    </div>
   );
 }
 
@@ -339,7 +192,7 @@ function LovedSection({
         className="rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
       />
       <p className="font-mono text-[0.6rem] text-dim">
-        Add or ✕ remove films, then hit <span className="text-amber">Refresh</span> up top to
+        Add or ✕ remove films, then hit <span className="text-amber">Refresh taste</span> up top to
         reshape your taste profile.
       </p>
       {results.length > 0 && (

@@ -2,35 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import Poster from "@/components/Poster";
-import FollowButton from "@/components/FollowButton";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
-import Avatar from "@/components/Avatar";
 import { themeClass } from "@/lib/themes";
 import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
-import SignatureShrine from "@/components/SignatureShrine";
-import ShowMore from "@/components/ShowMore";
-import ProjectionistCard from "@/components/ProjectionistCard";
-import SafetyActions from "@/components/SafetyActions";
 import { computeTasteStats } from "@/lib/rank";
-
-const REACTION_LABEL: Record<string, string> = {
-  loved: "loved",
-  fine: "thought it was fine",
-  not_for_me: "bounced off",
-  loved_ironically: "ironically loved",
-};
+import ProfileView, { type MovieLite } from "@/components/ProfileView";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-interface MovieLite {
-  id: number;
-  title: string;
-  year: number | null;
-  poster_path: string | null;
-  genres: string[];
-}
 
 /** Public member profile — their taste card, loved films, watches, mixtapes. */
 export default async function ProfilePage({ params }: { params: Promise<{ key: string }> }) {
@@ -118,7 +96,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     .filter((m): m is { id: number; vote_count: number | null } => !!m);
   const stats = computeTasteStats(tasteVotes);
 
-  const name = person.display_name ?? (person.handle ? `@${person.handle}` : "A film person");
   const threads = (profile.data?.threads ?? []) as Array<{ title: string; line: string }>;
   const lovedMovies = (loved.data ?? [])
     .map((r) => r.movies as unknown as MovieLite | null)
@@ -126,133 +103,45 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
 
   const inner = (
     <section className={`${themeClass(style.theme)} flex flex-col gap-5`}>
-      <header>
-        <div>
-          <MarqueeBulbs />
-          <p className="eyebrow mt-2">Member card</p>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <Avatar url={person.avatar_url} name={name} size="lg" />
-              <div className="min-w-0">
-                <h1 className="glow-amber font-display text-4xl leading-tight text-amber">
-                  {name.toUpperCase()}
-                </h1>
-                {person.handle && person.display_name && (
-                  <p className="font-mono text-xs text-dim">@{person.handle}</p>
-                )}
-                <p className="mt-1 font-mono text-[0.65rem] text-dim">
-                  {followerCount.count ?? 0} follower{(followerCount.count ?? 0) === 1 ? "" : "s"} ·{" "}
-                  following {followingCount.count ?? 0}
-                </p>
-              </div>
-            </div>
-            {isMe ? (
-              <Link
-                href="/settings"
-                className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim"
-              >
-                Style it ✨
-              </Link>
-            ) : me ? (
-              <FollowButton userId={person.id} initiallyFollowing={!!iFollow.data} size="lg" />
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      {sigMovie && (
-        <SignatureShrine
-          movieId={sigMovie.id}
-          title={sigMovie.title}
-          year={sigMovie.year}
-          stills={sigStills}
-          posterPath={sigMovie.poster_path}
-        />
-      )}
-
-      <ProjectionistCard stats={stats} />
-
-      {threads.length > 0 && (
-        <div className="ticket-edge rounded bg-surface p-4">
-          <p className="eyebrow mb-2">Their taste</p>
-          <ul className="flex flex-col gap-3">
-            {threads.map((t) => (
-              <li key={t.title}>
-                <p className="font-mono text-xs uppercase tracking-widest text-ticket">
-                  {t.title}
-                </p>
-                <p className="mt-0.5 text-sm text-cream">{t.line}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {lovedMovies.length > 0 && (
-        <div>
-          <p className="eyebrow mb-2">
-            Films they love ({lovedMovies.length})
-          </p>
-          <ShowMore initial={12} step={24} wrapperClassName="grid grid-cols-4 gap-2" label="Roll more posters">
-            {lovedMovies.map((m) => (
-              <Link key={m.id} href={`/m/${m.id}`} className="wiggle">
-                <Poster
-                  posterPath={m.poster_path}
-                  title={m.title}
-                  year={m.year}
-                  genres={m.genres}
-                />
-              </Link>
-            ))}
-          </ShowMore>
-        </div>
-      )}
-
-      <div>
-        <p className="eyebrow mb-2">Recent watches</p>
-        {(watches.data ?? []).length === 0 ? (
-          <p className="text-sm text-dim">Nothing logged yet.</p>
-        ) : (
-          <ShowMore initial={8} step={16} wrapperClassName="flex flex-col gap-2" label="Roll more watches">
-            {(watches.data ?? []).map((w) => {
-              const m = w.movies as unknown as { id: number; title: string; year: number | null } | null;
-              if (!m) return null;
-              return (
-                <div key={w.id} className="rounded border border-line bg-surface p-3 text-sm">
-                  <span className="text-dim">{REACTION_LABEL[w.reaction] ?? w.reaction} </span>
-                  <Link href={`/m/${m.id}`} className="text-cream underline">
-                    {m.title}
-                  </Link>{" "}
-                  <span className="font-mono text-xs text-dim">{m.year ?? ""}</span>
-                  {w.note && <p className="mt-1 text-xs italic text-cream/80">“{w.note}”</p>}
-                </div>
-              );
-            })}
-          </ShowMore>
-        )}
-      </div>
-
-      {(playlists.data ?? []).length > 0 && (
-        <div>
-          <p className="eyebrow mb-2">Mixtapes they sealed</p>
-          <ul className="flex flex-col gap-2">
-            {(playlists.data ?? []).map((p) => (
-              <li key={p.id}>
-                <Link
-                  href={`/p/${p.share_slug}`}
-                  className="flex items-center justify-between rounded border border-line bg-surface p-3"
-                >
-                  <span className="font-display text-lg text-cream">{p.name}</span>
-                  <span className="font-mono text-[0.65rem] text-dim">
-                    {Array.isArray(p.playlist_items) ? p.playlist_items.length : 0} films ↗
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {me && !isMe && <SafetyActions userId={person.id} name={name} />}
+      <ProfileView
+        person={{
+          id: person.id,
+          handle: person.handle,
+          display_name: person.display_name,
+          avatar_url: person.avatar_url,
+        }}
+        stats={stats}
+        threads={threads}
+        signature={
+          sigMovie
+            ? {
+                id: sigMovie.id,
+                title: sigMovie.title,
+                year: sigMovie.year,
+                posterPath: sigMovie.poster_path,
+                stills: sigStills,
+              }
+            : null
+        }
+        lovedMovies={lovedMovies}
+        watches={(watches.data ?? []).map((w) => ({
+          id: w.id as string,
+          reaction: w.reaction as string,
+          note: (w.note as string | null) ?? null,
+          movies: (w.movies as unknown as { id: number; title: string; year: number | null } | null) ?? null,
+        }))}
+        playlists={(playlists.data ?? []).map((p) => ({
+          id: p.id as string,
+          name: p.name as string,
+          share_slug: p.share_slug as string,
+          itemCount: Array.isArray(p.playlist_items) ? p.playlist_items.length : 0,
+        }))}
+        followerCount={followerCount.count ?? 0}
+        followingCount={followingCount.count ?? 0}
+        isMe={isMe}
+        viewerSignedIn={!!me}
+        iFollow={!!iFollow.data}
+      />
     </section>
   );
 
