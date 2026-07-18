@@ -162,6 +162,23 @@ export default function LobbyScreen({ myId }: { myId: string }) {
         ))}
       </div>
 
+      <Link
+        href="/settle"
+        onClick={() => sfxPop()}
+        className="film-card flex items-center gap-3 rounded-lg p-3"
+      >
+        <span aria-hidden className="text-3xl">⚖️</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-2xl leading-tight text-amber">
+            SETTLE IT
+          </span>
+          <span className="font-mono text-[0.65rem] text-dim">
+            Two of you, one phone, one movie — the house picks. →
+          </span>
+        </span>
+        <span className="stamp stamp-gold shrink-0">Party</span>
+      </Link>
+
       {view === "people" ? (
         <>
           <input
