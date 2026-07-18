@@ -16,6 +16,18 @@ export default function LoginPage() {
   // Hidden until Google OAuth is actually configured in Supabase.
   const googleEnabled = process.env.NEXT_PUBLIC_ENABLE_GOOGLE === "1";
 
+  // Turn raw auth errors into human copy — and never surface a bare/odd value.
+  function friendly(raw: unknown): string {
+    const msg = String((raw as { message?: unknown })?.message ?? raw ?? "").trim();
+    if (/rate|too many/i.test(msg))
+      return "Too many emails right now — give it a few minutes and try again.";
+    if (/sending|confirmation email|smtp/i.test(msg) || msg === "0" || msg === "")
+      return "We couldn't send your confirmation email — the email service may still need domain verification. Try again shortly.";
+    if (/already registered|already exists/i.test(msg))
+      return "That email already has an account. Try “Sign in” instead.";
+    return msg;
+  }
+
   function switchMode(m: Mode) {
     setMode(m);
     setError(null);
@@ -36,7 +48,7 @@ export default function LoginPage() {
           setError(
             /invalid/i.test(error.message)
               ? "Wrong email or password. If you originally joined via magic link, use “email me a magic link” once, then set a password in Settings."
-              : error.message,
+              : friendly(error),
           );
         } else {
           window.location.href = "/";
@@ -48,7 +60,7 @@ export default function LoginPage() {
           password,
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
-        if (error) setError(error.message);
+        if (error) setError(friendly(error));
         else if (data.session) {
           window.location.href = "/";
           return;
@@ -60,13 +72,13 @@ export default function LoginPage() {
           email,
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
-        if (error) setError(error.message);
+        if (error) setError(friendly(error));
         else setNotice("Magic link sent — check your email and open it on this device.");
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/callback?next=/reset`,
         });
-        if (error) setError(error.message);
+        if (error) setError(friendly(error));
         else setNotice("Password reset link sent — check your email.");
       }
     } finally {
@@ -193,7 +205,7 @@ export default function LoginPage() {
                 Continue with Google
               </button>
             )}
-            {error && <p className="text-xs text-ticket">{error}</p>}
+            {error ? <p className="text-xs text-ticket">{error}</p> : null}
           </form>
         )}
 
