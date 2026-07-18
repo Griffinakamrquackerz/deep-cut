@@ -39,6 +39,7 @@ export default function SettingsScreen({
   premiumUntil,
   hasStripeCustomer,
   premiumAvailable,
+  isAdmin = false,
 }: {
   handle: string | null;
   services: Service[];
@@ -49,6 +50,7 @@ export default function SettingsScreen({
   premiumUntil: string | null;
   hasStripeCustomer: boolean;
   premiumAvailable: boolean;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [newHandle, setNewHandle] = useState(handle ?? "");
@@ -414,6 +416,15 @@ export default function SettingsScreen({
       >
         {signingOut ? "Dimming the lights…" : "🚪 Sign out"}
       </button>
+
+      {isAdmin && (
+        <a
+          href="/admin"
+          className="rounded border border-amber/50 bg-amber/5 px-4 py-3 text-center font-mono text-xs uppercase tracking-widest text-amber"
+        >
+          🎛 Projection booth (admin)
+        </a>
+      )}
 
       <p className="mt-2 text-center font-mono text-[0.6rem] text-dim/80">
         <a href="/terms" className="underline">Terms of Use</a> ·{" "}

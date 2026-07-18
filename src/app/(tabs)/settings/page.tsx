@@ -5,6 +5,7 @@ import SettingsScreen from "@/components/SettingsScreen";
 import type { Service } from "@/lib/services";
 import { resolveStyle } from "@/lib/profile-style";
 import { getPremium, premiumConfigured } from "@/lib/premium";
+import { isAdminEmail } from "@/lib/admin";
 
 export default async function SettingsPage() {
   const user = await currentUser();
@@ -49,6 +50,7 @@ export default async function SettingsPage() {
       premiumUntil={premiumState.premiumUntil}
       hasStripeCustomer={!!premiumState.stripeCustomerId}
       premiumAvailable={premiumConfigured()}
+      isAdmin={isAdminEmail(user.email)}
     />
   );
 }

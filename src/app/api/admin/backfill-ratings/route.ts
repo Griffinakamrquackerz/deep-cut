@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cacheMovie } from "@/lib/tmdb";
 import { omdbConfigured } from "@/lib/omdb";
@@ -12,8 +12,8 @@ export const maxDuration = 60;
 // IMDb + Rotten Tomatoes when OMDB_API_KEY is set). Safe to run repeatedly.
 // Visit http://localhost:3000/api/admin/backfill-ratings while logged in.
 export async function GET() {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: "log in first" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const db = supabaseAdmin();
   const { data: movies } = await db.from("movies").select("id");
