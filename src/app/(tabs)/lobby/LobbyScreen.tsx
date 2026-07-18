@@ -8,7 +8,9 @@ import FollowButton from "@/components/FollowButton";
 import InviteButton from "@/components/InviteButton";
 import Poster from "@/components/Poster";
 import Avatar from "@/components/Avatar";
-import { sfxClick, sfxPop } from "@/lib/sfx";
+import FilmLeader from "@/components/FilmLeader";
+import { sfxClick, sfxPop, haptic } from "@/lib/sfx";
+import { toast } from "@/lib/toast";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -99,6 +101,9 @@ export default function LobbyScreen({ myId }: { myId: string }) {
   }, [query]);
 
   async function addToWatchlist(movieId: number) {
+    sfxPop();
+    haptic(20);
+    toast("Swiped to your watchlist", { tone: "amber", icon: "＋" });
     await fetch("/api/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -242,9 +247,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
           )}
         </>
       ) : loading ? (
-        <p className="animate-pulse py-10 text-center font-mono text-xs text-dim">
-          the lobby lights are coming up…
-        </p>
+        <FilmLeader label="the lobby lights are coming up" />
       ) : feed.length === 0 ? (
         <div className="ticket-edge rounded p-6 text-center">
           <p className="font-display text-2xl text-cream">QUIET IN HERE</p>

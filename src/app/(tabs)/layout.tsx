@@ -1,5 +1,6 @@
 import TabBar from "@/components/TabBar";
 import ProjectorIntro from "@/components/ProjectorIntro";
+import MarqueeToaster from "@/components/MarqueeToaster";
 import { currentUser } from "@/lib/supabase/server";
 
 export default async function TabsLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export default async function TabsLayout({ children }: { children: React.ReactNo
   return (
     <>
       <ProjectorIntro />
+      <MarqueeToaster />
       {/* Extra bottom padding clears the raised Tonight reel in the tab bar. */}
       <main className="px-4 pb-28 pt-4">{children}</main>
       <TabBar />

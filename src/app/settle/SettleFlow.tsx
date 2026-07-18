@@ -23,6 +23,29 @@ interface Enrich {
   streaming: string[];
 }
 
+// Campy jury quips cycled on the deliberation screen.
+const DELIBERATIONS = [
+  "consulting the ledger…",
+  "flipping a two-headed coin…",
+  "polling the back row…",
+  "checking who paid for snacks…",
+  "overruling your worst instincts…",
+  "cross-referencing the deep cuts…",
+];
+
+const MOOD_WORD: Record<Mood, string> = { laugh: "Funny", scared: "Scary", feel: "Feels" };
+const BRAIN_WORD = ["No brain", "Some brain", "A puzzle"];
+const OBSC_WORD: Record<number, string> = { 0: "Crowd-pleaser", 2: "A bit obscure", 4: "Deep cut" };
+
+function pickChips(a: SettleAnswers): string[] {
+  return [
+    MOOD_WORD[a.mood],
+    BRAIN_WORD[a.brain],
+    a.wantsShort ? "Under 100" : "Any length",
+    OBSC_WORD[a.obscurity] ?? "",
+  ].filter(Boolean);
+}
+
 function toAnswers(name: string, sheet: Sheet): SettleAnswers {
   return {
     name,
@@ -131,13 +154,16 @@ export default function SettleFlow() {
   const [p1Name, setP1Name] = useState("");
   const [p2Name, setP2Name] = useState("");
   const [p1, setP1] = useState<SettleAnswers | null>(null);
+  const [p2, setP2] = useState<SettleAnswers | null>(null);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
   const [vi, setVi] = useState(0); // verdict on the table (single mode)
   const [enrich, setEnrich] = useState<Record<number, Enrich>>({});
+  const [deliberation, setDeliberation] = useState(DELIBERATIONS[0]);
 
   // Best-of-3 state
   const [exhibitIdx, setExhibitIdx] = useState(0);
   const [finalists, setFinalists] = useState<number[]>([]);
+  const [flash, setFlash] = useState<"kept" | "tossed" | null>(null);
 
   const name1 = p1Name.trim() || "Player 1";
   const name2 = p2Name.trim() || "Player 2";
@@ -170,11 +196,23 @@ export default function SettleFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.film.tmdbId]);
 
+  // Cycle jury quips while deliberating.
+  useEffect(() => {
+    if (stage !== "computing") return;
+    let i = 0;
+    const t = setInterval(() => {
+      i = (i + 1) % DELIBERATIONS.length;
+      setDeliberation(DELIBERATIONS[i]);
+    }, 500);
+    return () => clearInterval(t);
+  }, [stage]);
+
   async function finishP2(sheet: Sheet) {
     if (!p1) return;
-    const p2 = toAnswers(name2, sheet);
+    const answers2 = toAnswers(name2, sheet);
+    setP2(answers2);
     setStage("computing");
-    const ranked = await buildVerdicts(p1, p2);
+    const ranked = await buildVerdicts(p1, answers2);
     setVerdicts(ranked);
     setVi(0);
     setExhibitIdx(0);
@@ -185,10 +223,12 @@ export default function SettleFlow() {
 
   function reset() {
     setP1(null);
+    setP2(null);
     setVerdicts([]);
     setVi(0);
     setExhibitIdx(0);
     setFinalists([]);
+    setFlash(null);
     setStage("intro");
   }
 
@@ -205,22 +245,27 @@ export default function SettleFlow() {
 
   // ── Best-of-3 voting ──────────────────────────────────────────────
   function voteExhibit(keep: boolean) {
+    if (flash) return; // ignore taps mid-stamp
     if (keep) {
       sfxPop();
       haptic(20);
     } else {
       haptic(8);
     }
+    setFlash(keep ? "kept" : "tossed");
     const nextFinalists = keep ? [...finalists, exhibitIdx] : finalists;
-    setFinalists(nextFinalists);
-    if (exhibitIdx >= 2) {
-      // The house rules: best kept exhibit, else it overrules with its #1.
-      const winner = nextFinalists.length ? Math.min(...nextFinalists) : 0;
-      setVi(winner);
-      setStage("verdict");
-    } else {
-      setExhibitIdx((i) => i + 1);
-    }
+    // Let the KEPT/TOSSED stamp land before advancing.
+    setTimeout(() => {
+      setFinalists(nextFinalists);
+      setFlash(null);
+      if (exhibitIdx >= 2) {
+        const winner = nextFinalists.length ? Math.min(...nextFinalists) : 0;
+        setVi(winner);
+        setStage("verdict"); // the verdict effect plays the gavel
+      } else {
+        setExhibitIdx((i) => i + 1);
+      }
+    }, 600);
   }
 
   // ── INTRO ─────────────────────────────────────────────────────────
@@ -341,7 +386,7 @@ export default function SettleFlow() {
   if (stage === "computing") {
     return (
       <main className="flex min-h-dvh items-center justify-center px-5">
-        <FilmLeader label="the house is deliberating" />
+        <FilmLeader label={deliberation} />
       </main>
     );
   }
@@ -422,7 +467,18 @@ export default function SettleFlow() {
             {finalists.length} kept · {exhibitIdx + 1} of 3
           </p>
         </header>
-        {FilmCard}
+        <div className="relative">
+          {FilmCard}
+          {flash && (
+            <span
+              className={`verdict-stamp stamp-slam absolute right-6 top-2 z-10 text-2xl ${
+                flash === "tossed" ? "tossed" : ""
+              }`}
+            >
+              {flash === "kept" ? "KEPT" : "TOSSED"}
+            </span>
+          )}
+        </div>
         <div className="ticket-edge mx-auto w-full max-w-sm rounded bg-surface p-4">
           <p className="eyebrow mb-1 text-ticket">The house submits</p>
           <p className="text-sm leading-relaxed text-cream">{current.why}</p>
@@ -464,12 +520,48 @@ export default function SettleFlow() {
         )}
       </header>
 
-      {FilmCard}
+      <div className="relative">
+        {FilmCard}
+        <span
+          key={vi}
+          className={`verdict-stamp stamp-slam absolute right-6 top-1 z-10 text-3xl ${
+            isRuling && !finalists.length ? "tossed" : ""
+          }`}
+        >
+          {isRuling && !finalists.length ? "OVERRULED" : "SETTLED"}
+        </span>
+      </div>
 
       <div className="ticket-edge mx-auto w-full max-w-sm rounded bg-surface p-4">
         <p className="eyebrow mb-1 text-ticket">Why this settles it</p>
         <p className="text-sm leading-relaxed text-cream">{current.why}</p>
       </div>
+
+      {p1 && p2 && (
+        <div className="mx-auto w-full max-w-sm">
+          <p className="eyebrow mb-2 text-center">Tale of the tape</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[p1, p2].map((pl, i) => (
+              <div
+                key={i}
+                className="rounded border border-line bg-surface p-3 text-center"
+              >
+                <p className="truncate font-display text-xl text-amber">{pl.name}</p>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {pickChips(pl).map((c) => (
+                    <li
+                      key={c}
+                      className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-dim"
+                    >
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto flex w-full max-w-sm flex-col gap-2.5">
         <button

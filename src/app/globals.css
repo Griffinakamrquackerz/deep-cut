@@ -277,6 +277,43 @@ body {
 .reel-spin { animation: reel-spin 7s linear infinite; }
 @keyframes reel-spin { to { transform: rotate(360deg); } }
 
+/* Cinema-marquee toast — slides down and settles like a lit sign. */
+.marquee-toast {
+  animation: toast-drop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes toast-drop {
+  from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Rubber-stamp SLAM — the gavel verdict lands on the card. */
+.stamp-slam {
+  animation: stamp-slam 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+@keyframes stamp-slam {
+  0% { opacity: 0; transform: rotate(-16deg) scale(2.4); }
+  55% { opacity: 1; transform: rotate(-11deg) scale(0.9); }
+  70% { transform: rotate(-13deg) scale(1.06); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+
+/* Big distressed verdict stamp — sits over the ruling card. */
+.verdict-stamp {
+  border: 3px solid var(--color-amber);
+  color: var(--color-amber);
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  box-shadow: 0 0 18px rgba(255, 180, 84, 0.35), inset 0 0 0 2px rgba(255, 180, 84, 0.25);
+  background: rgba(23, 18, 16, 0.55);
+}
+.verdict-stamp.tossed {
+  border-color: var(--color-dim);
+  color: var(--color-dim);
+  box-shadow: none;
+}
+
 /* ── Profile themes (MySpace, but cinema) ─────────────────────────────
    Each class re-tints the design tokens inside a member's public card.
    Tailwind utilities read the vars, so descendants restyle for free. */
@@ -389,6 +426,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .reel-grain,
   .reel-spin,
+  .marquee-toast,
+  .stamp-slam,
   .sheen,
   .neon-flicker,
   .marquee-bulbs > i,

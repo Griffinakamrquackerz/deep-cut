@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { sfxPop } from "@/lib/sfx";
+import { sfxPop, haptic } from "@/lib/sfx";
+import { toast } from "@/lib/toast";
 
 /** Optimistic follow/unfollow toggle, usable anywhere a user appears. */
 export default function FollowButton({
@@ -18,9 +19,11 @@ export default function FollowButton({
   async function toggle() {
     if (busy) return;
     sfxPop();
+    haptic(15);
     setBusy(true);
     const next = !following;
     setFollowing(next);
+    if (next) toast("Now following", { tone: "avail", icon: "★" });
     const res = await fetch("/api/follows", {
       method: next ? "POST" : "DELETE",
       headers: { "Content-Type": "application/json" },

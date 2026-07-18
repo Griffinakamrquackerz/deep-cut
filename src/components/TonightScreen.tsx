@@ -10,7 +10,8 @@ import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
 import AdSlot from "./AdSlot";
 import Confetti from "./Confetti";
-import { sfxChime, sfxClick, sfxPop } from "@/lib/sfx";
+import { sfxChime, sfxClick, sfxPop, haptic } from "@/lib/sfx";
+import { toast } from "@/lib/toast";
 import { SERVICES, type Service } from "@/lib/services";
 import { VIBES, vibeByKey } from "@/lib/vibes";
 
@@ -71,6 +72,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
 
   async function deal() {
     sfxClick();
+    haptic(12);
     setDealing(true);
     setMessage(null);
     const res = await fetch("/api/recs", {
@@ -98,9 +100,11 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
         );
       } else {
         const v = vibeByKey(vibe);
-        setMessage(
-          `Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` for “${v.label}”` : ""}.`,
-        );
+        haptic([30, 40, 30]);
+        toast(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` · ${v.label}` : ""}`, {
+          tone: "ticket",
+          icon: "🎟",
+        });
       }
     }
     await load();
@@ -108,7 +112,11 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   }
 
   async function setStatus(rec: RecRow, status: string) {
-    if (status === "watchlisted") sfxPop();
+    if (status === "watchlisted") {
+      sfxPop();
+      haptic(20);
+      toast(`Saved to your watchlist`, { tone: "amber", icon: "＋" });
+    }
     setRecs((prev) => prev.filter((r) => r.id !== rec.id));
     await fetch(`/api/recs/${rec.id}`, {
       method: "PATCH",
@@ -120,7 +128,9 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
   async function submitReaction(rec: RecRow, payload: ReactionPayload) {
     if (payload.reaction === "loved" || payload.reaction === "loved_ironically") {
       sfxChime();
+      haptic([20, 30, 20]);
       setConfetti((c) => c + 1);
+      toast("Logged with love", { tone: "ticket", icon: "❤" });
     }
     await fetch("/api/logs", {
       method: "POST",
