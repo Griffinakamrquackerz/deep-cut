@@ -265,24 +265,37 @@ export default function TonightScreen({
         </div>
       )}
 
-      {/* Settle It — front-door standoff, the two-player growth loop */}
-      <Link
-        href="/settle"
-        onClick={() => sfxClick()}
-        className="flex items-center justify-between gap-3 rounded-lg border border-ticket/50 bg-gradient-to-r from-ticket/10 to-transparent p-3"
-      >
-        <div className="min-w-0">
-          <p className="font-display text-xl leading-tight text-cream">
-            ⚖️ CAN&apos;T AGREE? <span className="text-ticket">SETTLE IT.</span>
+      {/* Front-door modes: the two-player standoff and the lean-back channel */}
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/settle"
+          onClick={() => sfxClick()}
+          className="rounded-lg border border-ticket/50 bg-gradient-to-br from-ticket/10 to-transparent p-3"
+        >
+          <p className="font-display text-lg leading-tight text-cream">
+            ⚖️ CAN&apos;T AGREE?
+            <br />
+            <span className="text-ticket">SETTLE IT.</span>
           </p>
-          <p className="font-mono text-[0.6rem] text-dim">
-            Two of you, five questions — the house picks the movie.
+          <p className="mt-1 font-mono text-[0.55rem] text-dim">
+            Two of you, five questions — the house rules.
           </p>
-        </div>
-        <span className="shrink-0 rounded-full border border-ticket px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-ticket">
-          Start →
-        </span>
-      </Link>
+        </Link>
+        <Link
+          href="/roll"
+          onClick={() => sfxClick()}
+          className="rounded-lg border border-amber/50 bg-gradient-to-br from-amber/10 to-transparent p-3"
+        >
+          <p className="font-display text-lg leading-tight text-cream">
+            📺 TIRED BRAIN?
+            <br />
+            <span className="text-amber">JUST ROLL IT.</span>
+          </p>
+          <p className="mt-1 font-mono text-[0.55rem] text-dim">
+            A channel of deep cuts — trailers roll, you lean back.
+          </p>
+        </Link>
+      </div>
 
       <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
         <div>

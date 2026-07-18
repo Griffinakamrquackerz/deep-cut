@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -10,6 +11,36 @@ import MovieActions from "./MovieActions";
 import AdSlot from "@/components/AdSlot";
 import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
+
+// SEO: every film page is public and crawlable with its own title, description,
+// and poster card — free, compounding top-of-funnel discovery (the IMDb move).
+// cacheMovie hits our DB cache, so the render call right after is cheap.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const tmdbId = Number(id);
+  if (!Number.isInteger(tmdbId) || tmdbId <= 0) return {};
+  const movie = await cacheMovie(tmdbId).catch(() => null);
+  if (!movie) return {};
+
+  const title = `${movie.title}${movie.year ? ` (${movie.year})` : ""}`;
+  const description = movie.overview
+    ? `${movie.overview.slice(0, 150)}${movie.overview.length > 150 ? "…" : ""} Where to stream it, the trailer, and whether it's worth your night — the Deep Cut take.`
+    : `Where to stream ${movie.title}, the trailer, and whether it's worth your night — the Deep Cut take.`;
+  const poster = movie.poster_path
+    ? [{ url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`, width: 500, height: 750 }]
+    : undefined;
+
+  return {
+    title,
+    description,
+    openGraph: { title: `${title} · Deep Cut`, description, images: poster },
+    twitter: { card: "summary", title: `${title} · Deep Cut`, description },
+  };
+}
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
