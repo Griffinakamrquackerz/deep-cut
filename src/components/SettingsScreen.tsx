@@ -89,11 +89,6 @@ export default function SettingsScreen({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    const data = await res.json().catch(() => null);
-    if (data?.styleSkipped) {
-      setStyleMsg("Style saved locally, but the database needs its style upgrade (migration 0004) to remember it.");
-      return false;
-    }
     if (!res.ok) {
       setStyleMsg("Couldn't save that — try again.");
       return false;

@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cacheMovie } from "@/lib/tmdb";
 import { THEME_KEYS } from "@/lib/themes";
+import { writeStyleFallback } from "@/lib/profile-style";
 
 const Input = z.object({
   handle: z
@@ -42,15 +43,21 @@ export async function PATCH(request: Request) {
   const db = supabaseAdmin();
   let { error } = await db.from("users").update(updates).eq("id", user.id);
   if (error && ("profile_theme" in updates || "signature_movie_id" in updates)) {
-    // Migration 0004 may not be applied yet — retry with the legacy shape,
-    // but tell the client styling didn't stick.
+    // Migration 0004 not applied — persist style via the events fallback
+    // instead, and retry any remaining fields with the legacy shape.
+    const saved = await writeStyleFallback(user.id, {
+      theme: parsed.data.theme ?? undefined,
+      signatureMovieId: parsed.data.signatureMovieId,
+    });
     delete updates.profile_theme;
     delete updates.signature_movie_id;
     if (Object.keys(updates).length > 0) {
       ({ error } = await db.from("users").update(updates).eq("id", user.id));
-      if (!error) return NextResponse.json({ ok: true, styleSkipped: true });
     } else {
-      return NextResponse.json({ ok: false, styleSkipped: true }, { status: 200 });
+      error = null;
+    }
+    if (!error && !saved) {
+      return NextResponse.json({ error: "style_save_failed" }, { status: 500 });
     }
   }
   if (error) {

@@ -3,6 +3,7 @@ import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import SettingsScreen from "@/components/SettingsScreen";
 import type { Service } from "@/lib/services";
+import { resolveStyle } from "@/lib/profile-style";
 
 export default async function SettingsPage() {
   const user = await currentUser();
@@ -24,10 +25,11 @@ export default async function SettingsPage() {
     me = legacy.data ? { ...legacy.data, profile_theme: "marquee", signature_movie_id: null } : null;
   }
 
+  const style = await resolveStyle(user.id, me);
   const [services, sig] = await Promise.all([
     db.from("user_services").select("service").eq("user_id", user.id),
-    me?.signature_movie_id
-      ? db.from("movies").select("id, title, year").eq("id", me.signature_movie_id).maybeSingle()
+    style.signatureMovieId
+      ? db.from("movies").select("id, title, year").eq("id", style.signatureMovieId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -36,7 +38,7 @@ export default async function SettingsPage() {
       handle={me?.handle ?? null}
       services={(services.data ?? []).map((r) => r.service as Service)}
       avatarUrl={me?.avatar_url ?? null}
-      theme={me?.profile_theme ?? "marquee"}
+      theme={style.theme ?? "marquee"}
       signatureMovie={sig.data ?? null}
     />
   );

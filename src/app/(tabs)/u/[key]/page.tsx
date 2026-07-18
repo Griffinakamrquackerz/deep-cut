@@ -7,6 +7,7 @@ import FollowButton from "@/components/FollowButton";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import Avatar from "@/components/Avatar";
 import { themeClass } from "@/lib/themes";
+import { resolveStyle } from "@/lib/profile-style";
 import ShowMore from "@/components/ShowMore";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -51,6 +52,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
   } | null;
   if (!person) notFound();
 
+  // Theme + signature film: columns when migrated, events fallback otherwise.
+  const style = await resolveStyle(person.id, person);
+
   const me = await currentUser();
   const isMe = me?.id === person.id;
 
@@ -93,11 +97,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         : Promise.resolve({ data: null }),
     ]);
 
-  const { data: sigMovie } = person.signature_movie_id
+  const { data: sigMovie } = style.signatureMovieId
     ? await db
         .from("movies")
         .select("id, title, year, poster_path")
-        .eq("id", person.signature_movie_id)
+        .eq("id", style.signatureMovieId)
         .maybeSingle()
     : { data: null };
 
@@ -108,7 +112,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     .filter((m): m is MovieLite => !!m);
 
   const inner = (
-    <section className={`${themeClass(person.profile_theme)} flex flex-col gap-5`}>
+    <section className={`${themeClass(style.theme)} flex flex-col gap-5`}>
       <header className="relative -mx-4 -mt-4 px-4 pb-4 pt-6">
         {sigMovie?.poster_path && (
           <div className="signature-backdrop" aria-hidden>
