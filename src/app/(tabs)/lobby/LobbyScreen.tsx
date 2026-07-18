@@ -34,6 +34,10 @@ interface Person {
   avatar_url: string | null;
 }
 
+interface Suggestion extends Person {
+  reason: string;
+}
+
 const personName = (p: Person) => p.display_name ?? (p.handle ? `@${p.handle}` : "someone");
 const profileHref = (p: { id: string; handle: string | null }) => `/u/${p.handle ?? p.id}`;
 
@@ -51,6 +55,7 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
   const [results, setResults] = useState<Person[] | null>(null);
   const [followingList, setFollowingList] = useState<Person[]>([]);
   const [followers, setFollowers] = useState<Person[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [peopleLoaded, setPeopleLoaded] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -65,13 +70,17 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
   }, []);
 
   const loadPeople = useCallback(async () => {
-    const res = await fetch("/api/people");
-    if (res.ok) {
-      const data = await res.json();
+    const [peopleRes, sugRes] = await Promise.all([
+      fetch("/api/people"),
+      fetch("/api/people/suggestions"),
+    ]);
+    if (peopleRes.ok) {
+      const data = await peopleRes.json();
       setFollowingList(data.following ?? []);
       setFollowers(data.followers ?? []);
       setFollowing(data.followingIds ?? []);
     }
+    if (sugRes.ok) setSuggestions((await sugRes.json()).suggestions ?? []);
     setPeopleLoaded(true);
   }, []);
 
@@ -214,6 +223,35 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
             </p>
           ) : (
             <>
+              {suggestions.length > 0 && (
+                <div>
+                  <p className="eyebrow mb-2 text-ticket">★ Worth a follow</p>
+                  <ul className="flex flex-col gap-2">
+                    {suggestions
+                      .filter((s) => !following.includes(s.id))
+                      .map((s) => (
+                        <li
+                          key={s.id}
+                          className="flex items-center justify-between gap-2 rounded border border-line bg-surface p-3"
+                        >
+                          <Link href={profileHref(s)} className="flex min-w-0 items-center gap-2.5">
+                            <Avatar url={s.avatar_url} name={personName(s)} size="md" />
+                            <span className="min-w-0">
+                              <span className="block truncate font-display text-lg text-cream">
+                                {personName(s)}
+                              </span>
+                              <span className="block truncate font-mono text-[0.6rem] text-amber/80">
+                                {s.reason}
+                              </span>
+                            </span>
+                          </Link>
+                          <FollowButton userId={s.id} initiallyFollowing={false} />
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
               <div>
                 <p className="eyebrow mb-2">Following ({followingList.length})</p>
                 {followingList.length === 0 ? (
