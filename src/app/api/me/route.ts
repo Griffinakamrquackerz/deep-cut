@@ -41,8 +41,17 @@ export async function PATCH(request: Request) {
   if (Object.keys(updates).length === 0) return NextResponse.json({ ok: true });
 
   const db = supabaseAdmin();
+  const hasStyle = "profile_theme" in updates || "signature_movie_id" in updates;
   let { error } = await db.from("users").update(updates).eq("id", user.id);
-  if (error && ("profile_theme" in updates || "signature_movie_id" in updates)) {
+  if (!error && hasStyle) {
+    // Mirror successful column writes into the fallback so resolveStyle's
+    // default-vs-choice heuristic always has the truth to lean on.
+    await writeStyleFallback(user.id, {
+      theme: parsed.data.theme ?? undefined,
+      signatureMovieId: parsed.data.signatureMovieId,
+    });
+  }
+  if (error && hasStyle) {
     // Migration 0004 not applied — persist style via the events fallback
     // instead, and retry any remaining fields with the legacy shape.
     const saved = await writeStyleFallback(user.id, {

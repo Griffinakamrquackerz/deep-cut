@@ -46,13 +46,24 @@ export async function writeStyleFallback(
   return !error;
 }
 
-/** Column values win; fall back to event rows when they're absent or empty. */
+/**
+ * Column values win when they carry a real pick; otherwise consult the
+ * events fallback. A bare "marquee" column is the post-migration default —
+ * not proof of a choice — so it defers to the fallback too (writes keep the
+ * fallback in sync, so an intentional marquee pick still resolves right).
+ */
 export async function resolveStyle(
   userId: string,
   row: { profile_theme?: string | null; signature_movie_id?: number | null } | null,
 ): Promise<ProfileStyle> {
   const colTheme = row?.profile_theme ?? null;
   const colSig = row?.signature_movie_id ?? null;
-  if (colTheme || colSig) return { theme: colTheme, signatureMovieId: colSig };
-  return readStyleFallback(userId);
+  if ((colTheme && colTheme !== "marquee") || colSig) {
+    return { theme: colTheme, signatureMovieId: colSig };
+  }
+  const fallback = await readStyleFallback(userId);
+  return {
+    theme: fallback.theme ?? colTheme,
+    signatureMovieId: fallback.signatureMovieId ?? colSig,
+  };
 }

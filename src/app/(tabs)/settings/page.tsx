@@ -22,7 +22,8 @@ export default async function SettingsPage() {
       .select("handle, avatar_url")
       .eq("id", user.id)
       .maybeSingle();
-    me = legacy.data ? { ...legacy.data, profile_theme: "marquee", signature_movie_id: null } : null;
+    // null (not "marquee") so resolveStyle still consults the events fallback.
+    me = legacy.data ? { ...legacy.data, profile_theme: null, signature_movie_id: null } : null;
   }
 
   const style = await resolveStyle(user.id, me);
