@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FilmLeader from "@/components/FilmLeader";
-import VerdictPoster from "./VerdictPoster";
+import VerdictMedia from "./VerdictMedia";
 import { sfxClick, sfxGavel, sfxPop, haptic } from "@/lib/sfx";
 import {
   SETTLE_QUESTIONS,
@@ -157,7 +157,8 @@ export default function SettleFlow() {
   const [p2, setP2] = useState<SettleAnswers | null>(null);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
   const [vi, setVi] = useState(0); // verdict on the table (single mode)
-  const [enrich, setEnrich] = useState<Record<number, Enrich>>({});
+  // Real runtime + streaming reported up by VerdictMedia, keyed by title|year.
+  const [meta, setMeta] = useState<Record<string, Enrich>>({});
   const [deliberation, setDeliberation] = useState(DELIBERATIONS[0]);
 
   // Best-of-3 state
@@ -177,24 +178,6 @@ export default function SettleFlow() {
       haptic([40, 60, 40]);
     }
   }, [stage, vi]);
-
-  // Enrich the shown real-data film with real runtime + streaming.
-  useEffect(() => {
-    const film = current?.film;
-    if (!film?.tmdbId || enrich[film.tmdbId]) return;
-    let cancelled = false;
-    void fetch(`/api/settle/film?id=${film.tmdbId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled && d && film.tmdbId)
-          setEnrich((e) => ({ ...e, [film.tmdbId!]: { runtime: d.runtime, streaming: d.streaming ?? [] } }));
-      })
-      .catch(() => null);
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.film.tmdbId]);
 
   // Cycle jury quips while deliberating.
   useEffect(() => {
@@ -413,20 +396,22 @@ export default function SettleFlow() {
 
   if (!current) return null;
   const { film } = current;
-  const ext = film.tmdbId ? enrich[film.tmdbId] : undefined;
-  const runtime = ext?.runtime ?? (film.tmdbId ? null : film.min);
-  const streaming = film.tmdbId ? (ext?.streaming ?? []) : film.streaming;
+  const mkey = `${film.title}|${film.year}`;
+  const m = meta[mkey];
+  const runtime = m?.runtime ?? (film.tmdbId ? null : film.min);
+  const streaming = m?.streaming?.length ? m.streaming : film.tmdbId ? [] : film.streaming;
 
   const FilmCard = (
-    <div className="film-card mx-auto flex w-full max-w-sm gap-4 rounded-lg p-4">
-      <div className="w-28 shrink-0">
-        <VerdictPoster
-          title={film.title}
-          year={film.year}
-          genres={film.genres}
-          knownPoster={film.posterPath}
-        />
-      </div>
+    <div className="film-card mx-auto flex w-full max-w-sm flex-col gap-3 rounded-lg p-4">
+      <VerdictMedia
+        key={mkey}
+        title={film.title}
+        year={film.year}
+        genres={film.genres}
+        tmdbId={film.tmdbId}
+        knownPoster={film.posterPath}
+        onMeta={(mm) => setMeta((prev) => ({ ...prev, [mkey]: mm }))}
+      />
       <div className="min-w-0">
         <p className="font-display text-2xl leading-tight text-cream">{film.title}</p>
         <p className="font-mono text-[0.65rem] text-dim">
@@ -471,7 +456,7 @@ export default function SettleFlow() {
           {FilmCard}
           {flash && (
             <span
-              className={`verdict-stamp stamp-slam absolute right-6 top-2 z-10 text-2xl ${
+              className={`verdict-stamp stamp-slam pointer-events-none absolute right-6 top-2 z-10 text-2xl ${
                 flash === "tossed" ? "tossed" : ""
               }`}
             >
@@ -524,7 +509,7 @@ export default function SettleFlow() {
         {FilmCard}
         <span
           key={vi}
-          className={`verdict-stamp stamp-slam absolute right-6 top-1 z-10 text-3xl ${
+          className={`verdict-stamp stamp-slam pointer-events-none absolute right-6 top-1 z-10 text-3xl ${
             isRuling && !finalists.length ? "tossed" : ""
           }`}
         >
