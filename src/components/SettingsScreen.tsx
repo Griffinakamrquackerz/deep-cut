@@ -223,7 +223,7 @@ export default function SettingsScreen({
         <div className="mt-4">
           <p className="font-mono text-xs uppercase tracking-wider text-cream">Signature film</p>
           <p className="font-mono text-[0.6rem] text-dim">
-            your profile song, but cinema — its poster backdrops your card
+            your profile song, but cinema — its stills become a collage on your card
           </p>
           {signature ? (
             <div className="mt-2 flex items-center justify-between rounded border border-amber/60 bg-bg px-3 py-2">

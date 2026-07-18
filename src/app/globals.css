@@ -320,26 +320,25 @@ body {
 }
 .pt-golden img { filter: sepia(0.55) contrast(1.05); }
 
-/* Signature-film backdrop behind a profile header. */
-.signature-backdrop {
+/* Signature-film shrine — stills as photo prints taped to the wall. */
+.shrine-photo {
+  border: 4px solid rgba(245, 240, 230, 0.92);
+  border-bottom-width: 14px; /* instant-print chin */
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.75);
+  background: #f5f0e6;
+}
+.shrine-tape {
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+  top: -7px;
+  left: 50%;
+  z-index: 1;
+  height: 12px;
+  width: 44px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255, 180, 84, 0.35);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
 }
-.signature-backdrop img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(14px) brightness(0.55) !important;
-  transform: scale(1.15);
-}
-.signature-backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(23, 18, 16, 0.25), var(--color-bg));
-}
+
 @keyframes wiggle {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-2deg); }

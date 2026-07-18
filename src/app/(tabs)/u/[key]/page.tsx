@@ -8,6 +8,8 @@ import MarqueeBulbs from "@/components/MarqueeBulbs";
 import Avatar from "@/components/Avatar";
 import { themeClass } from "@/lib/themes";
 import { resolveStyle } from "@/lib/profile-style";
+import { getMovieStills } from "@/lib/tmdb";
+import SignatureShrine from "@/components/SignatureShrine";
 import ShowMore from "@/components/ShowMore";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -97,13 +99,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         : Promise.resolve({ data: null }),
     ]);
 
-  const { data: sigMovie } = style.signatureMovieId
-    ? await db
-        .from("movies")
-        .select("id, title, year, poster_path")
-        .eq("id", style.signatureMovieId)
-        .maybeSingle()
-    : { data: null };
+  const [{ data: sigMovie }, sigStills] = style.signatureMovieId
+    ? await Promise.all([
+        db
+          .from("movies")
+          .select("id, title, year, poster_path")
+          .eq("id", style.signatureMovieId)
+          .maybeSingle(),
+        getMovieStills(style.signatureMovieId).catch(() => [] as string[]),
+      ])
+    : [{ data: null }, [] as string[]];
 
   const name = person.display_name ?? (person.handle ? `@${person.handle}` : "A film person");
   const threads = (profile.data?.threads ?? []) as Array<{ title: string; line: string }>;
@@ -113,14 +118,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
 
   const inner = (
     <section className={`${themeClass(style.theme)} flex flex-col gap-5`}>
-      <header className="relative -mx-4 -mt-4 px-4 pb-4 pt-6">
-        {sigMovie?.poster_path && (
-          <div className="signature-backdrop" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`https://image.tmdb.org/t/p/w500${sigMovie.poster_path}`} alt="" />
-          </div>
-        )}
-        <div className="relative">
+      <header>
+        <div>
           <MarqueeBulbs />
           <p className="eyebrow mt-2">Member card</p>
           <div className="flex items-start justify-between gap-3">
@@ -150,17 +149,18 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
               <FollowButton userId={person.id} initiallyFollowing={!!iFollow.data} size="lg" />
             ) : null}
           </div>
-          {sigMovie && (
-            <p className="mt-3 font-mono text-[0.65rem] text-dim">
-              🎞 Signature film:{" "}
-              <Link href={`/m/${sigMovie.id}`} className="text-amber underline decoration-amber/40">
-                {sigMovie.title}
-              </Link>{" "}
-              {sigMovie.year ?? ""}
-            </p>
-          )}
         </div>
       </header>
+
+      {sigMovie && (
+        <SignatureShrine
+          movieId={sigMovie.id}
+          title={sigMovie.title}
+          year={sigMovie.year}
+          stills={sigStills}
+          posterPath={sigMovie.poster_path}
+        />
+      )}
 
       {threads.length > 0 && (
         <div className="ticket-edge rounded bg-surface p-4">

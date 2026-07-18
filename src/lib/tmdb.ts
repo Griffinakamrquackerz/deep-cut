@@ -213,6 +213,17 @@ export function pickBestVideo(videos: TmdbVideo[]): { key: string; name: string 
   return best ? { key: best.key, name: best.name } : null;
 }
 
+/** Top production stills (backdrop file_paths) for a film, best-voted first. */
+export async function getMovieStills(tmdbId: number, limit = 6): Promise<string[]> {
+  const data = await tmdbFetch<{
+    backdrops?: Array<{ file_path: string; vote_count: number }>;
+  }>(`/movie/${tmdbId}/images`, { include_image_language: "null,en" });
+  return (data?.backdrops ?? [])
+    .sort((a, b) => b.vote_count - a.vote_count)
+    .slice(0, limit)
+    .map((b) => b.file_path);
+}
+
 /** Best YouTube trailer for a film, or null when TMDB has none. */
 export async function getMovieTrailer(
   tmdbId: number,
