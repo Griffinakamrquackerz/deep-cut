@@ -14,14 +14,34 @@ const plexMono = IBM_Plex_Mono({
 });
 const karla = Karla({ subsets: ["latin"], variable: "--font-karla" });
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://thedeepcut.xyz";
+
 export const metadata: Metadata = {
-  title: "Deep Cut",
-  description: "Movies you haven't met yet.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Deep Cut — movies you haven't met yet",
+    template: "%s · Deep Cut",
+  },
+  description:
+    "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Deep Cut",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Deep Cut",
+    title: "Deep Cut — movies you haven't met yet",
+    description:
+      "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Deep Cut — movies you haven't met yet",
+    description: "An AI repertory theater for films you haven't met yet.",
   },
 };
 

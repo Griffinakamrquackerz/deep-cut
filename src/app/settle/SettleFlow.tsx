@@ -218,14 +218,51 @@ export default function SettleFlow() {
     setStage("intro");
   }
 
-  async function shareRuling(film: { title: string; year: number }) {
+  async function shareRuling(
+    film: {
+      title: string;
+      year: number;
+      posterPath?: string | null;
+      vibe: string;
+      houseConviction: number;
+    },
+    overruled: boolean,
+  ) {
     sfxPop();
-    const url = typeof window !== "undefined" ? window.location.origin + "/settle" : "";
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "https://thedeepcut.xyz";
+    const params = new URLSearchParams({
+      title: film.title,
+      year: String(film.year),
+      vibe: film.vibe,
+      conviction: String(film.houseConviction),
+      mode: overruled ? "overruled" : "settled",
+    });
+    if (film.posterPath) params.set("poster", film.posterPath);
+    if (p1?.name) params.set("p1", p1.name);
+    if (p2?.name) params.set("p2", p2.name);
+    const imageUrl = `${origin}/api/settle/verdict-image?${params.toString()}`;
+    const link = `${origin}/settle`;
     const text = `⚖️ The house says we're watching ${film.title} (${film.year}). Settle yours:`;
+
+    // Best case: share the actual verdict card (Web Share Level 2 — iOS/Android).
+    try {
+      if (typeof navigator !== "undefined" && "canShare" in navigator) {
+        const blob = await fetch(imageUrl).then((r) => r.blob());
+        const file = new File([blob], "settled.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text, title: "Settle It — Deep Cut" });
+          return;
+        }
+      }
+    } catch {
+      // fall through to link sharing
+    }
+
     if (typeof navigator !== "undefined" && navigator.share) {
-      await navigator.share({ title: "Settle It — Deep Cut", text, url }).catch(() => null);
+      await navigator.share({ title: "Settle It — Deep Cut", text, url: link }).catch(() => null);
     } else if (typeof navigator !== "undefined") {
-      await navigator.clipboard.writeText(`${text} ${url}`).catch(() => null);
+      await navigator.clipboard.writeText(`${text} ${link}`).catch(() => null);
     }
   }
 
@@ -563,7 +600,7 @@ export default function SettleFlow() {
           ★ That&apos;ll do ★
         </button>
         <button
-          onClick={() => void shareRuling(film)}
+          onClick={() => void shareRuling(film, isRuling && !finalists.length)}
           className="rounded border border-amber px-5 py-3 font-mono text-xs uppercase tracking-widest text-amber"
         >
           📸 Share the ruling
