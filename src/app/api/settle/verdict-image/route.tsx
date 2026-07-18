@@ -102,9 +102,23 @@ export async function GET(req: Request) {
               <span style={{ color: CREAM }}>{p2}</span>
             </div>
           ) : null}
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <span style={{ color: AMBER, fontSize: 34 }}>{"★".repeat(conviction)}</span>
-            <span style={{ color: LINE, fontSize: 34 }}>{"★".repeat(5 - conviction)}</span>
+          {/* Conviction as CSS pips — next/og's default font has no ★ glyph. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 18 }}>
+            <span style={{ color: DIM, fontSize: 22, letterSpacing: 3 }}>CONVICTION</span>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: i < conviction ? AMBER : "transparent",
+                    border: `3px solid ${i < conviction ? AMBER : LINE}`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
           <span style={{ color: DIM, fontSize: 24, letterSpacing: 4, marginTop: 18 }}>thedeepcut.xyz</span>
         </div>
