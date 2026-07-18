@@ -6,7 +6,17 @@ import Landing from "@/components/Landing";
 import type { Service } from "@/lib/services";
 import { isPremium } from "@/lib/premium";
 
-export default async function TonightPage() {
+export default async function TonightPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  // Safety net: if a Supabase auth code lands on the homepage (misconfigured
+  // Site URL, older email templates), hand it to the real callback instead of
+  // stranding the user on the landing page.
+  const { code } = await searchParams;
+  if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+
   const user = await currentUser();
   if (!user) {
     // Signed-out front door: sell the fantasy with a wall of real posters.
