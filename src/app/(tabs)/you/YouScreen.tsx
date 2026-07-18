@@ -11,6 +11,7 @@ import LetterboxdImport from "@/components/LetterboxdImport";
 import Avatar from "@/components/Avatar";
 import ProjectionistCard from "@/components/ProjectionistCard";
 import StreakBadge from "@/components/StreakBadge";
+import SignatureShrine from "@/components/SignatureShrine";
 import type { StreakStats } from "@/lib/streak";
 import RankUp from "@/components/RankUp";
 import type { TasteStats } from "@/lib/rank";
@@ -31,6 +32,13 @@ interface Thread {
 export default function YouScreen(props: {
   stats: TasteStats;
   streak: StreakStats;
+  signature: {
+    id: number;
+    title: string;
+    year: number | null;
+    posterPath: string | null;
+    stills: string[];
+  } | null;
   avatarUrl: string | null;
   threads: Thread[];
   version: number;
@@ -106,6 +114,45 @@ export default function YouScreen(props: {
           </div>
         </div>
       </header>
+
+      {/* Signature film — the shrine that fronts your public profile */}
+      {props.signature ? (
+        <div>
+          <div className="mb-2 flex items-baseline justify-between">
+            <p className="eyebrow">Your signature film</p>
+            <Link
+              href="/settings"
+              className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
+            >
+              Change ↗
+            </Link>
+          </div>
+          <SignatureShrine
+            movieId={props.signature.id}
+            title={props.signature.title}
+            year={props.signature.year}
+            stills={props.signature.stills}
+            posterPath={props.signature.posterPath}
+          />
+        </div>
+      ) : (
+        <Link
+          href="/settings"
+          className="flex items-center justify-between rounded border border-dashed border-line bg-surface/50 p-4"
+        >
+          <span>
+            <span className="block font-mono text-xs uppercase tracking-widest text-amber">
+              ✦ Pick your signature film
+            </span>
+            <span className="font-mono text-[0.6rem] text-dim">
+              the one that says everything — front and center on your profile
+            </span>
+          </span>
+          <span className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
+            Settings ↗
+          </span>
+        </Link>
+      )}
 
       {/* Taste card — ticket stub */}
       <div className="ticket-edge relative overflow-hidden rounded bg-surface p-5">

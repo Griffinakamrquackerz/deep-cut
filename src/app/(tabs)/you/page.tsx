@@ -5,15 +5,31 @@ import YouScreen from "./YouScreen";
 import type { Service } from "@/lib/services";
 import { computeTasteStats } from "@/lib/rank";
 import { computeStreak } from "@/lib/streak";
+import { resolveStyle } from "@/lib/profile-style";
+import { getMovieStills } from "@/lib/tmdb";
 
 export default async function YouPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
 
   const db = supabaseAdmin();
-  const [profile, me, services, watchlist, loved, history] = await Promise.all([
+
+  // Style columns arrive with migration 0004 — retry with the legacy shape so
+  // the signature film still resolves (via the events fallback) pre-migration.
+  const styleCols = "handle, display_name, avatar_url, profile_theme, signature_movie_id";
+  const legacyCols = "handle, display_name, avatar_url";
+  let meRes = await db.from("users").select(styleCols).eq("id", user.id).maybeSingle();
+  if (meRes.error) meRes = await db.from("users").select(legacyCols).eq("id", user.id).maybeSingle();
+  const me = { data: meRes.data as {
+    handle: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+    profile_theme?: string | null;
+    signature_movie_id?: number | null;
+  } | null };
+
+  const [profile, services, watchlist, loved, history] = await Promise.all([
     db.from("taste_profiles").select("threads, version, generated_at").eq("user_id", user.id).maybeSingle(),
-    db.from("users").select("handle, display_name, avatar_url").eq("id", user.id).maybeSingle(),
     db.from("user_services").select("service").eq("user_id", user.id),
     db
       .from("recommendations")
@@ -43,10 +59,34 @@ export default async function YouPage() {
     Date.now(),
   );
 
+  // Signature film — the same shrine that fronts your public profile, now on
+  // your own tab. Resolves from columns or the events fallback.
+  const style = await resolveStyle(user.id, me.data);
+  const [{ data: sigMovie }, sigStills] = style.signatureMovieId
+    ? await Promise.all([
+        db
+          .from("movies")
+          .select("id, title, year, poster_path")
+          .eq("id", style.signatureMovieId)
+          .maybeSingle(),
+        getMovieStills(style.signatureMovieId).catch(() => [] as string[]),
+      ])
+    : [{ data: null }, [] as string[]];
+  const signature = sigMovie
+    ? {
+        id: sigMovie.id as number,
+        title: sigMovie.title as string,
+        year: (sigMovie.year as number | null) ?? null,
+        posterPath: (sigMovie.poster_path as string | null) ?? null,
+        stills: sigStills,
+      }
+    : null;
+
   return (
     <YouScreen
       stats={stats}
       streak={streak}
+      signature={signature}
       threads={(profile.data?.threads ?? []) as Array<{ title: string; line: string }>}
       version={profile.data?.version ?? 0}
       handle={me.data?.handle ?? null}
