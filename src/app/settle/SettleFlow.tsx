@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FilmLeader from "@/components/FilmLeader";
-import Poster from "@/components/Poster";
+import VerdictPoster from "./VerdictPoster";
 import {
   SETTLE_QUESTIONS,
   rankVerdicts,
@@ -256,7 +256,7 @@ export default function SettleFlow() {
 
       <div className="film-card mx-auto flex w-full max-w-sm gap-4 rounded-lg p-4">
         <div className="w-28 shrink-0">
-          <Poster posterPath={null} title={film.title} year={film.year} genres={film.genres} />
+          <VerdictPoster title={film.title} year={film.year} genres={film.genres} />
         </div>
         <div className="min-w-0">
           <p className="font-display text-2xl leading-tight text-cream">{film.title}</p>
