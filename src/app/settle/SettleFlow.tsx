@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FilmLeader from "@/components/FilmLeader";
+import RatingsBadges from "@/components/RatingsBadges";
 import VerdictMedia from "./VerdictMedia";
+import type { MovieRatings } from "@/lib/tmdb";
 import { sfxClick, sfxGavel, sfxPop, haptic } from "@/lib/sfx";
 import {
   SETTLE_QUESTIONS,
@@ -21,6 +23,7 @@ type Sheet = Partial<Record<(typeof SETTLE_QUESTIONS)[number]["key"], unknown>>;
 interface Enrich {
   runtime: number | null;
   streaming: string[];
+  ratings: MovieRatings | null;
 }
 
 // Campy jury quips cycled on the deliberation screen.
@@ -421,6 +424,7 @@ export default function SettleFlow() {
         <p className="mt-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-amber/80">
           {film.genres.join(" · ")}
         </p>
+        {m?.ratings && <RatingsBadges className="mt-1.5" ratings={m.ratings} />}
         <p className="mt-2 text-sm italic text-amber">{film.vibe}</p>
         {streaming.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Poster from "@/components/Poster";
+import type { MovieRatings } from "@/lib/tmdb";
 
 // Cache resolution + meta so re-rolls and revisits are instant.
 const idCache = new Map<string, number | null>();
@@ -8,6 +9,7 @@ interface Meta {
   trailerKey: string | null;
   runtime: number | null;
   streaming: string[];
+  ratings: MovieRatings | null;
 }
 const metaCache = new Map<number, Meta>();
 
@@ -30,7 +32,7 @@ export default function VerdictMedia({
   genres: string[];
   tmdbId?: number;
   knownPoster?: string | null;
-  onMeta?: (m: { runtime: number | null; streaming: string[] }) => void;
+  onMeta?: (m: { runtime: number | null; streaming: string[]; ratings: MovieRatings | null }) => void;
 }) {
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [posterPath, setPosterPath] = useState<string | null>(knownPoster ?? null);
@@ -72,10 +74,10 @@ export default function VerdictMedia({
       if (!meta) {
         try {
           const r = await fetch(`/api/settle/film?id=${id}`);
-          meta = r.ok ? await r.json() : { trailerKey: null, runtime: null, streaming: [] };
+          meta = r.ok ? await r.json() : { trailerKey: null, runtime: null, streaming: [], ratings: null };
           metaCache.set(id, meta!);
         } catch {
-          meta = { trailerKey: null, runtime: null, streaming: [] };
+          meta = { trailerKey: null, runtime: null, streaming: [], ratings: null };
         }
       }
       if (cancelled) return;
@@ -83,7 +85,7 @@ export default function VerdictMedia({
       setResolved(true);
       if (!metaSent.current) {
         metaSent.current = true;
-        onMeta?.({ runtime: meta!.runtime, streaming: meta!.streaming });
+        onMeta?.({ runtime: meta!.runtime, streaming: meta!.streaming, ratings: meta!.ratings });
       }
     }
 
