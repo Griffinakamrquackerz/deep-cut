@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { pushConfigured, sendPush, type PushSub } from "@/lib/push";
+import { siteUrl } from "@/lib/site";
 
 // The Friday Night Deal — a weekly nudge that fires when people are actually
 // deciding what to watch. Wired to a Vercel Cron (see vercel.json). Auth is a
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
     if (title) titleByUser.set(uid, title);
   }
 
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://thedeepcut.xyz";
+  const base = siteUrl();
   let sent = 0;
   const expired: string[] = [];
 

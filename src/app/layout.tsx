@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Bebas_Neue, IBM_Plex_Mono, Karla } from "next/font/google";
 import PwaSetup from "@/components/PwaSetup";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
@@ -14,7 +15,7 @@ const plexMono = IBM_Plex_Mono({
 });
 const karla = Karla({ subsets: ["latin"], variable: "--font-karla" });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://thedeepcut.xyz";
+const SITE_URL = siteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
