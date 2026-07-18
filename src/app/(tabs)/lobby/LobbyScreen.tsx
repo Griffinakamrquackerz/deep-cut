@@ -40,7 +40,7 @@ const profileHref = (p: { id: string; handle: string | null }) => `/u/${p.handle
 const feedName = (actor: { id: string; handle: string | null; display_name: string | null }, myId: string) =>
   actor.id === myId ? "You" : actorName(actor);
 
-export default function LobbyScreen({ myId }: { myId: string }) {
+export default function LobbyScreen({ myId, premium = false }: { myId: string; premium?: boolean }) {
   const [view, setView] = useState<"feed" | "people">("feed");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
@@ -265,7 +265,7 @@ export default function LobbyScreen({ myId }: { myId: string }) {
             const stamp = item.kind === "watch" ? REACTION_STAMP[item.reaction] : null;
             return (
               <li key={`${item.kind}-${item.id}`}>
-                {idx === 2 && (
+                {idx === 2 && !premium && (
                   <div className="mb-4">
                     <AdSlot index={1} slot="lobby-feed" />
                   </div>

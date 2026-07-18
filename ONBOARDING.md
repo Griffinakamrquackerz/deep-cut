@@ -46,7 +46,9 @@ repo root — its preview builds of this branch are noise, ignore them.
 `LLM_API_KEY` (Groq), `TMDB_API_KEY`, `OMDB_API_KEY`,
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
 `NEXT_PUBLIC_APP_URL`, `DAILY_REC_BATCHES`, `DAILY_PROFILE_REGENS`,
-`NEXT_PUBLIC_ADSENSE_CLIENT` (unset → house ads), `NEXT_PUBLIC_ENABLE_GOOGLE` (unset → no Google button).
+`NEXT_PUBLIC_ADSENSE_CLIENT` (unset → house ads), `NEXT_PUBLIC_ENABLE_GOOGLE` (unset → no Google button),
+`STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` (unset → premium storefront hidden),
+`DAILY_REC_BATCHES_FREE` (free-tier deal cap, default 10; premium uses `DAILY_REC_BATCHES`, default 30).
 
 > **Rotate every key at handoff** (Supabase, Groq, TMDB, OMDb). At least one Groq key was
 > pasted in a chat once. Keys live in Vercel → deepcut → Settings → Environment Variables.
@@ -85,7 +87,15 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
   PWA (manifest + `public/sw.js` v2 — bump its cache names when changing caching).
 - **Safety/App Store:** account deletion `/api/account` + Settings danger zone; block/report
   `/api/safety` + `SafetyActions.tsx` (blocks filter feed + people); `/terms`, `/privacy`.
-- **Ads:** `AdSlot.tsx` — env-gated AdSense with house-ad fallback; `/ads.txt` route.
+- **Ads:** `AdSlot.tsx` — env-gated AdSense with house-ad fallback; `/ads.txt` route; hidden
+  everywhere for premium members.
+- **Premium ("Balcony Seats"):** $4.99/mo after a 90-day trial via Stripe — `src/lib/stripe.ts`
+  (raw REST, no SDK; hand-rolled webhook signature verification), `src/lib/premium.ts`
+  (users.premium_until with events fallback pre-0005), routes `/api/stripe/{checkout,webhook,portal}`,
+  storefront in Settings. Free = 10 deals/day + ads; premium = 30 deals/day, ad-free. Stripe
+  setup: create product/price, add the three env vars, point a webhook at
+  `/api/stripe/webhook` with events `checkout.session.completed`,
+  `customer.subscription.updated`, `customer.subscription.deleted`.
 
 ## 6. Known constraints & capacity
 

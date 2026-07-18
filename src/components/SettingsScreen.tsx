@@ -34,12 +34,20 @@ export default function SettingsScreen({
   avatarUrl,
   theme,
   signatureMovie,
+  premiumActive,
+  premiumUntil,
+  hasStripeCustomer,
+  premiumAvailable,
 }: {
   handle: string | null;
   services: Service[];
   avatarUrl: string | null;
   theme: string;
   signatureMovie: SignatureMovie | null;
+  premiumActive: boolean;
+  premiumUntil: string | null;
+  hasStripeCustomer: boolean;
+  premiumAvailable: boolean;
 }) {
   const router = useRouter();
   const [newHandle, setNewHandle] = useState(handle ?? "");
@@ -153,6 +161,13 @@ export default function SettingsScreen({
         <p className="eyebrow mt-2">Projection booth</p>
         <h1 className="glow-amber font-display text-4xl text-amber">SETTINGS</h1>
       </header>
+
+      <BalconySeats
+        active={premiumActive}
+        until={premiumUntil}
+        hasCustomer={hasStripeCustomer}
+        available={premiumAvailable}
+      />
 
       {/* ── Your marquee look ─────────────────────────────────────── */}
       <div className="ticket-edge rounded bg-surface p-4">
@@ -435,6 +450,85 @@ function DangerZone() {
         </button>
       </div>
       {error && <p className="mt-2 font-mono text-xs text-ticket">{error}</p>}
+    </div>
+  );
+}
+
+
+/** The Balcony Seats storefront: 3 free months, then $4.99/mo. */
+function BalconySeats({
+  active,
+  until,
+  hasCustomer,
+  available,
+}: {
+  active: boolean;
+  until: string | null;
+  hasCustomer: boolean;
+  available: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function go(path: "/api/stripe/checkout" | "/api/stripe/portal") {
+    setBusy(true);
+    setErr(null);
+    const res = await fetch(path, { method: "POST" });
+    const data = await res.json().catch(() => null);
+    if (res.ok && data?.url) {
+      window.location.href = data.url;
+      return;
+    }
+    setErr(data?.error ? String(data.error).slice(0, 160) : "Something jammed — try again.");
+    setBusy(false);
+  }
+
+  if (!available && !active) return null; // Stripe not configured yet — hide the storefront
+
+  return (
+    <div className="film-card rounded-lg p-4">
+      <div className="flex items-baseline justify-between">
+        <p className="eyebrow text-ticket">Balcony Seats</p>
+        {active && <span className="stamp stamp-gold">Member</span>}
+      </div>
+      {active ? (
+        <>
+          <p className="mt-1 font-display text-2xl text-amber">🥂 YOU&apos;RE IN THE BALCONY</p>
+          <p className="font-mono text-[0.65rem] text-dim">
+            30 deals a day · zero ads
+            {until ? ` · renews ${new Date(until).toLocaleDateString()}` : ""}
+          </p>
+          {hasCustomer && (
+            <button
+              onClick={() => void go("/api/stripe/portal")}
+              disabled={busy}
+              className="mt-3 rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim disabled:opacity-50"
+            >
+              {busy ? "Opening…" : "Manage subscription"}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="mt-1 font-display text-2xl text-amber">MOVE UP TO THE BALCONY</p>
+          <ul className="mt-1 flex flex-col gap-0.5 font-mono text-[0.65rem] text-cream/90">
+            <li>🎟 30 deals a day (general admission gets 10)</li>
+            <li>🚫 Zero ads, anywhere</li>
+            <li>🥂 Member stamp on your card</li>
+          </ul>
+          <button
+            onClick={() => void go("/api/stripe/checkout")}
+            disabled={busy}
+            className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
+          >
+            {busy ? "Opening the box office…" : "★ 3 months free, then $4.99/mo ★"}
+          </button>
+          <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+            the price of one rental · cancel anytime
+          </p>
+        </>
+      )}
+      {err && <p className="mt-2 font-mono text-xs text-ticket">{err}</p>}
     </div>
   );
 }

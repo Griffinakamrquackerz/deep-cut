@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dealRecs } from "@/lib/engine";
-import { checkAndIncrement, refund } from "@/lib/rate-limit";
+import { checkAndIncrement, refund, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib/rate-limit";
+import { isPremium } from "@/lib/premium";
 import { RecBatchInput } from "@/lib/schemas";
 
 // 60s is the safe ceiling on Vercel's free (Hobby) plan.
@@ -51,9 +52,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
 
-  const allowed = await checkAndIncrement(user.id, "rec_batch");
+  // General Admission gets FREE_REC_BATCHES/day; Balcony Seats gets the full house.
+  const premium = await isPremium(user.id);
+  const limit = premium ? DAILY_LIMITS.rec_batch : FREE_REC_BATCHES;
+  const allowed = await checkAndIncrement(user.id, "rec_batch", limit);
   if (!allowed) {
-    return NextResponse.json({ error: "rate_limited", limit: "3 batches/day" }, { status: 429 });
+    return NextResponse.json(
+      { error: "rate_limited", limit: `${limit} deals/day`, premium },
+      { status: 429 },
+    );
   }
 
   try {

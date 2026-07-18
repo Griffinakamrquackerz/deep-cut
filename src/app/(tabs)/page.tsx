@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import TonightScreen from "@/components/TonightScreen";
 import Landing from "@/components/Landing";
 import type { Service } from "@/lib/services";
+import { isPremium } from "@/lib/premium";
 
 export default async function TonightPage() {
   const user = await currentUser();
@@ -29,5 +30,6 @@ export default async function TonightPage() {
   if (!count || count < 8) redirect("/welcome");
 
   const myServices = (svcRows ?? []).map((r) => r.service as Service);
-  return <TonightScreen myServices={myServices} />;
+  const premium = await isPremium(user.id);
+  return <TonightScreen myServices={myServices} premium={premium} />;
 }

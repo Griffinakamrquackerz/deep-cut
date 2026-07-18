@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import SettingsScreen from "@/components/SettingsScreen";
 import type { Service } from "@/lib/services";
 import { resolveStyle } from "@/lib/profile-style";
+import { getPremium, premiumConfigured } from "@/lib/premium";
 
 export default async function SettingsPage() {
   const user = await currentUser();
@@ -27,6 +28,9 @@ export default async function SettingsPage() {
   }
 
   const style = await resolveStyle(user.id, me);
+  const premiumState = await getPremium(user.id);
+  const premiumActive =
+    !!premiumState.premiumUntil && new Date(premiumState.premiumUntil).getTime() > Date.now();
   const [services, sig] = await Promise.all([
     db.from("user_services").select("service").eq("user_id", user.id),
     style.signatureMovieId
@@ -41,6 +45,10 @@ export default async function SettingsPage() {
       avatarUrl={me?.avatar_url ?? null}
       theme={style.theme ?? "marquee"}
       signatureMovie={sig.data ?? null}
+      premiumActive={premiumActive}
+      premiumUntil={premiumState.premiumUntil}
+      hasStripeCustomer={!!premiumState.stripeCustomerId}
+      premiumAvailable={premiumConfigured()}
     />
   );
 }

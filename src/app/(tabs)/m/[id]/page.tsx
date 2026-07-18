@@ -8,6 +8,7 @@ import ServiceBadges from "@/components/ServiceBadges";
 import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
 import AdSlot from "@/components/AdSlot";
+import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
@@ -96,7 +97,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
         )}
       </div>
 
-      <AdSlot index={2} slot="movie-page" />
+      {!(user && (await isPremium(user.id))) && <AdSlot index={2} slot="movie-page" />}
 
       <p className="font-mono text-[0.55rem] text-dim/70">
         Metadata & streaming data: TMDB (JustWatch). This product uses the TMDB API but is not

@@ -40,7 +40,13 @@ function availableServices(rec: RecRow): Service[] {
   return SERVICES.filter((s) => p[s]);
 }
 
-export default function TonightScreen({ myServices }: { myServices: Service[] }) {
+export default function TonightScreen({
+  myServices,
+  premium = false,
+}: {
+  myServices: Service[];
+  premium?: boolean;
+}) {
   const [recs, setRecs] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
@@ -86,7 +92,12 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
       }),
     });
     if (res.status === 429) {
-      setMessage("You've hit today's deal limit — back tomorrow.");
+      const data = await res.json().catch(() => null);
+      setMessage(
+        data?.premium === false
+          ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 3 months free in Settings."
+          : "You've hit today's deal limit — back tomorrow.",
+      );
     } else if (!res.ok) {
       const data = await res.json().catch(() => null);
       const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
@@ -280,7 +291,7 @@ export default function TonightScreen({ myServices }: { myServices: Service[] })
             const avail = availableServices(rec);
             return (
               <React.Fragment key={rec.id}>
-              {idx === 3 && (
+              {idx === 3 && !premium && (
                 <li>
                   <AdSlot index={0} slot="tonight-feed" />
                 </li>

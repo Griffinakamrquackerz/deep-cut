@@ -2,8 +2,9 @@ import { supabaseAdmin } from "./supabase/admin";
 
 // Per-user daily caps. These are product guardrails, NOT cost limits — on the
 // free Groq/TMDB/OMDb tiers there's no dollar spend. Tune via env:
-//   DAILY_REC_BATCHES     (default 25)  — "Deal me more" batches/day
-//   DAILY_PROFILE_REGENS  (default 10)  — manual "refresh my profile"/day
+//   DAILY_REC_BATCHES         (default 30) — premium "Deal me more" batches/day
+//   DAILY_REC_BATCHES_FREE    (default 10) — free-tier batches/day
+//   DAILY_PROFILE_REGENS      (default 10) — manual "refresh my profile"/day
 // Set a big number (e.g. 9999) for effectively unlimited on a personal instance.
 function envInt(name: string, fallback: number): number {
   const v = Number(process.env[name]);
@@ -12,13 +13,20 @@ function envInt(name: string, fallback: number): number {
 
 export const DAILY_LIMITS = {
   profile_regen: envInt("DAILY_PROFILE_REGENS", 10),
-  rec_batch: envInt("DAILY_REC_BATCHES", 25),
+  rec_batch: envInt("DAILY_REC_BATCHES", 30), // Balcony Seats (premium)
 };
+
+/** Free-tier (General Admission) deal cap. */
+export const FREE_REC_BATCHES = envInt("DAILY_REC_BATCHES_FREE", 10);
 
 export type LimitKind = keyof typeof DAILY_LIMITS;
 
 /** Returns true and increments if under today's limit; false when exhausted. */
-export async function checkAndIncrement(userId: string, kind: LimitKind): Promise<boolean> {
+export async function checkAndIncrement(
+  userId: string,
+  kind: LimitKind,
+  limitOverride?: number,
+): Promise<boolean> {
   const db = supabaseAdmin();
   const day = new Date().toISOString().slice(0, 10);
   const { data } = await db
@@ -30,7 +38,7 @@ export async function checkAndIncrement(userId: string, kind: LimitKind): Promis
     .maybeSingle();
 
   const current = data?.count ?? 0;
-  if (current >= DAILY_LIMITS[kind]) return false;
+  if (current >= (limitOverride ?? DAILY_LIMITS[kind])) return false;
 
   await db
     .from("usage_counters")
