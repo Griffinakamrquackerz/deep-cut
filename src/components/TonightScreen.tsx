@@ -40,13 +40,21 @@ function availableServices(rec: RecRow): Service[] {
   return SERVICES.filter((s) => p[s]);
 }
 
+interface MorningAfter {
+  recId: string;
+  movie: { id: number; title: string; year: number | null; poster_path: string | null };
+}
+
 export default function TonightScreen({
   myServices,
   premium = false,
+  morningAfter = null,
 }: {
   myServices: Service[];
   premium?: boolean;
+  morningAfter?: MorningAfter | null;
 }) {
+  const [ma, setMa] = useState<MorningAfter | null>(morningAfter);
   const [recs, setRecs] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
@@ -156,6 +164,27 @@ export default function TonightScreen({
     setRecs((prev) => prev.filter((r) => r.id !== rec.id));
   }
 
+  async function morningLog(reaction: "loved" | "fine" | "not_for_me") {
+    if (!ma) return;
+    const current = ma;
+    setMa(null); // optimistic dismiss
+    if (reaction === "loved") {
+      sfxChime();
+      haptic([20, 30, 20]);
+      setConfetti((c) => c + 1);
+      toast("Logged with love", { tone: "ticket", icon: "❤" });
+    } else {
+      sfxPop();
+      toast("Logged — that sharpens your taste", { tone: "amber", icon: "✓" });
+    }
+    setRecs((prev) => prev.filter((r) => r.id !== current.recId));
+    await fetch("/api/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ movieId: current.movie.id, recId: current.recId, reaction }),
+    });
+  }
+
   function tapReason(rec: RecRow) {
     void fetch("/api/events", {
       method: "POST",
@@ -187,6 +216,73 @@ export default function TonightScreen({
           MOVIES YOU HAVEN&apos;T MET YET
         </h1>
       </header>
+
+      {/* Morning-after loop — close the loop on last night's deal */}
+      {ma && (
+        <div className="film-card deal-in flex items-center gap-3 rounded-lg border border-amber/40 bg-amber/5 p-3">
+          {ma.movie.poster_path && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`https://image.tmdb.org/t/p/w200${ma.movie.poster_path}`}
+              alt=""
+              className="h-20 w-14 shrink-0 rounded object-cover"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow text-amber">🌅 The morning after</p>
+            <p className="mt-0.5 text-sm text-cream">
+              Last night we dealt you{" "}
+              <span className="font-display text-lg text-amber">{ma.movie.title}</span>. Did you
+              catch it?
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => void morningLog("loved")}
+                className="rounded-full border border-ticket px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-ticket"
+              >
+                ❤ Loved it
+              </button>
+              <button
+                onClick={() => void morningLog("fine")}
+                className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
+              >
+                — It was fine
+              </button>
+              <button
+                onClick={() => void morningLog("not_for_me")}
+                className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
+              >
+                ✕ Not for me
+              </button>
+              <button
+                onClick={() => setMa(null)}
+                className="rounded-full px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim/70"
+              >
+                Haven&apos;t yet →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settle It — front-door standoff, the two-player growth loop */}
+      <Link
+        href="/settle"
+        onClick={() => sfxClick()}
+        className="flex items-center justify-between gap-3 rounded-lg border border-ticket/50 bg-gradient-to-r from-ticket/10 to-transparent p-3"
+      >
+        <div className="min-w-0">
+          <p className="font-display text-xl leading-tight text-cream">
+            ⚖️ CAN&apos;T AGREE? <span className="text-ticket">SETTLE IT.</span>
+          </p>
+          <p className="font-mono text-[0.6rem] text-dim">
+            Two of you, five questions — the house picks the movie.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-ticket px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-ticket">
+          Start →
+        </span>
+      </Link>
 
       <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
         <div>

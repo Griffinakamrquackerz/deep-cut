@@ -41,5 +41,27 @@ export default async function TonightPage({
 
   const myServices = (svcRows ?? []).map((r) => r.service as Service);
   const premium = await isPremium(user.id);
-  return <TonightScreen myServices={myServices} premium={premium} />;
+
+  // Morning-after loop: the most recent film we dealt more than 8h ago that you
+  // never logged. "Did you watch last night's deal?" closes the loop and feeds
+  // the taste engine.
+  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
+  const { data: maRec } = await supabase
+    .from("recommendations")
+    .select("id, created_at, movies(id, title, year, poster_path)")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .lt("created_at", eightHoursAgo)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const maMovie = maRec?.movies as unknown as {
+    id: number;
+    title: string;
+    year: number | null;
+    poster_path: string | null;
+  } | null;
+  const morningAfter = maMovie ? { recId: maRec!.id as string, movie: maMovie } : null;
+
+  return <TonightScreen myServices={myServices} premium={premium} morningAfter={morningAfter} />;
 }
