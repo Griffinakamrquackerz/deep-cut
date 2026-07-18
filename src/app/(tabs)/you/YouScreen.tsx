@@ -10,6 +10,8 @@ import ShowMore from "@/components/ShowMore";
 import LetterboxdImport from "@/components/LetterboxdImport";
 import Avatar from "@/components/Avatar";
 import ProjectionistCard from "@/components/ProjectionistCard";
+import StreakBadge from "@/components/StreakBadge";
+import type { StreakStats } from "@/lib/streak";
 import RankUp from "@/components/RankUp";
 import type { TasteStats } from "@/lib/rank";
 
@@ -28,6 +30,7 @@ interface Thread {
 
 export default function YouScreen(props: {
   stats: TasteStats;
+  streak: StreakStats;
   avatarUrl: string | null;
   threads: Thread[];
   version: number;
@@ -154,6 +157,7 @@ export default function YouScreen(props: {
       </div>
 
       <RankUp rankTitle={props.stats.rank.title} glyph={props.stats.rank.glyph} />
+      <StreakBadge streak={props.streak} />
       <ProjectionistCard stats={props.stats} isMe />
 
       {/* Section tabs */}

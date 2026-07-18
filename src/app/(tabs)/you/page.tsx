@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import YouScreen from "./YouScreen";
 import type { Service } from "@/lib/services";
 import { computeTasteStats } from "@/lib/rank";
+import { computeStreak } from "@/lib/streak";
 
 export default async function YouPage() {
   const user = await currentUser();
@@ -37,10 +38,15 @@ export default async function YouPage() {
     .map((r) => r.movies as unknown as { id: number; vote_count: number | null } | null)
     .filter((m): m is { id: number; vote_count: number | null } => !!m);
   const stats = computeTasteStats(votes);
+  const streak = computeStreak(
+    (history.data ?? []).map((r) => r.watched_at as string),
+    Date.now(),
+  );
 
   return (
     <YouScreen
       stats={stats}
+      streak={streak}
       threads={(profile.data?.threads ?? []) as Array<{ title: string; line: string }>}
       version={profile.data?.version ?? 0}
       handle={me.data?.handle ?? null}

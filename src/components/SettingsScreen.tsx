@@ -6,6 +6,7 @@ import { PROFILE_THEMES } from "@/lib/themes";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
 import Avatar from "@/components/Avatar";
+import NotificationsToggle from "@/components/NotificationsToggle";
 import { isMuted, setMuted, sfxChime, sfxPop } from "@/lib/sfx";
 
 interface SignatureMovie {
@@ -365,6 +366,8 @@ export default function SettingsScreen({
           </span>
         </button>
       </div>
+
+      <NotificationsToggle />
 
       <button
         onClick={save}

@@ -78,6 +78,20 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
   Set PA → Key PA → 2nd 2nd AD → 2nd AD → 1st AD → Director → Executive Producer),
   crossing "above the line" at Director. Card in `ProjectionistCard.tsx`, promotion
   ceremony `RankUp.tsx` (localStorage remembers last celebrated).
+- **Watch streak:** `src/lib/streak.ts` (pure) — consecutive *weeks* with a logged
+  watch, computed on the `/you` page from `watch_logs`. Surfaced by `StreakBadge.tsx`.
+  No stored counter, nothing to migrate.
+- **Web push / Friday Night Deal** (optional, off until configured):
+  - Client opt-in `NotificationsToggle.tsx` (in Settings) → subscribes via the SW
+    (`public/sw.js` `push`/`notificationclick` handlers) → `POST /api/push/subscribe`
+    (rows in `push_subscriptions`, migration 0005). Public key served at
+    `/api/push/vapid`.
+  - Weekly cron `GET /api/cron/friday-deal` (schedule in `vercel.json`, Fri 23:00 UTC)
+    picks each subscriber's newest active rec and pushes it via `src/lib/push.ts`.
+  - **To turn it on:** `npx web-push generate-vapid-keys`, then set `VAPID_PUBLIC_KEY`,
+    `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET` in Vercel; apply migration
+    0005. Until then everything no-ops and the Settings toggle stays hidden. The native
+    App Store wrapper additionally needs APNs configured under your Apple Developer team.
 - **Community:** `/lobby` (marquee feed + people search), profiles `/u/[handle-or-id]`
   (public, themed via `src/lib/themes.ts` CSS-var overrides, signature-film stills shrine
   `SignatureShrine.tsx`), avatars (`/api/avatar`, client-resized JPEG → Supabase storage).

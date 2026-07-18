@@ -66,3 +66,41 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
+
+// --- Web push: the Friday Night Deal and other house calls ---
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Deep Cut";
+  const options = {
+    body: data.body || "Your Friday night deal is ready.",
+    icon: "/api/icon/192",
+    badge: "/api/icon/192",
+    tag: data.tag || "deepcut",
+    renotify: true,
+    data: { url: data.url || "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if ("focus" in client) {
+            client.navigate(target);
+            return client.focus();
+          }
+        }
+        return self.clients.openWindow(target);
+      }),
+  );
+});
