@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 // Deploy marker — bump BUILD when shipping a fix so the live version is
 // verifiable from outside (no more guessing whether a deploy has landed).
-const BUILD = "login-errors-v43";
+const BUILD = "signout-v44";
 
 export async function GET() {
   return NextResponse.json({ build: BUILD });

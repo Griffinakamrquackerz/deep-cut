@@ -63,6 +63,7 @@ export default function SettingsScreen({
   const [sigQuery, setSigQuery] = useState("");
   const [sigResults, setSigResults] = useState<SignatureMovie[]>([]);
   const [styleMsg, setStyleMsg] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => setMutedState(isMuted()), []);
 
@@ -117,6 +118,14 @@ export default function SettingsScreen({
     setMuted(next);
     setMutedState(next);
     if (!next) sfxChime(); // a little fanfare so they hear it working
+  }
+
+  async function signOut() {
+    setSigningOut(true);
+    const { supabaseBrowser } = await import("@/lib/supabase/client");
+    // Clears the session cookie (global scope) so the server sees us logged out too.
+    await supabaseBrowser().auth.signOut().catch(() => null);
+    window.location.href = "/login";
   }
 
   async function savePassword() {
@@ -394,6 +403,14 @@ export default function SettingsScreen({
       <div className="mt-2">
         <InstallPrompt compact />
       </div>
+
+      <button
+        onClick={() => void signOut()}
+        disabled={signingOut}
+        className="mt-2 rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-cream disabled:opacity-50"
+      >
+        {signingOut ? "Dimming the lights…" : "🚪 Sign out"}
+      </button>
 
       <p className="mt-2 text-center font-mono text-[0.6rem] text-dim/80">
         <a href="/terms" className="underline">Terms of Use</a> ·{" "}
