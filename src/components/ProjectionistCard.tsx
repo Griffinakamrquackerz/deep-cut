@@ -13,11 +13,23 @@ export default function ProjectionistCard({
   isMe?: boolean;
 }) {
   const dots = Math.round(stats.avgObscurity);
+  const above = stats.rank.side === "above";
   return (
     <div className="film-card rounded-lg p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="eyebrow">Projectionist rank</p>
+        <p className="eyebrow">Crew credit</p>
         <p className="font-mono text-[0.6rem] text-dim">{stats.reels} reels</p>
+      </div>
+      <div className="mt-1">
+        <span
+          className={`inline-block rounded-sm border px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.2em] ${
+            above
+              ? "border-amber bg-amber/15 text-amber"
+              : "border-line bg-bg/60 text-dim"
+          }`}
+        >
+          {above ? "★ Above the line" : "Below the line"}
+        </span>
       </div>
       <p className="mt-1 font-display text-3xl leading-tight text-amber">
         {stats.rank.glyph} {stats.rank.title.toUpperCase()}

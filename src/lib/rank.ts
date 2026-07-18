@@ -11,15 +11,21 @@ export interface RankTier {
   /** reels needed: met + 2 × deep cuts */
   at: number;
   line: string;
+  /** film-crew hierarchy side: crew is "below", creative leads are "above" */
+  side: "below" | "above";
 }
 
+// The crew ladder — climb from the coffee run to the director's chair, then
+// cross above the line. On-set career progression, in order.
 export const RANK_LADDER: RankTier[] = [
-  { title: "Popcorn Civilian", glyph: "🍿", at: 0, line: "Everyone starts in the lobby." },
-  { title: "Matinee Regular", glyph: "🎟", at: 12, line: "The usher knows your seat." },
-  { title: "Back-Row Scholar", glyph: "🎓", at: 30, line: "You read the credits. All of them." },
-  { title: "Cult Initiate", glyph: "🕯", at: 60, line: "You've seen things the algorithm hasn't." },
-  { title: "Reel Archaeologist", glyph: "⛏", at: 110, line: "You dig where the vault gets dusty." },
-  { title: "Phantom of the Archive", glyph: "👻", at: 180, line: "The projectionist asks YOU for picks." },
+  { title: "Office PA", glyph: "☕", at: 0, side: "below", line: "Everyone starts on the coffee run." },
+  { title: "Set PA", glyph: "🎧", at: 10, side: "below", line: "On set now — radio on, eyes up." },
+  { title: "Key PA", glyph: "🔑", at: 25, side: "below", line: "You run the other PAs." },
+  { title: "2nd 2nd AD", glyph: "🗒", at: 50, side: "below", line: "Call sheets and background — you're climbing." },
+  { title: "2nd AD", glyph: "📣", at: 90, side: "below", line: "You wrangle the cast and the day." },
+  { title: "1st AD", glyph: "⏱", at: 150, side: "below", line: "You run the floor — the set moves on your word." },
+  { title: "Director", glyph: "🎥", at: 240, side: "above", line: "You crossed above the line. It's your picture now." },
+  { title: "Executive Producer", glyph: "🎩", at: 380, side: "above", line: "You greenlight the whole show." },
 ];
 
 export interface TasteStats {

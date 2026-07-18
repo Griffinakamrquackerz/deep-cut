@@ -74,8 +74,10 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
 - **Tonight:** `src/components/TonightScreen.tsx` (deal UX, vibes, filters).
 - **Taste profile:** `src/lib/ai.ts` Stage A; regenerates every 5th watch log; PNG share at
   `/api/taste-card`.
-- **Projectionist rank:** `src/lib/rank.ts` (pure), card in `ProjectionistCard.tsx`,
-  promotion ceremony `RankUp.tsx` (localStorage remembers last celebrated).
+- **Crew-credit rank:** `src/lib/rank.ts` (pure) — a film-crew ladder (Office PA →
+  Set PA → Key PA → 2nd 2nd AD → 2nd AD → 1st AD → Director → Executive Producer),
+  crossing "above the line" at Director. Card in `ProjectionistCard.tsx`, promotion
+  ceremony `RankUp.tsx` (localStorage remembers last celebrated).
 - **Community:** `/lobby` (marquee feed + people search), profiles `/u/[handle-or-id]`
   (public, themed via `src/lib/themes.ts` CSS-var overrides, signature-film stills shrine
   `SignatureShrine.tsx`), avatars (`/api/avatar`, client-resized JPEG → Supabase storage).
