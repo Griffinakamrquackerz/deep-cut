@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Bebas_Neue, IBM_Plex_Mono, Karla } from "next/font/google";
 import PwaSetup from "@/components/PwaSetup";
+import JsonLd from "@/components/JsonLd";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -66,6 +67,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         )}
         <PwaSetup />
+        {/* schema.org WebSite — tells Google the site's canonical name/home */}
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Deep Cut",
+            alternateName: "The Deep Cut",
+            url: SITE_URL,
+            description:
+              "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+          }}
+        />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}
         <div className="reel-grain" aria-hidden />
         <div className="reel-vignette" aria-hidden />

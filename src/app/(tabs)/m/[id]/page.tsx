@@ -11,6 +11,8 @@ import MovieActions from "./MovieActions";
 import AdSlot from "@/components/AdSlot";
 import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
+import JsonLd from "@/components/JsonLd";
+import { siteUrl } from "@/lib/site";
 
 // SEO: every film page is public and crawlable with its own title, description,
 // and poster card — free, compounding top-of-funnel discovery (the IMDb move).
@@ -70,8 +72,35 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     (r) => r.service as Service,
   );
 
+  // schema.org Movie — earns the rich result (poster, stars) on Google.
+  const movieLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Movie",
+    name: movie.title,
+    url: `${siteUrl()}/m/${movie.id}`,
+    ...(movie.year ? { dateCreated: String(movie.year) } : {}),
+    ...(movie.poster_path
+      ? { image: `https://image.tmdb.org/t/p/w500${movie.poster_path}` }
+      : {}),
+    ...(movie.overview ? { description: movie.overview } : {}),
+    ...(movie.genres.length ? { genre: movie.genres } : {}),
+    ...(movie.runtime ? { duration: `PT${movie.runtime}M` } : {}),
+    ...(movie.imdb_id ? { sameAs: `https://www.imdb.com/title/${movie.imdb_id}/` } : {}),
+    ...(movie.vote_average && movie.vote_count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: movie.vote_average,
+            bestRating: 10,
+            ratingCount: movie.vote_count,
+          },
+        }
+      : {}),
+  };
+
   return (
     <section className="flex flex-col gap-5">
+      <JsonLd data={movieLd} />
       <div className="flex gap-4">
         <div className="w-32 shrink-0">
           <Poster
