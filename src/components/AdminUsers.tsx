@@ -89,15 +89,7 @@ export default function AdminUsers({
   }
 
   return (
-    <section className="flex flex-col gap-4 px-4 py-8">
-      <header>
-        <p className="eyebrow">Admin console</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">THE PROJECTION BOOTH</h1>
-        <p className="mt-1 font-mono text-[0.65rem] text-dim">
-          Signed in as {adminEmail} · {users.length} account{users.length === 1 ? "" : "s"}
-        </p>
-      </header>
-
+    <div className="flex flex-col gap-4">
       <input
         type="search"
         value={q}
@@ -227,6 +219,6 @@ export default function AdminUsers({
         Deleting an account is permanent — it removes their auth login and cascades to every row
         they own (loved films, watches, recs, playlists, follows, profile).
       </p>
-    </section>
+    </div>
   );
 }

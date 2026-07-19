@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import AdminUsers, { type AdminUserRow } from "@/components/AdminUsers";
+import { gatherStats } from "@/lib/admin-stats";
+import AdminDashboard from "@/components/AdminDashboard";
+import { type AdminUserRow } from "@/components/AdminUsers";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +13,10 @@ export default async function AdminPage() {
   if (!admin) notFound(); // non-admins see a plain 404 — the console is invisible
 
   const db = supabaseAdmin();
-  const [{ data: authList }, { data: profiles }] = await Promise.all([
+  const [{ data: authList }, { data: profiles }, stats] = await Promise.all([
     db.auth.admin.listUsers({ page: 1, perPage: 200 }),
     db.from("users").select("id, handle, display_name, created_at"),
+    gatherStats(),
   ]);
 
   const pMap = new Map(
@@ -39,5 +42,5 @@ export default async function AdminPage() {
       return tb - ta;
     });
 
-  return <AdminUsers users={users} adminEmail={admin.email ?? ""} />;
+  return <AdminDashboard stats={stats} users={users} adminEmail={admin.email ?? ""} />;
 }
