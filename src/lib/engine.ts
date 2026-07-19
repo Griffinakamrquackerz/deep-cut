@@ -277,7 +277,10 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
   try {
   if (!targetMet()) {
     // A vibe overrides taste-genres for the vault pull — the mood is the point.
-    const genreIds = vibe ? vibe.genreIds : topGenreIds(lovedBriefs);
+    // Use the channel-tightened genre set (e.g. Scare = horror only, not any
+    // thriller) and exclude tone-breakers so an off-genre film never slips in.
+    const genreIds = vibe ? (vibe.rollGenreIds ?? vibe.genreIds) : topGenreIds(lovedBriefs);
+    const withoutGenreIds = vibe?.avoidGenreIds;
     const svc = services as Service[];
     const wantServices = opts.myServicesOnly && svc.length > 0;
     const threadTitle = profile.threads[0]?.title ?? "your taste";
@@ -303,6 +306,8 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
           obscurityMin: opts.obscurityMin,
           obscurityMax: opts.obscurityMax,
           genreIds: attempt.genreIds,
+          withoutGenreIds: attempt.genreIds ? withoutGenreIds : undefined,
+          minRating: vibe ? 5.5 : undefined, // vibe pulls stay watchable
           services: attempt.services,
           page,
         });

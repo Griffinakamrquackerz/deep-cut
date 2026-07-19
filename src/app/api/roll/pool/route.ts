@@ -19,7 +19,7 @@ const Input = z.object({
   pageStart: z.number().int().min(1).max(5).optional(),
 });
 
-const CANON_PER_POOL = 10;
+const CANON_PER_POOL = 7;
 
 // House rule: Bollywood/regional Indian cinema enters via the programmer's
 // shelf (a hand-picked international classic) or not at all. Home-audience
@@ -74,23 +74,39 @@ export async function POST(request: Request) {
     .sort(() => Math.random() - 0.5)
     .slice(0, CANON_PER_POOL);
 
+  // Recent-gems window: released in the last ~12 years but before the 18-month
+  // gate. The all-time (vote_average.desc) reel skews old — acclaimed classics
+  // carry the highest ratings — so we pull a dedicated modern reel and splice
+  // it in, keeping the channel from feeling like a museum.
+  const modernFloor = new Date(Date.now() - 12 * 365 * 86_400_000).toISOString().slice(0, 10);
+  const common = {
+    genreIds: vibe.rollGenreIds ?? vibe.genreIds,
+    withoutGenreIds: vibe.avoidGenreIds,
+    obscurityMin: 3,
+    obscurityMax: 5,
+    minRating: 6.5,
+    minRuntime: 75,
+    sortBy: "vote_average.desc" as const,
+  };
+
   try {
-    const [canonResolved, ...pages] = await Promise.all([
+    const [canonResolved, timeless, modern] = await Promise.all([
       Promise.all(picks.map(resolveCanon)),
-      ...[pageStart, pageStart + 1].map((page) =>
-        discoverSettleCandidates({
-          genreIds: vibe.rollGenreIds ?? vibe.genreIds,
-          withoutGenreIds: vibe.avoidGenreIds,
-          obscurityMin: 3,
-          obscurityMax: 5,
-          releasedBefore: cutoff,
-          minRating: 6.5,
-          minRuntime: 75,
-          sortBy: "vote_average.desc",
-          page,
-        }),
-      ),
+      discoverSettleCandidates({ ...common, releasedBefore: cutoff, page: pageStart }),
+      discoverSettleCandidates({
+        ...common,
+        releasedAfter: modernFloor,
+        releasedBefore: cutoff,
+        page: pageStart,
+      }),
     ]);
+
+    // Interleave modern + timeless so recent films aren't buried behind classics.
+    const reel: typeof timeless = [];
+    for (let i = 0; i < Math.max(modern.length, timeless.length); i++) {
+      if (modern[i]) reel.push(modern[i]);
+      if (timeless[i]) reel.push(timeless[i]);
+    }
 
     const seen = new Set<number>();
     const candidates: Candidate[] = [];
@@ -100,7 +116,7 @@ export async function POST(request: Request) {
         candidates.push(c);
       }
     }
-    for (const c of pages.flat()) {
+    for (const c of reel) {
       if (seen.has(c.id) || !c.poster_path) continue;
       if (CANON_ONLY_LANGS.has(c.original_language)) continue;
       // Quality bar, any passport: a genuinely great non-English film travels

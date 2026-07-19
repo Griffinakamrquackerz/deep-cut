@@ -398,6 +398,8 @@ export interface DiscoverOpts {
   obscurityMin: number;
   obscurityMax: number;
   genreIds?: number[];
+  withoutGenreIds?: number[]; // exclude ANY of these (comma) — tone-breakers
+  minRating?: number; // vote_average floor
   services?: Service[]; // when set, only films streaming on these (US)
   page?: number;
   sortBy?: string;
@@ -437,6 +439,8 @@ export async function discoverSettleCandidates(opts: {
   withoutGenreIds?: number[];
   /** YYYY-MM-DD ceiling — a real deep cut has had time to become one. */
   releasedBefore?: string;
+  /** YYYY-MM-DD floor — for a "recent gems" pull that balances the era mix. */
+  releasedAfter?: string;
   /** TMDB vote_average floor — obscure should not mean bad. */
   minRating?: number;
   /** "vote_average.desc" surfaces most-loved-least-seen (the hidden-gem sort). */
@@ -458,6 +462,7 @@ export async function discoverSettleCandidates(opts: {
   if (opts.maxRuntime) qs["with_runtime.lte"] = String(opts.maxRuntime);
   if (opts.withoutGenreIds?.length) qs.without_genres = opts.withoutGenreIds.join(",");
   if (opts.releasedBefore) qs["primary_release_date.lte"] = opts.releasedBefore;
+  if (opts.releasedAfter) qs["primary_release_date.gte"] = opts.releasedAfter;
   if (opts.minRating) qs["vote_average.gte"] = String(opts.minRating);
   if (opts.minRuntime) qs["with_runtime.gte"] = String(opts.minRuntime);
 
@@ -501,6 +506,8 @@ export async function discoverMovies(opts: DiscoverOpts): Promise<DiscoverResult
   };
   if (band.lte != null) qs["vote_count.lte"] = String(band.lte);
   if (opts.genreIds?.length) qs.with_genres = opts.genreIds.join("|"); // OR
+  if (opts.withoutGenreIds?.length) qs.without_genres = opts.withoutGenreIds.join(","); // exclude ANY
+  if (opts.minRating) qs["vote_average.gte"] = String(opts.minRating);
   const providerIds = opts.services?.length ? tmdbProviderIds(opts.services) : [];
   if (providerIds.length) {
     qs.with_watch_providers = providerIds.join("|");
