@@ -263,7 +263,7 @@ Rules:
 - Every candidate must be a REAL, released feature film. Never invent titles. Use the film's original release year.
 - NEVER recommend anything on the exclusion list or in the loved list.
 - Each "reason" is ONE line (max ~25 words) tied to a specific taste thread or a specific loved film, e.g. "Because you loved The Room → the film-set chaos of Living in Oblivion."
-- At least half the candidates should be lesser-known films (obscurity 3+). Bias toward the requested obscurity range.
+- Deep Cut's premise is films the user HASN'T met. Deal mostly obscurity 3-4 plus 1-2 true deep cuts (5). At most ONE candidate per batch may be obscurity 1-2, and only when it's a perfect taste match they've plausibly missed. Never deal current chart hits, franchise blockbusters, or the all-time-most-popular staples — assume they've already met those. Low-key but excellent beats famous.
 - Mix eras: include at least 3 films from the last 10 years and avoid defaulting to the canonical "greatest of all time" lists — surface festival favorites, international picks, and under-the-radar releases the user has plausibly never heard of.
 - Spread across the user's taste threads; don't cluster on one.
 - obscurity_guess: your 1-5 estimate of how obscure the film is.
@@ -299,7 +299,7 @@ export async function generateRecCandidates(
       ? `\nTONIGHT'S VIBE: "${req.vibe.label}" — ${req.vibe.hint} EVERY candidate must fit this vibe; use the taste threads to pick WHICH films within it, and let each reason connect the vibe to their taste.`
       : "",
     req.myServicesOnly && req.services.length
-      ? `\nIMPORTANT: The user wants films they can watch TONIGHT. Strongly prefer films currently streaming on: ${req.services.join(", ")}. Well-known streaming-catalog staples beat unstreamable deep cuts here.`
+      ? `\nIMPORTANT: The user wants films they can watch TONIGHT. Strongly prefer films currently streaming on: ${req.services.join(", ")} — but keep them lesser-known. A streamable hidden gem beats a famous catalog staple; never fill the batch with well-known titles just because they stream.`
       : "",
   ]
     .filter(Boolean)

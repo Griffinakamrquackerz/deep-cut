@@ -58,7 +58,7 @@ export default function TonightScreen({
   const [recs, setRecs] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
-  const [depth, setDepth] = useState(1); // obscurity dial: minimum obscurity
+  const [depth, setDepth] = useState(2); // obscurity dial: min obscurity — house default skips the top 40
   const [mineOnly, setMineOnly] = useState(false);
   const [vibe, setVibe] = useState<string | null>(null);
   const [reacting, setReacting] = useState<RecRow | null>(null);
