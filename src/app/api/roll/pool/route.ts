@@ -3,6 +3,7 @@ import { z } from "zod";
 import { discoverSettleCandidates, searchMovies } from "@/lib/tmdb";
 import { vibeByKey, VIBE_KEYS } from "@/lib/vibes";
 import { HOUSE_CANON, type CanonPick } from "@/lib/canon";
+import { effectiveObscurity } from "@/lib/obscurity";
 
 export const maxDuration = 30;
 
@@ -119,6 +120,10 @@ export async function POST(request: Request) {
     for (const c of reel) {
       if (seen.has(c.id) || !c.poster_path) continue;
       if (CANON_ONLY_LANGS.has(c.original_language)) continue;
+      // Fame caps the reel: a film buzzing right now isn't a deep cut this
+      // month, whatever its vote count says. (House picks are exempt — a
+      // canon classic stays canon even when it trends.)
+      if (effectiveObscurity(c) < 3) continue;
       // Quality bar, any passport: a genuinely great non-English film travels
       // (1000+ votes = international reach); a home-crowd favorite with an
       // inflated rating doesn't. Low-vote masterpieces ride the canon shelf.

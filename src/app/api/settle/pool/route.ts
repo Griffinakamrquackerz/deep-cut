@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { discoverSettleCandidates } from "@/lib/tmdb";
+import { effectiveObscurity } from "@/lib/obscurity";
 
 // Public by design — Settle It has no auth. Returns a fresh candidate pool
 // from TMDB so verdicts never run dry and posters are native.
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
     const seen = new Set<number>();
     const candidates = pages.flat().filter((c) => {
       if (seen.has(c.id) || !c.poster_path) return false;
+      // Honest band: fame-capped obscurity must fit what the couch asked for —
+      // a buzzy new release can't sneak into a deep-cut standoff on low votes.
+      const eo = effectiveObscurity(c);
+      if (eo < obscurityMin || eo > obscurityMax) return false;
       seen.add(c.id);
       return true;
     });

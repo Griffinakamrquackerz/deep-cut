@@ -2,6 +2,8 @@
 // pool; zero backend by design (see the build ticket). The scoring is the
 // ticket's algorithm verbatim: deterministic, explainable, feels smart.
 
+import { effectiveObscurity } from "./obscurity";
+
 export type Mood = "laugh" | "scared" | "feel";
 
 export interface SettleAnswers {
@@ -140,12 +142,14 @@ export interface PoolCandidate {
   popularity: number;
 }
 
-function obscurityFromVotes(votes: number): 0 | 1 | 2 | 3 | 4 {
-  if (votes > 12000) return 0;
-  if (votes > 5000) return 1;
-  if (votes > 2000) return 2;
-  if (votes > 700) return 3;
-  return 4;
+// Settle rides the app-wide honest scorer (fame caps obscurity; new films
+// can't be deep cuts) — shifted to Settle's 0–4 scale.
+function obscurityFromCandidate(c: {
+  vote_count: number;
+  popularity?: number | null;
+  year?: number | null;
+}): 0 | 1 | 2 | 3 | 4 {
+  return (effectiveObscurity(c) - 1) as 0 | 1 | 2 | 3 | 4;
 }
 
 /** Turn TMDB candidates into scorable SettleFilms with derived, honest tags. */
@@ -160,7 +164,7 @@ export function candidatesToFilms(cands: PoolCandidate[], eitherShort: boolean):
         : ids.some((g) => LIGHT_GENRES.has(g))
           ? 0
           : 1;
-      const obscurity = obscurityFromVotes(c.vote_count);
+      const obscurity = obscurityFromCandidate(c);
       const genreName = GENRE_NAME[ids[0]] ?? "one";
       const secondGenre = ids[1] ? GENRE_NAME[ids[1]] : null;
       const label = secondGenre ? `${genreName}-${secondGenre}` : genreName;
