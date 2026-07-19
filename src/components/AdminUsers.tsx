@@ -17,6 +17,18 @@ function fmt(d: string | null): string {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
 
+interface PeekData {
+  watchlist: Array<{
+    movieId: number;
+    title: string;
+    year: number | null;
+    posterPath: string | null;
+    reason: string;
+    obscurity: number;
+  }>;
+  counts: { watchlist: number; loved: number; watches: number };
+}
+
 export default function AdminUsers({
   users: initial,
   adminEmail,
@@ -29,6 +41,25 @@ export default function AdminUsers({
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [peekId, setPeekId] = useState<string | null>(null);
+  const [peek, setPeek] = useState<PeekData | null>(null);
+  const [peekLoading, setPeekLoading] = useState(false);
+
+  async function togglePeek(userId: string) {
+    if (peekId === userId) {
+      setPeekId(null);
+      setPeek(null);
+      return;
+    }
+    setPeekId(userId);
+    setPeek(null);
+    setPeekLoading(true);
+    const data = await fetch(`/api/admin/user-detail?id=${userId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    setPeek(data);
+    setPeekLoading(false);
+  }
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -79,10 +110,8 @@ export default function AdminUsers({
 
       <ul className="flex flex-col gap-2">
         {filtered.map((u) => (
-          <li
-            key={u.id}
-            className="flex items-center justify-between gap-3 rounded border border-line bg-surface p-3"
-          >
+          <li key={u.id} className="flex flex-col rounded border border-line bg-surface p-3">
+            <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-sm text-cream">
                 {u.email ?? "—"}
@@ -99,6 +128,16 @@ export default function AdminUsers({
               </p>
             </div>
 
+            <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={() => void togglePeek(u.id)}
+              aria-expanded={peekId === u.id}
+              className={`rounded border px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest ${
+                peekId === u.id ? "border-amber text-amber" : "border-line text-dim hover:border-amber hover:text-amber"
+              }`}
+            >
+              👁 {peekId === u.id ? "Close" : "Peek"}
+            </button>
             {u.isSelf ? (
               <span className="shrink-0 font-mono text-[0.55rem] uppercase tracking-widest text-dim/60">
                 Settings ↗
@@ -126,6 +165,56 @@ export default function AdminUsers({
               >
                 Delete
               </button>
+            )}
+            </div>
+            </div>
+
+            {/* God-mode peek: their watchlist, admin eyes only */}
+            {peekId === u.id && (
+              <div className="mt-3 border-t border-dashed border-line pt-3">
+                {peekLoading ? (
+                  <p className="font-mono text-[0.65rem] text-dim">Pulling the reel…</p>
+                ) : !peek ? (
+                  <p className="font-mono text-[0.65rem] text-ticket">Couldn&apos;t load — try again.</p>
+                ) : (
+                  <>
+                    <p className="mb-2 font-mono text-[0.6rem] uppercase tracking-widest text-dim">
+                      🎬 watchlist {peek.counts.watchlist} · loved {peek.counts.loved} · watches{" "}
+                      {peek.counts.watches}
+                    </p>
+                    {peek.watchlist.length === 0 ? (
+                      <p className="text-sm text-dim">Empty watchlist — nothing saved yet.</p>
+                    ) : (
+                      <ul className="flex flex-col gap-1.5">
+                        {peek.watchlist.map((w) => (
+                          <li key={w.movieId} className="flex items-center gap-2.5">
+                            {w.posterPath ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={`https://image.tmdb.org/t/p/w92${w.posterPath}`}
+                                alt=""
+                                className="h-12 w-8 shrink-0 rounded object-cover"
+                              />
+                            ) : (
+                              <span className="h-12 w-8 shrink-0 rounded bg-bg" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm text-cream">
+                                {w.title}{" "}
+                                <span className="font-mono text-xs text-dim">{w.year ?? ""}</span>{" "}
+                                <span className="text-amber">{"◆".repeat(w.obscurity)}</span>
+                              </p>
+                              <p className="truncate font-mono text-[0.6rem] italic text-dim">
+                                {w.reason}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </li>
         ))}
