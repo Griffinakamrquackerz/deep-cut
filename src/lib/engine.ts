@@ -8,6 +8,7 @@ import {
   type MovieBrief,
 } from "./ai";
 import { effectiveObscurity } from "./obscurity";
+import { getRecentSignals, signalLine } from "./signals";
 import { cacheMovie, discoverMovies, resolveTitleYear, TMDB_GENRE_IDS } from "./tmdb";
 import type { Service } from "./services";
 import { vibeByKey } from "./vibes";
@@ -84,13 +85,14 @@ async function getRecentLogBriefs(userId: string, limit = 20): Promise<LogBrief[
 /** Stage A: (re)generate the taste profile and bump its version. */
 export async function regenerateProfile(userId: string): Promise<TasteProfile> {
   const db = supabaseAdmin();
-  const [loved, logs] = await Promise.all([
+  const [loved, logs, sparks] = await Promise.all([
     getLovedBriefs(userId),
     getRecentLogBriefs(userId),
+    getRecentSignals(db, userId, 15),
   ]);
   if (loved.length === 0) throw new Error("no loved movies");
 
-  const { profile, raw } = await generateTasteProfile(loved, logs);
+  const { profile, raw } = await generateTasteProfile(loved, logs, sparks.map(signalLine));
 
   await db.from("ai_logs").insert({ user_id: userId, stage: "profile", raw });
 
@@ -176,6 +178,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
     getExclusions(userId),
     db.from("user_services").select("service").eq("user_id", userId),
   ]);
+  const sparks = await getRecentSignals(db, userId, 10);
   const services = (svcRows.data ?? []).map((r) => r.service as string);
   const vibe = vibeByKey(opts.vibe);
 
@@ -211,6 +214,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
       obscurityMax: opts.obscurityMax,
       myServicesOnly: opts.myServicesOnly,
       vibe: vibe ? { label: vibe.label, hint: vibe.hint } : null,
+      recentSparks: sparks.map(signalLine),
     });
     await db.from("ai_logs").insert({ user_id: userId, stage: "recs", raw });
 

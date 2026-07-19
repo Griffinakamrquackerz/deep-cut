@@ -228,11 +228,13 @@ Rules:
 - Threads are NEVER genre labels ("horror fan") or director trivia. They articulate what the person responds to across genres — e.g. "sincere failure", "hangout movies where dialogue is the plot", "competence porn", "beautiful things breaking slowly".
 - title: 2-5 punchy words. line: one sentence (max ~25 words) explaining the thread back to the user in second person.
 - Weigh reactions: 'loved' and 'loved_ironically' reveal taste; 'not_for_me' reveals boundaries; a 'why' (vibe/story/performances/chaos) is a strong signal.
+- SPARKS (films they picked from lineups, accepted as verdicts, or wrote takes about) are weak positive engagement — texture, not endorsement. Never let a spark outweigh a loved film or a boundary.
 - Respond with ONLY a JSON object, no prose, no markdown fences: {"threads":[{"title":"...","line":"..."}]}`;
 
 export async function generateTasteProfile(
   loved: MovieBrief[],
   logs: LogBrief[],
+  sparks: string[] = [],
 ): Promise<{ profile: TasteProfile; raw: string }> {
   const logLines = logs.map(
     (l) =>
@@ -243,6 +245,8 @@ export async function generateTasteProfile(
     ...loved.map(briefLine),
     logs.length ? "\nRECENT WATCH REACTIONS:" : "",
     ...logLines,
+    sparks.length ? "\nSPARKS (weak engagement signals):" : "",
+    ...sparks,
   ]
     .filter(Boolean)
     .join("\n");
@@ -281,6 +285,9 @@ export interface RecRequest {
   myServicesOnly?: boolean;
   /** Tonight's mood — every candidate must fit it (label + steering hint). */
   vibe?: { label: string; hint: string } | null;
+  /** Soft sparks: films that recently caught their eye (Roll picks, Settle
+   *  verdicts, takes). Lean toward their energy, below loved films. */
+  recentSparks?: string[];
 }
 
 export async function generateRecCandidates(
@@ -296,6 +303,9 @@ export async function generateRecCandidates(
     "\nSTREAMING SERVICES:",
     req.services.length ? req.services.join(", ") : "(unknown)",
     `\nREQUESTED OBSCURITY RANGE: ${req.obscurityMin}-${req.obscurityMax}`,
+    req.recentSparks?.length
+      ? `\nCAUGHT THEIR EYE LATELY (weak signals — lean toward this energy, but loved films outrank these):\n${req.recentSparks.join("\n")}`
+      : "",
     req.vibe
       ? `\nTONIGHT'S VIBE: "${req.vibe.label}" — ${req.vibe.hint} EVERY candidate must fit this vibe; use the taste threads to pick WHICH films within it, and let each reason connect the vibe to their taste.`
       : "",

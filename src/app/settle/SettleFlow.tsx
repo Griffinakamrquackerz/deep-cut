@@ -593,6 +593,15 @@ export default function SettleFlow() {
         <button
           onClick={() => {
             sfxPop();
+            // Accepting the ruling is a taste spark for the winning film
+            // (fire-and-forget; signed-out couches just 401 silently).
+            if (film.tmdbId) {
+              void fetch("/api/signals", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ movieId: film.tmdbId, source: "settle_verdict" }),
+              }).catch(() => null);
+            }
             setStage("done");
           }}
           className="pulse-cta rounded bg-ticket px-5 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream"

@@ -7,6 +7,7 @@ import { cacheMovie } from "@/lib/tmdb";
 import { checkAndIncrement } from "@/lib/rate-limit";
 import { isAdminEmail } from "@/lib/admin";
 import { track } from "@/lib/analytics";
+import { recordTasteSignal } from "@/lib/signals";
 
 /** List takes — public (movie pages are crawlable; takes are content). */
 export async function GET(req: Request) {
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
   if (!created) return NextResponse.json({ error: "create_failed" }, { status: 500 });
 
   await track(user.id, "hot_take_posted", { movieId: movie.id });
+  // Writing about a film is engagement — a soft spark for the taste engine.
+  await recordTasteSignal(supabaseAdmin(), user.id, movie.id, "hot_take");
   return NextResponse.json({ ok: true, id: created.id });
 }
 

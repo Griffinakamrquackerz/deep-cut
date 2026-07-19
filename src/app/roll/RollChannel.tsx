@@ -230,7 +230,15 @@ export default function RollChannel() {
       <div className="flex gap-2">
         <Link
           href={`/m/${film.id}`}
-          onClick={() => sfxPop()}
+          onClick={() => {
+            sfxPop();
+            // Soft taste spark — fire-and-forget; guests just 401 silently.
+            void fetch("/api/signals", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ movieId: film.id, source: "roll_pick" }),
+            }).catch(() => null);
+          }}
           className="pulse-cta flex-1 rounded bg-ticket px-4 py-3 text-center font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
         >
           🎟 That&apos;s the one
