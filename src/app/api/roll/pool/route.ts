@@ -103,6 +103,10 @@ export async function POST(request: Request) {
     for (const c of pages.flat()) {
       if (seen.has(c.id) || !c.poster_path) continue;
       if (CANON_ONLY_LANGS.has(c.original_language)) continue;
+      // Quality bar, any passport: a genuinely great non-English film travels
+      // (1000+ votes = international reach); a home-crowd favorite with an
+      // inflated rating doesn't. Low-vote masterpieces ride the canon shelf.
+      if (c.original_language !== "en" && c.vote_count < 1000) continue;
       seen.add(c.id);
       candidates.push({
         id: c.id,

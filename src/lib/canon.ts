@@ -30,6 +30,7 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Clue", y: 1985 },
     { t: "Hunt for the Wilderpeople", y: 2016 },
     { t: "Sorry to Bother You", y: 2018 },
+    { t: "We All Loved Each Other So Much", y: 1974 },
   ],
   scare: [
     { t: "Possession", y: 1981 },
@@ -66,6 +67,7 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Aftersun", y: 2022 },
     { t: "All That Jazz", y: 1979 },
     { t: "Wings of Desire", y: 1987 },
+    { t: "Macario", y: 1960 },
   ],
   mind: [
     { t: "Stalker", y: 1979 },
@@ -174,6 +176,7 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Embrace of the Serpent", y: 2015 },
     { t: "Andrei Rublev", y: 1966 },
     { t: "The Emerald Forest", y: 1985 },
+    { t: "The Human Condition I: No Greater Love", y: 1959 },
   ],
   true: [
     { t: "The Act of Killing", y: 2012 },
