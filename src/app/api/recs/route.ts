@@ -39,7 +39,7 @@ export async function GET() {
 
   // Self-healing obscurity: stored scores predate the fame-cap fix, so re-score
   // from live movie data at read time — a stale "rare find" corrects itself.
-  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
   const recs = rows.map((r) => {
     const m = r.movies as unknown as {
       vote_count?: number;
