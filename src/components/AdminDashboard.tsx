@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import AdminOverview from "@/components/AdminOverview";
+import AdminMoney from "@/components/AdminMoney";
 import AdminUsers, { type AdminUserRow } from "@/components/AdminUsers";
 import type { AdminStats } from "@/lib/admin-stats";
 
-type Tab = "overview" | "members";
+type Tab = "overview" | "money" | "members";
 
 /** The Projection Booth — Deep Cut's owner console. */
 export default function AdminDashboard({
@@ -30,7 +31,7 @@ export default function AdminDashboard({
       </header>
 
       <div className="flex gap-1 rounded border border-line bg-surface p-1">
-        {(["overview", "members"] as const).map((t) => (
+        {(["overview", "money", "members"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -39,13 +40,15 @@ export default function AdminDashboard({
               tab === t ? "bg-bg text-amber" : "text-dim"
             }`}
           >
-            {t === "overview" ? "📊 Overview" : `👥 Members (${users.length})`}
+            {t === "overview" ? "📊 Overview" : t === "money" ? "💳 Money" : `👥 Members (${users.length})`}
           </button>
         ))}
       </div>
 
       {tab === "overview" ? (
         <AdminOverview stats={stats} />
+      ) : tab === "money" ? (
+        <AdminMoney money={stats.money} />
       ) : (
         <AdminUsers users={users} adminEmail={adminEmail} />
       )}

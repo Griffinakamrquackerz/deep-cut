@@ -17,10 +17,28 @@ function fmtDate(d: string | null): string {
 }
 
 export default function AdminOverview({ stats }: { stats: AdminStats }) {
-  const { members, active, engine, activity, premium, content, recentSignups, topWatchlisted } = stats;
+  const { members, active, engine, activity, premium, content, recentSignups, topWatchlisted, system } =
+    stats;
 
   return (
     <div className="flex flex-col gap-5">
+      {/* System health — what's wired vs waiting */}
+      <section>
+        <p className="eyebrow mb-2">Systems</p>
+        <div className="flex flex-wrap gap-1.5">
+          {system.map((s) => (
+            <span
+              key={s.name}
+              title={s.note}
+              className={`rounded-full border px-2.5 py-1 font-mono text-[0.55rem] uppercase tracking-widest ${
+                s.ok ? "border-avail/60 text-avail" : "border-line text-dim"
+              }`}
+            >
+              {s.ok ? "●" : "○"} {s.name}
+            </span>
+          ))}
+        </div>
+      </section>
       {/* Members */}
       <section>
         <p className="eyebrow mb-2">The house</p>

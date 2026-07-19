@@ -1,4 +1,10 @@
 import { supabaseAdmin } from "./supabase/admin";
+import { premiumConfigured } from "./premium";
+import { pushConfigured } from "./push";
+import { omdbConfigured } from "./omdb";
+
+// Balcony Seats list price. Env-overridable; matches the $4.99/mo model.
+const BALCONY_PRICE = Number(process.env.BALCONY_PRICE_USD) || 4.99;
 
 // The booth's instrument panel. Every number an owner needs to know if Deep
 // Cut is alive: who's joining, who's coming back, whether the taste engine
@@ -21,6 +27,20 @@ export interface AdminStats {
   content: { movies: number; ratingsCoverage: number | null };
   recentSignups: Array<{ id: string; handle: string | null; email: string | null; at: string | null }>;
   topWatchlisted: Array<{ title: string; year: number | null; count: number }>;
+  money: {
+    configured: boolean;
+    price: number;
+    activeSubs: number; // premium_until in the future
+    trialing: number; // latest Stripe status = trialing
+    paying: number; // latest Stripe status = active
+    canceled: number; // latest status canceled/unpaid/past_due
+    conversions: number; // distinct users who ever started a sub
+    mrr: number; // paying × price
+    arr: number; // mrr × 12
+    recentEvents: Array<{ email: string | null; kind: string; status: string; at: string }>;
+    subscribers: Array<{ email: string | null; status: string; startedAt: string }>;
+  };
+  system: Array<{ name: string; ok: boolean; note: string }>;
 }
 
 function iso(daysAgo: number): string {
@@ -155,6 +175,68 @@ export async function gatherStats(): Promise<AdminStats> {
     /* leave empty */
   }
 
+  // ── Money: Balcony Seats subscriptions ──────────────────────────────
+  // Latest Stripe status per user comes from balcony_started/updated events;
+  // premium_until (or its events fallback) says who's currently in the balcony.
+  const emailFor = (uid: string | null): string | null =>
+    uid ? (emailById.get(uid) ?? null) : null;
+
+  const { data: subEvents } = await db
+    .from("events")
+    .select("user_id, name, props, created_at")
+    .in("name", ["balcony_started", "balcony_updated"])
+    .order("created_at", { ascending: false })
+    .limit(800);
+
+  const latestStatus = new Map<string, string>();
+  const conversionUsers = new Set<string>();
+  const startedAt = new Map<string, string>();
+  for (const e of subEvents ?? []) {
+    const uid = e.user_id as string | null;
+    if (!uid) continue;
+    conversionUsers.add(uid);
+    if (!latestStatus.has(uid)) {
+      const status = String((e.props as Record<string, unknown>)?.status ?? "unknown");
+      latestStatus.set(uid, status);
+      startedAt.set(uid, e.created_at as string);
+    }
+  }
+  let trialing = 0,
+    paying = 0,
+    canceledSubs = 0;
+  for (const status of latestStatus.values()) {
+    if (status === "trialing") trialing++;
+    else if (status === "active") paying++;
+    else if (["canceled", "unpaid", "past_due", "incomplete_expired"].includes(status)) canceledSubs++;
+  }
+  const mrr = Math.round(paying * BALCONY_PRICE * 100) / 100;
+  const recentEvents = (subEvents ?? []).slice(0, 12).map((e) => ({
+    email: emailFor(e.user_id as string | null),
+    kind: (e.name as string) === "balcony_started" ? "started" : "updated",
+    status: String((e.props as Record<string, unknown>)?.status ?? "—"),
+    at: e.created_at as string,
+  }));
+  const subscribers = [...latestStatus.entries()]
+    .filter(([, s]) => s === "active" || s === "trialing")
+    .map(([uid, status]) => ({
+      email: emailFor(uid),
+      status,
+      startedAt: startedAt.get(uid) ?? "",
+    }));
+
+  // ── System health: what's wired vs waiting ─────────────────────────
+  const system: AdminStats["system"] = [
+    { name: "TMDB", ok: !!process.env.TMDB_API_KEY, note: "film data & posters" },
+    {
+      name: "LLM (recs)",
+      ok: !!(process.env.LLM_API_KEY || process.env.ANTHROPIC_API_KEY),
+      note: "taste + deal reasoning",
+    },
+    { name: "OMDb", ok: omdbConfigured(), note: "IMDb / Rotten Tomatoes ratings" },
+    { name: "Stripe", ok: premiumConfigured(), note: "Balcony Seats payments" },
+    { name: "Web push", ok: pushConfigured(), note: "Friday Night Deal" },
+  ];
+
   return {
     members: { total, new24h, new7d, new30d },
     active: { d7: d7Active, d30: d30Active },
@@ -164,5 +246,19 @@ export async function gatherStats(): Promise<AdminStats> {
     content: { movies, ratingsCoverage },
     recentSignups,
     topWatchlisted,
+    money: {
+      configured: premiumConfigured(),
+      price: BALCONY_PRICE,
+      activeSubs: premium ?? 0,
+      trialing,
+      paying,
+      canceled: canceledSubs,
+      conversions: conversionUsers.size,
+      mrr,
+      arr: Math.round(mrr * 12 * 100) / 100,
+      recentEvents,
+      subscribers,
+    },
+    system,
   };
 }
