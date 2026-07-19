@@ -17,6 +17,15 @@ interface Take {
   fights: number;
   myReaction: "fire" | "fight" | null;
   mine: boolean;
+  comments: number;
+}
+
+interface Banter {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: { id: string; handle: string | null; displayName: string | null; avatarUrl: string | null };
+  mine: boolean;
 }
 
 interface FilmHit {
@@ -55,6 +64,11 @@ export default function HotTakesWall({
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<FilmHit[]>([]);
   const [posting, setPosting] = useState(false);
+  // Banter threads: which take is open, its loaded comments, and the draft.
+  const [openThread, setOpenThread] = useState<string | null>(null);
+  const [threads, setThreads] = useState<Record<string, Banter[] | undefined>>({});
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
 
   const load = useCallback(async () => {
     const qs = movieId ? `?movieId=${movieId}` : "";
@@ -127,6 +141,59 @@ export default function HotTakesWall({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ takeId: t.id, kind: next }),
     }).catch(() => null);
+  }
+
+  async function toggleThread(t: Take) {
+    sfxPop();
+    if (openThread === t.id) {
+      setOpenThread(null);
+      return;
+    }
+    setOpenThread(t.id);
+    setDraft("");
+    if (!threads[t.id]) {
+      const data = await fetch(`/api/takes/comments?takeId=${t.id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      setThreads((prev) => ({ ...prev, [t.id]: (data?.comments as Banter[]) ?? [] }));
+    }
+  }
+
+  async function sendBanter(t: Take) {
+    const body = draft.trim();
+    if (!body || sending) return;
+    if (!signedIn) {
+      window.location.href = "/login";
+      return;
+    }
+    setSending(true);
+    const res = await fetch("/api/takes/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ takeId: t.id, body }),
+    }).catch(() => null);
+    setSending(false);
+    if (res?.status === 429) {
+      toast("Easy, champ — the banter well refills tomorrow.", { tone: "amber", icon: "💬" });
+      return;
+    }
+    if (!res?.ok) return;
+    sfxPop();
+    haptic(10);
+    setDraft("");
+    const data = await fetch(`/api/takes/comments?takeId=${t.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    setThreads((prev) => ({ ...prev, [t.id]: (data?.comments as Banter[]) ?? [] }));
+    setTakes((prev) => (prev ?? []).map((x) => (x.id === t.id ? { ...x, comments: x.comments + 1 } : x)));
+  }
+
+  async function removeBanter(t: Take, c: Banter) {
+    setThreads((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? []).filter((x) => x.id !== c.id) }));
+    setTakes((prev) =>
+      (prev ?? []).map((x) => (x.id === t.id ? { ...x, comments: Math.max(0, x.comments - 1) } : x)),
+    );
+    await fetch(`/api/takes/comments?id=${c.id}`, { method: "DELETE" }).catch(() => null);
   }
 
   async function remove(t: Take) {
@@ -287,6 +354,15 @@ export default function HotTakesWall({
                       >
                         🥊 fight me {t.fights > 0 ? t.fights : ""}
                       </button>
+                      <button
+                        onClick={() => void toggleThread(t)}
+                        aria-expanded={openThread === t.id}
+                        className={`rounded-full border px-2.5 py-1 font-mono text-[0.65rem] ${
+                          openThread === t.id ? "border-cream/60 text-cream" : "border-line text-dim"
+                        }`}
+                      >
+                        💬 {t.comments > 0 ? t.comments : "banter"}
+                      </button>
                       {t.mine && (
                         <button
                           onClick={() => void remove(t)}
@@ -296,6 +372,73 @@ export default function HotTakesWall({
                         </button>
                       )}
                     </div>
+
+                    {/* The banter thread */}
+                    {openThread === t.id && (
+                      <div className="mt-2.5 border-t border-dashed border-line pt-2.5">
+                        {threads[t.id] === undefined ? (
+                          <p className="font-mono text-[0.6rem] text-dim">pulling up chairs…</p>
+                        ) : (threads[t.id] ?? []).length === 0 ? (
+                          <p className="font-mono text-[0.6rem] text-dim">
+                            no banter yet — first heckle wins.
+                          </p>
+                        ) : (
+                          <ul className="flex flex-col gap-2">
+                            {(threads[t.id] ?? []).map((c) => {
+                              const cname = c.author.handle
+                                ? `@${c.author.handle}`
+                                : (c.author.displayName ?? "someone");
+                              return (
+                                <li key={c.id} className="flex items-start gap-2">
+                                  <Avatar url={c.author.avatarUrl} name={cname} size="sm" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-mono text-[0.55rem] uppercase tracking-wider text-dim">
+                                      <Link
+                                        href={`/u/${c.author.handle ?? c.author.id}`}
+                                        className="text-amber"
+                                      >
+                                        {cname}
+                                      </Link>{" "}
+                                      · {ago(c.createdAt)}
+                                    </p>
+                                    <p className="text-sm text-cream">{c.body}</p>
+                                  </div>
+                                  {c.mine && (
+                                    <button
+                                      onClick={() => void removeBanter(t, c)}
+                                      aria-label="Delete comment"
+                                      className="font-mono text-[0.6rem] text-dim"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        {signedIn && (
+                          <div className="mt-2 flex gap-1.5">
+                            <input
+                              value={draft}
+                              onChange={(e) => setDraft(e.target.value.slice(0, TAKE_MAX))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void sendBanter(t);
+                              }}
+                              placeholder="Talk your talk…"
+                              className="min-w-0 flex-1 rounded border border-line bg-bg px-2.5 py-1.5 text-sm text-cream placeholder:text-dim/60"
+                            />
+                            <button
+                              onClick={() => void sendBanter(t)}
+                              disabled={!draft.trim() || sending}
+                              className="rounded border border-ticket px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-ticket disabled:opacity-40"
+                            >
+                              {sending ? "…" : "🎤"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>

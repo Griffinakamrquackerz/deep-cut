@@ -15,6 +15,7 @@ export const DAILY_LIMITS = {
   profile_regen: envInt("DAILY_PROFILE_REGENS", 10),
   rec_batch: envInt("DAILY_REC_BATCHES", 30), // Balcony Seats (premium)
   hot_take: envInt("DAILY_HOT_TAKES", 15),
+  take_comment: envInt("DAILY_TAKE_COMMENTS", 60),
 };
 
 /** Free-tier (General Admission) deal cap. */

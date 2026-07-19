@@ -19,6 +19,15 @@ export interface HotTake {
   fights: number;
   myReaction: "fire" | "fight" | null;
   mine: boolean;
+  comments: number;
+}
+
+export interface TakeComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: { id: string; handle: string | null; displayName: string | null; avatarUrl: string | null };
+  mine: boolean;
 }
 
 export async function createTake(
@@ -45,13 +54,15 @@ export async function deleteTake(
   if (!isAdmin) q = q.eq("user_id", requesterId);
   const { error, count } = await q;
   if (error) return false;
-  // Best-effort: sweep the take's reactions too.
-  await db
-    .from("events")
-    .delete()
-    .eq("name", "take_reaction")
-    .eq("props->>take_id", takeId)
-    .then(() => null, () => null);
+  // Best-effort: sweep the take's reactions and banter too.
+  for (const name of ["take_reaction", "take_comment"]) {
+    await db
+      .from("events")
+      .delete()
+      .eq("name", name)
+      .eq("props->>take_id", takeId)
+      .then(() => null, () => null);
+  }
   return (count ?? 0) > 0;
 }
 
@@ -65,6 +76,83 @@ export async function reactToTake(
     .from("events")
     .insert({ user_id: userId, name: "take_reaction", props: { take_id: takeId, kind } });
   return !error;
+}
+
+export async function createComment(
+  db: SupabaseClient,
+  userId: string,
+  takeId: string,
+  body: string,
+): Promise<{ id: string } | null> {
+  // Only banter on takes that exist — a dangling thread is a confusing thread.
+  const { data: take } = await db
+    .from("events")
+    .select("id")
+    .eq("id", takeId)
+    .eq("name", "hot_take")
+    .maybeSingle();
+  if (!take) return null;
+  const { data, error } = await db
+    .from("events")
+    .insert({ user_id: userId, name: "take_comment", props: { take_id: takeId, body } })
+    .select("id")
+    .single();
+  return error || !data ? null : { id: data.id as string };
+}
+
+export async function deleteComment(
+  db: SupabaseClient,
+  commentId: string,
+  requesterId: string,
+  isAdmin: boolean,
+): Promise<boolean> {
+  let q = db.from("events").delete({ count: "exact" }).eq("id", commentId).eq("name", "take_comment");
+  if (!isAdmin) q = q.eq("user_id", requesterId);
+  const { error, count } = await q;
+  return !error && (count ?? 0) > 0;
+}
+
+export async function listComments(
+  db: SupabaseClient,
+  takeId: string,
+  viewerId: string | null,
+): Promise<TakeComment[]> {
+  const { data: rows } = await db
+    .from("events")
+    .select("id, user_id, props, created_at")
+    .eq("name", "take_comment")
+    .eq("props->>take_id", takeId)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  if (!rows?.length) return [];
+
+  const blocked = viewerId ? new Set(await getBlockedIds(viewerId)) : new Set<string>();
+  const comments = rows.filter((r) => r.user_id && !blocked.has(r.user_id as string));
+  if (!comments.length) return [];
+
+  const userIds = [...new Set(comments.map((c) => c.user_id as string))];
+  const { data: authors } = await db
+    .from("users")
+    .select("id, handle, display_name, avatar_url")
+    .in("id", userIds);
+  const authorById = new Map((authors ?? []).map((a) => [a.id as string, a]));
+
+  return comments.map((c) => {
+    const p = (c.props ?? {}) as Record<string, unknown>;
+    const a = authorById.get(c.user_id as string);
+    return {
+      id: c.id as string,
+      body: typeof p.body === "string" ? p.body.slice(0, TAKE_MAX) : "",
+      createdAt: c.created_at as string,
+      author: {
+        id: c.user_id as string,
+        handle: (a?.handle as string | null) ?? null,
+        displayName: (a?.display_name as string | null) ?? null,
+        avatarUrl: (a?.avatar_url as string | null) ?? null,
+      },
+      mine: viewerId === (c.user_id as string),
+    };
+  });
 }
 
 export async function listTakes(
@@ -98,7 +186,8 @@ export async function listTakes(
     ),
   ];
 
-  const [{ data: authors }, { data: movies }, { data: reactions }] = await Promise.all([
+  const [{ data: authors }, { data: movies }, { data: reactions }, { data: commentRows }] =
+    await Promise.all([
     db.from("users").select("id, handle, display_name, avatar_url").in("id", userIds),
     movieIds.length
       ? db.from("movies").select("id, title, year, poster_path").in("id", movieIds)
@@ -110,10 +199,24 @@ export async function listTakes(
       .in("props->>take_id", takeIds)
       .order("created_at", { ascending: true })
       .limit(2000),
+    db
+      .from("events")
+      .select("user_id, props")
+      .eq("name", "take_comment")
+      .in("props->>take_id", takeIds)
+      .limit(2000),
   ]);
 
   const authorById = new Map((authors ?? []).map((a) => [a.id as string, a]));
   const movieById = new Map((movies ?? []).map((m) => [m.id as number, m]));
+
+  const commentCount = new Map<string, number>();
+  for (const c of commentRows ?? []) {
+    if (!c.user_id || blockedSet.has(c.user_id as string)) continue;
+    const tid = ((c.props ?? {}) as Record<string, unknown>).take_id;
+    if (typeof tid !== "string") continue;
+    commentCount.set(tid, (commentCount.get(tid) ?? 0) + 1);
+  }
 
   // Latest reaction per (user, take) wins; null kind clears it.
   const latest = new Map<string, "fire" | "fight" | null>();
@@ -164,6 +267,7 @@ export async function listTakes(
       fights: c.fight,
       myReaction: mine.get(t.id as string) ?? null,
       mine: viewerId === (t.user_id as string),
+      comments: commentCount.get(t.id as string) ?? 0,
     };
   });
 }
