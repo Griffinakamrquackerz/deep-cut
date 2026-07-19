@@ -35,6 +35,10 @@ export async function POST(request: Request) {
 
   try {
     // Two pages, deduped — plenty of depth for a night of re-rolls.
+    // Deep-cut requests select like the Roll channel: loved-but-quiet
+    // (vote_average.desc). popularity.desc would surface exactly the buzzy
+    // films the honest-band filter rejects — sort and filter must agree.
+    const deep = obscurityMin >= 3;
     const pages = await Promise.all(
       [pageStart, pageStart + 1].map((page) =>
         discoverSettleCandidates({
@@ -44,7 +48,9 @@ export async function POST(request: Request) {
           maxRuntime: eitherShort ? 99 : undefined,
           withoutGenreIds: avoidGenreIds,
           releasedBefore: maxReleaseDate,
-          minRating,
+          minRating: minRating ?? (deep ? 6 : undefined),
+          minRuntime: 75,
+          sortBy: deep ? "vote_average.desc" : "popularity.desc",
           page,
         }),
       ),
