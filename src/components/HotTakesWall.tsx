@@ -174,7 +174,7 @@ export default function HotTakesWall({
     }).catch(() => null);
     setSending(false);
     if (res?.status === 429) {
-      toast("Easy, champ — the banter well refills tomorrow.", { tone: "amber", icon: "💬" });
+      toast("The banter well refills tomorrow.", { tone: "amber", icon: "💬" });
       return;
     }
     if (!res?.ok) return;
@@ -255,7 +255,7 @@ export default function HotTakesWall({
             onChange={(e) => setBody(e.target.value.slice(0, TAKE_MAX))}
             placeholder={
               film
-                ? `Your spiciest ${TAKE_MAX} characters on ${film.title}…`
+                ? `Your most indefensible take on ${film.title}…`
                 : "Pick a film, then light the match…"
             }
             rows={3}

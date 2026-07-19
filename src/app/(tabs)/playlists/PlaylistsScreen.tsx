@@ -251,7 +251,7 @@ export default function PlaylistsScreen({
         <p className="eyebrow mb-2">Sent</p>
         {sent.length === 0 ? (
           <p className="text-sm text-dim">
-            No mixtapes yet. Every playlist you send is a friend you recruit.
+            No mixtapes yet. Nobody forgets the person who made them a tape.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">

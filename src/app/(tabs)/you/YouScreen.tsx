@@ -79,7 +79,7 @@ export default function YouScreen(props: {
       {/* Promotion ceremony (fires only when your rank title changes) */}
       <RankUp rankTitle={props.stats.rank.title} glyph={props.stats.rank.glyph} />
 
-      <p className="eyebrow">Your booth · manage your card</p>
+      <p className="eyebrow">Your booth · where the card gets made</p>
 
       <StreakBadge streak={props.streak} />
 
