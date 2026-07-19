@@ -419,6 +419,7 @@ export interface SettleCandidate {
   genre_ids: number[];
   vote_count: number;
   popularity: number;
+  original_language: string; // ISO 639-1, e.g. "en", "ja", "hi"
 }
 
 /**
@@ -470,6 +471,7 @@ export async function discoverSettleCandidates(opts: {
       genre_ids?: number[];
       vote_count: number;
       popularity: number;
+      original_language?: string;
     }>;
   }
   const data = await tmdbFetch<Payload>("/discover/movie", qs).catch(() => null);
@@ -482,6 +484,7 @@ export async function discoverSettleCandidates(opts: {
     genre_ids: r.genre_ids ?? [],
     vote_count: r.vote_count,
     popularity: r.popularity,
+    original_language: r.original_language ?? "en",
   }));
 }
 

@@ -21,6 +21,12 @@ const Input = z.object({
 
 const CANON_PER_POOL = 10;
 
+// House rule: Bollywood/regional Indian cinema enters via the programmer's
+// shelf (a hand-picked international classic) or not at all. Home-audience
+// devotion inflates ratings enough to game the most-loved-least-seen sort,
+// flooding unrelated channels with regional crowd-pleasers.
+const CANON_ONLY_LANGS = new Set(["hi", "ta", "te", "ml", "kn", "bn", "pa", "mr"]);
+
 interface Candidate {
   id: number;
   title: string;
@@ -96,6 +102,7 @@ export async function POST(request: Request) {
     }
     for (const c of pages.flat()) {
       if (seen.has(c.id) || !c.poster_path) continue;
+      if (CANON_ONLY_LANGS.has(c.original_language)) continue;
       seen.add(c.id);
       candidates.push({
         id: c.id,
