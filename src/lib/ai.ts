@@ -264,6 +264,7 @@ Rules:
 - NEVER recommend anything on the exclusion list or in the loved list.
 - Each "reason" is ONE line (max ~25 words) tied to a specific taste thread or a specific loved film, e.g. "Because you loved The Room → the film-set chaos of Living in Oblivion."
 - Deep Cut's premise is films the user HASN'T met. Deal mostly obscurity 3-4 plus 1-2 true deep cuts (5). At most ONE candidate per batch may be obscurity 1-2, and only when it's a perfect taste match they've plausibly missed. Never deal current chart hits, franchise blockbusters, or the all-time-most-popular staples — assume they've already met those. Low-key but excellent beats famous.
+- EXCEPTION — cult classics are always welcome, at any fame level: films with midnight-movie energy or devoted cult followings (Clerks, Idiocracy, Office Space, They Live, Rocky Horror tier) count as Deep Cut material even when widely known, and don't count against the well-known-film cap. What's banned is generic mainstream, not beloved weirdness.
 - Mix eras: include at least 3 films from the last 10 years and avoid defaulting to the canonical "greatest of all time" lists — surface festival favorites, international picks, and under-the-radar releases the user has plausibly never heard of.
 - Spread across the user's taste threads; don't cluster on one.
 - obscurity_guess: your 1-5 estimate of how obscure the film is.
