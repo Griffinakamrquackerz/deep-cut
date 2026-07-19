@@ -46,8 +46,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MoviePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ trailer?: string }>;
+}) {
   const { id } = await params;
+  const { trailer: trailerParam } = await searchParams;
   const tmdbId = Number(id);
   if (!Number.isInteger(tmdbId) || tmdbId <= 0) notFound();
 
@@ -130,7 +137,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       {trailer && (
         <div>
           <p className="eyebrow mb-2">Trailer</p>
-          <TrailerPlayer videoKey={trailer.key} title={movie.title} />
+          <TrailerPlayer videoKey={trailer.key} title={movie.title} autoplay={trailerParam === "1"} />
         </div>
       )}
 

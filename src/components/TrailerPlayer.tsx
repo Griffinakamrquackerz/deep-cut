@@ -6,19 +6,38 @@ import { useState } from "react";
  * loading the real iframe up front would drag ~1MB of YouTube JS into every
  * movie page and wreck the PWA's load time. youtube-nocookie keeps it lean.
  */
-export default function TrailerPlayer({ videoKey, title }: { videoKey: string; title: string }) {
-  const [playing, setPlaying] = useState(false);
+export default function TrailerPlayer({
+  videoKey,
+  title,
+  autoplay = false,
+}: {
+  videoKey: string;
+  title: string;
+  /** Start rolling on mount (muted — mobile browsers block unmuted autoplay). */
+  autoplay?: boolean;
+}) {
+  const [playing, setPlaying] = useState(autoplay);
+  const [muted, setMuted] = useState(autoplay);
 
   if (playing) {
     return (
       <div className="poster-frame relative aspect-video w-full overflow-hidden rounded">
         <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoKey}?autoplay=1&rel=0`}
+          key={muted ? "m" : "s"}
+          src={`https://www.youtube-nocookie.com/embed/${videoKey}?autoplay=1&mute=${muted ? 1 : 0}&rel=0&playsinline=1`}
           title={`${title} — trailer`}
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
           className="absolute inset-0 h-full w-full border-0"
         />
+        {muted && (
+          <button
+            onClick={() => setMuted(false)}
+            className="absolute bottom-2 right-2 rounded bg-bg/85 px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-amber"
+          >
+            🔊 Tap for sound
+          </button>
+        )}
       </div>
     );
   }

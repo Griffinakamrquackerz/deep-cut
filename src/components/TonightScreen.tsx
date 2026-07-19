@@ -223,19 +223,39 @@ export default function TonightScreen({
       {ma && (
         <div className="film-card deal-in flex items-center gap-3 rounded-lg border border-amber/40 bg-amber/5 p-3">
           {ma.movie.poster_path && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`https://image.tmdb.org/t/p/w200${ma.movie.poster_path}`}
-              alt=""
-              className="h-20 w-14 shrink-0 rounded object-cover"
-            />
+            <Link
+              href={`/m/${ma.movie.id}?trailer=1`}
+              onClick={() => sfxClick()}
+              className="wiggle shrink-0"
+              aria-label={`${ma.movie.title} — trailer & info`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://image.tmdb.org/t/p/w200${ma.movie.poster_path}`}
+                alt=""
+                className="h-20 w-14 rounded object-cover"
+              />
+            </Link>
           )}
           <div className="min-w-0 flex-1">
             <p className="eyebrow text-amber">🌅 The morning after</p>
             <p className="mt-0.5 text-sm text-cream">
               Last night we dealt you{" "}
-              <span className="font-display text-lg text-amber">{ma.movie.title}</span>. Did you
-              catch it?
+              <Link
+                href={`/m/${ma.movie.id}?trailer=1`}
+                onClick={() => sfxClick()}
+                className="font-display text-lg text-amber underline decoration-dotted underline-offset-4"
+              >
+                {ma.movie.title}
+              </Link>
+              . Did you catch it?{" "}
+              <Link
+                href={`/m/${ma.movie.id}?trailer=1`}
+                onClick={() => sfxClick()}
+                className="whitespace-nowrap font-mono text-[0.6rem] uppercase tracking-wider text-dim underline"
+              >
+                ▶ trailer &amp; info
+              </Link>
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <button
