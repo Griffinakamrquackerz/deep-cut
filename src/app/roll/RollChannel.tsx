@@ -60,10 +60,22 @@ export default function RollChannel() {
     setChannel(v);
     setLoading(true);
     setError(null);
+    // Channel tuning: tighter genres than the deal fallback (tone-breakers
+    // excluded), only films old enough to have BECOME deep cuts (18 months),
+    // and a quality floor — obscure should never mean bad.
+    const cutoff = new Date(Date.now() - 548 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const res = await fetch("/api/settle/pool", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ genreIds: v.genreIds, obscurityMin: 3, obscurityMax: 5, eitherShort: false }),
+      body: JSON.stringify({
+        genreIds: v.rollGenreIds ?? v.genreIds,
+        avoidGenreIds: v.avoidGenreIds,
+        obscurityMin: 3,
+        obscurityMax: 5,
+        eitherShort: false,
+        maxReleaseDate: cutoff,
+        minRating: 5.5,
+      }),
     }).catch(() => null);
     const data = res?.ok ? await res!.json().catch(() => null) : null;
     const films = (data?.candidates ?? []) as ChannelFilm[];

@@ -9,12 +9,17 @@ const Input = z.object({
   obscurityMin: z.number().int().min(1).max(5),
   obscurityMax: z.number().int().min(1).max(5),
   eitherShort: z.boolean(),
+  // Channel extras (Just Roll It) — optional so Settle callers are unchanged.
+  avoidGenreIds: z.array(z.number().int().positive()).max(8).optional(),
+  maxReleaseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  minRating: z.number().min(0).max(10).optional(),
 });
 
 export async function POST(request: Request) {
   const parsed = Input.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
-  const { genreIds, obscurityMin, obscurityMax, eitherShort } = parsed.data;
+  const { genreIds, obscurityMin, obscurityMax, eitherShort, avoidGenreIds, maxReleaseDate, minRating } =
+    parsed.data;
 
   try {
     // Two pages, deduped — plenty of depth for a night of re-rolls.
@@ -25,6 +30,9 @@ export async function POST(request: Request) {
           obscurityMin,
           obscurityMax,
           maxRuntime: eitherShort ? 99 : undefined,
+          withoutGenreIds: avoidGenreIds,
+          releasedBefore: maxReleaseDate,
+          minRating,
           page,
         }),
       ),

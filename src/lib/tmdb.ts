@@ -432,6 +432,12 @@ export async function discoverSettleCandidates(opts: {
   obscurityMax: number;
   maxRuntime?: number;
   page?: number;
+  /** Genres that break the channel's tone (comma = exclude ANY of these). */
+  withoutGenreIds?: number[];
+  /** YYYY-MM-DD ceiling — a real deep cut has had time to become one. */
+  releasedBefore?: string;
+  /** TMDB vote_average floor — obscure should not mean bad. */
+  minRating?: number;
 }): Promise<SettleCandidate[]> {
   const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
   const qs: Record<string, string> = {
@@ -445,6 +451,9 @@ export async function discoverSettleCandidates(opts: {
   if (band.lte != null) qs["vote_count.lte"] = String(band.lte);
   if (opts.genreIds.length) qs.with_genres = opts.genreIds.join("|");
   if (opts.maxRuntime) qs["with_runtime.lte"] = String(opts.maxRuntime);
+  if (opts.withoutGenreIds?.length) qs.without_genres = opts.withoutGenreIds.join(",");
+  if (opts.releasedBefore) qs["primary_release_date.lte"] = opts.releasedBefore;
+  if (opts.minRating) qs["vote_average.gte"] = String(opts.minRating);
 
   interface Payload {
     results?: Array<{
