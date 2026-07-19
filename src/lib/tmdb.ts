@@ -438,13 +438,15 @@ export async function discoverSettleCandidates(opts: {
   releasedBefore?: string;
   /** TMDB vote_average floor — obscure should not mean bad. */
   minRating?: number;
+  /** "vote_average.desc" surfaces most-loved-least-seen (the hidden-gem sort). */
+  sortBy?: "popularity.desc" | "vote_average.desc";
 }): Promise<SettleCandidate[]> {
   const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
   const qs: Record<string, string> = {
     include_adult: "false",
     include_video: "false",
     language: "en-US",
-    sort_by: "popularity.desc",
+    sort_by: opts.sortBy ?? "popularity.desc",
     "vote_count.gte": String(Math.max(band.gte, 200)), // real films only
     page: String(opts.page ?? 1),
   };

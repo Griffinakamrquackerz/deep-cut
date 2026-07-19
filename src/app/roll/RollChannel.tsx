@@ -16,6 +16,8 @@ interface ChannelFilm {
   year: number | null;
   poster_path: string | null;
   overview: string;
+  /** hand-programmed house-canon pick, not an algorithm find */
+  canon?: boolean;
 }
 
 const TRAILER_SECONDS = 45; // auto-advance pacing with a trailer playing
@@ -60,21 +62,13 @@ export default function RollChannel() {
     setChannel(v);
     setLoading(true);
     setError(null);
-    // Channel tuning: tighter genres than the deal fallback (tone-breakers
-    // excluded), only films old enough to have BECOME deep cuts (18 months),
-    // and a quality floor — obscure should never mean bad.
-    const cutoff = new Date(Date.now() - 548 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const res = await fetch("/api/settle/pool", {
+    // The channel's own pool: hand-programmed house canon spliced with a
+    // most-loved-least-seen discover reel (tuning lives server-side).
+    const res = await fetch("/api/roll/pool", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        genreIds: v.rollGenreIds ?? v.genreIds,
-        avoidGenreIds: v.avoidGenreIds,
-        obscurityMin: 3,
-        obscurityMax: 5,
-        eitherShort: false,
-        maxReleaseDate: cutoff,
-        minRating: 5.5,
+        vibe: v.key,
         // Random slice per tune-in — the channel shouldn't rerun last night's lineup.
         pageStart: 1 + Math.floor(Math.random() * 3),
       }),
@@ -225,6 +219,11 @@ export default function RollChannel() {
         <p className="font-display text-3xl leading-tight text-cream">
           {film.title} <span className="font-mono text-sm text-dim">{film.year ?? ""}</span>
         </p>
+        {film.canon && (
+          <span className="mt-1 inline-block rounded-sm border border-amber bg-amber/10 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.2em] text-amber">
+            🎞 House pick — programmer&apos;s shelf
+          </span>
+        )}
         {film.overview && <p className="mt-1 line-clamp-2 text-sm text-dim">{film.overview}</p>}
       </div>
 
