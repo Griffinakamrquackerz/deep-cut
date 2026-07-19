@@ -6,6 +6,7 @@ import { checkAndIncrement, refund, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib
 import { isPremium } from "@/lib/premium";
 import { RecBatchInput } from "@/lib/schemas";
 import { effectiveObscurity } from "@/lib/obscurity";
+import { isAdminEmail } from "@/lib/admin";
 
 // 60s is the safe ceiling on Vercel's free (Hobby) plan.
 export const maxDuration = 60;
@@ -67,15 +68,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
 
-  // General Admission gets FREE_REC_BATCHES/day; Balcony Seats gets the full house.
-  const premium = await isPremium(user.id);
-  const limit = premium ? DAILY_LIMITS.rec_batch : FREE_REC_BATCHES;
-  const allowed = await checkAndIncrement(user.id, "rec_batch", limit);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "rate_limited", limit: `${limit} deals/day`, premium },
-      { status: 429 },
-    );
+  // General Admission gets FREE_REC_BATCHES/day; Balcony Seats gets the full
+  // house; the projectionist (admin) is never cut off — unlimited spins for
+  // testing the engine.
+  if (!isAdminEmail(user.email)) {
+    const premium = await isPremium(user.id);
+    const limit = premium ? DAILY_LIMITS.rec_batch : FREE_REC_BATCHES;
+    const allowed = await checkAndIncrement(user.id, "rec_batch", limit);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "rate_limited", limit: `${limit} deals/day`, premium },
+        { status: 429 },
+      );
+    }
   }
 
   try {
