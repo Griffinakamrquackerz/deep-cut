@@ -440,6 +440,8 @@ export async function discoverSettleCandidates(opts: {
   minRating?: number;
   /** "vote_average.desc" surfaces most-loved-least-seen (the hidden-gem sort). */
   sortBy?: "popularity.desc" | "vote_average.desc";
+  /** Feature-length floor — keeps TV specials, shorts, and music videos out. */
+  minRuntime?: number;
 }): Promise<SettleCandidate[]> {
   const band = voteBandForObscurity(opts.obscurityMin, opts.obscurityMax);
   const qs: Record<string, string> = {
@@ -456,6 +458,7 @@ export async function discoverSettleCandidates(opts: {
   if (opts.withoutGenreIds?.length) qs.without_genres = opts.withoutGenreIds.join(",");
   if (opts.releasedBefore) qs["primary_release_date.lte"] = opts.releasedBefore;
   if (opts.minRating) qs["vote_average.gte"] = String(opts.minRating);
+  if (opts.minRuntime) qs["with_runtime.gte"] = String(opts.minRuntime);
 
   interface Payload {
     results?: Array<{

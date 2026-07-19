@@ -79,6 +79,7 @@ export async function POST(request: Request) {
           obscurityMax: 5,
           releasedBefore: cutoff,
           minRating: 6.5,
+          minRuntime: 75,
           sortBy: "vote_average.desc",
           page,
         }),

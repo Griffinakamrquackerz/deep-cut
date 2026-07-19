@@ -45,7 +45,7 @@ export const VIBES: Vibe[] = [
     hint: "Films that hit hard emotionally — grief, longing, bittersweet endings, catharsis.",
     genreIds: [18, 10749],
     rollGenreIds: [18],
-    avoidGenreIds: [28, 80, 27],
+    avoidGenreIds: [28, 80, 27, 99],
   },
   {
     key: "mind",
@@ -95,7 +95,7 @@ export const VIBES: Vibe[] = [
     emoji: "🗺️",
     hint: "Transporting films — adventures, sweeping settings, other countries and eras. Escape hatch cinema.",
     genreIds: [12, 14, 36],
-    avoidGenreIds: [16, 10751, 28, 878],
+    avoidGenreIds: [16, 10751, 28, 878, 99],
   },
   {
     key: "true",
