@@ -107,6 +107,10 @@ export async function POST(request: Request) {
       // (1000+ votes = international reach); a home-crowd favorite with an
       // inflated rating doesn't. Low-vote masterpieces ride the canon shelf.
       if (c.original_language !== "en" && c.vote_count < 1000) continue;
+      // Time is the other judge: an old film with a high rating earned it, a
+      // recent one needs real reach — fan-bombed ratings cluster in the last
+      // decade (Gabriel's Inferno tier). Recent low-vote gems ride the canon.
+      if (c.year && c.year >= new Date().getFullYear() - 10 && c.vote_count < 3000) continue;
       seen.add(c.id);
       candidates.push({
         id: c.id,
