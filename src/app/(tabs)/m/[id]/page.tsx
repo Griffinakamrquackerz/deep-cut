@@ -12,6 +12,7 @@ import AdSlot from "@/components/AdSlot";
 import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
 import JsonLd from "@/components/JsonLd";
+import CurtainReveal from "@/components/CurtainReveal";
 import { siteUrl } from "@/lib/site";
 
 // SEO: every film page is public and crawlable with its own title, description,
@@ -101,6 +102,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
   return (
     <section className="flex flex-col gap-5">
       <JsonLd data={movieLd} />
+      <CurtainReveal />
       <div className="flex gap-4">
         <div className="w-32 shrink-0">
           <Poster

@@ -8,6 +8,8 @@ import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
+import DealReels from "./DealReels";
+import HouseDark from "./HouseDark";
 import AdSlot from "./AdSlot";
 import Confetti from "./Confetti";
 import { sfxChime, sfxClick, sfxPop, haptic } from "@/lib/sfx";
@@ -270,7 +272,7 @@ export default function TonightScreen({
         <Link
           href="/settle"
           onClick={() => sfxClick()}
-          className="rounded-lg border border-ticket/50 bg-gradient-to-br from-ticket/10 to-transparent p-3"
+          className="bulb-frame bg-gradient-to-br from-ticket/10 to-transparent p-3"
         >
           <p className="font-display text-lg leading-tight text-cream">
             ⚖️ CAN&apos;T AGREE?
@@ -284,7 +286,7 @@ export default function TonightScreen({
         <Link
           href="/roll"
           onClick={() => sfxClick()}
-          className="rounded-lg border border-amber/50 bg-gradient-to-br from-amber/10 to-transparent p-3"
+          className="bulb-frame bg-gradient-to-br from-amber/10 to-transparent p-3"
         >
           <p className="font-display text-lg leading-tight text-cream">
             📺 TIRED BRAIN?
@@ -358,11 +360,13 @@ export default function TonightScreen({
           disabled={dealing}
           className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
         >
-          {dealing
-            ? "Dealing…"
-            : vibe
-              ? `★ Deal me “${vibeByKey(vibe)?.label}” ★`
-              : "★ Deal me more ★"}
+          {dealing ? (
+            <DealReels />
+          ) : vibe ? (
+            `★ Deal me “${vibeByKey(vibe)?.label}” ★`
+          ) : (
+            "★ Deal me more ★"
+          )}
         </button>
       </div>
 
@@ -371,27 +375,26 @@ export default function TonightScreen({
       {loading ? (
         <FilmLeader label="rolling film" />
       ) : visible.length === 0 ? (
-        <div className="ticket-edge rounded p-6 text-center">
-          <p className="font-display text-2xl text-cream">NOTHING ON THE MARQUEE</p>
-          {recs.length > 0 ? (
-            <>
-              <p className="mt-1 text-sm text-dim">
-                {recs.length} rec{recs.length === 1 ? "" : "s"} hidden by your filters.
-              </p>
-              <button
-                onClick={() => {
-                  setDepth(1);
-                  setMineOnly(false);
-                }}
-                className="mt-3 rounded border border-amber px-3 py-2 font-mono text-xs uppercase tracking-widest text-amber"
-              >
-                Show everything
-              </button>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-dim">Deal a fresh batch above.</p>
+        <HouseDark
+          title="THE HOUSE IS DARK"
+          line={
+            recs.length > 0
+              ? `${recs.length} rec${recs.length === 1 ? "" : "s"} dimmed by your filters.`
+              : "Deal a fresh batch above."
+          }
+        >
+          {recs.length > 0 && (
+            <button
+              onClick={() => {
+                setDepth(1);
+                setMineOnly(false);
+              }}
+              className="rounded border border-amber px-3 py-2 font-mono text-xs uppercase tracking-widest text-amber"
+            >
+              Raise the lights
+            </button>
           )}
-        </div>
+        </HouseDark>
       ) : (
         <ul className="flex flex-col gap-4">
           {visible.map((rec, idx) => {

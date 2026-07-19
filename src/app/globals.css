@@ -183,6 +183,40 @@ body {
   border: 2px dashed var(--color-line);
 }
 
+/* Punched ticket stub — the two semicircle notches cut into the sides of a
+   real cinema ticket. Pair with .ticket-edge for the dashed tear-line. */
+.ticket-stub {
+  --notch: 11px;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+
+/* Slot-machine reels — a vertical strip of symbols spun behind a fixed
+   window. Three at staggered speeds = a one-armed-bandit deal. */
+.reel-window {
+  display: inline-block;
+  height: 1em;
+  line-height: 1em;
+  overflow: hidden;
+  vertical-align: -0.12em;
+}
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  animation: reel-spin-v 0.42s linear infinite;
+}
+.reel-window:nth-child(2) .reel-strip { animation-duration: 0.53s; }
+.reel-window:nth-child(3) .reel-strip { animation-duration: 0.47s; }
+@keyframes reel-spin-v {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
 /* Lobby-card treatment: soft depth + amber footlights on hover. */
 .film-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%),
@@ -535,6 +569,7 @@ body {
   .reel-scratch,
   .cue-mark,
   .bulb-frame::before,
+  .reel-strip,
   .reel-spin,
   .marquee-toast,
   .stamp-slam,

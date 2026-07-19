@@ -119,7 +119,7 @@ export default function ProfileView(data: ProfileViewData) {
       <ProjectionistCard stats={data.stats} isMe={data.isMe} />
 
       {data.threads.length > 0 && (
-        <div className="ticket-edge rounded bg-surface p-4">
+        <div className="ticket-edge ticket-stub rounded bg-surface p-4">
           <p className="eyebrow mb-2">{data.isMe ? "Your taste" : "Their taste"}</p>
           <ul className="flex flex-col gap-3">
             {data.threads.map((t) => (
