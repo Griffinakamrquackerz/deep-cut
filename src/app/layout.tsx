@@ -80,8 +80,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}
+        <div className="reel-beam" aria-hidden />
+        <div className="reel-scratch" aria-hidden />
         <div className="reel-grain" aria-hidden />
         <div className="reel-vignette" aria-hidden />
+        <div className="cue-mark" aria-hidden />
         <div className="relative z-10 mx-auto min-h-dvh w-full max-w-md sm:max-w-lg md:max-w-2xl">
           {children}
         </div>
