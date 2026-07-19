@@ -13,18 +13,29 @@ const Input = z.object({
   avoidGenreIds: z.array(z.number().int().positive()).max(8).optional(),
   maxReleaseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   minRating: z.number().min(0).max(10).optional(),
+  // Starting discover page — lets the channel serve a different slice per
+  // tune-in so sibling channels (and repeat visits) don't feel identical.
+  pageStart: z.number().int().min(1).max(5).optional(),
 });
 
 export async function POST(request: Request) {
   const parsed = Input.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
-  const { genreIds, obscurityMin, obscurityMax, eitherShort, avoidGenreIds, maxReleaseDate, minRating } =
-    parsed.data;
+  const {
+    genreIds,
+    obscurityMin,
+    obscurityMax,
+    eitherShort,
+    avoidGenreIds,
+    maxReleaseDate,
+    minRating,
+    pageStart = 1,
+  } = parsed.data;
 
   try {
     // Two pages, deduped — plenty of depth for a night of re-rolls.
     const pages = await Promise.all(
-      [1, 2].map((page) =>
+      [pageStart, pageStart + 1].map((page) =>
         discoverSettleCandidates({
           genreIds,
           obscurityMin,

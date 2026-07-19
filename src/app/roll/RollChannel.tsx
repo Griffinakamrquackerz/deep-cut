@@ -75,6 +75,8 @@ export default function RollChannel() {
         eitherShort: false,
         maxReleaseDate: cutoff,
         minRating: 5.5,
+        // Random slice per tune-in — the channel shouldn't rerun last night's lineup.
+        pageStart: 1 + Math.floor(Math.random() * 3),
       }),
     }).catch(() => null);
     const data = res?.ok ? await res!.json().catch(() => null) : null;

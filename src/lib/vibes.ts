@@ -35,6 +35,7 @@ export const VIBES: Vibe[] = [
     emoji: "🔪",
     hint: "Horror night — dread, jump scares, creeping unease. Elevated or trashy both welcome.",
     genreIds: [27, 53],
+    rollGenreIds: [27],
     avoidGenreIds: [10751, 16],
   },
   {
@@ -43,6 +44,7 @@ export const VIBES: Vibe[] = [
     emoji: "😭",
     hint: "Films that hit hard emotionally — grief, longing, bittersweet endings, catharsis.",
     genreIds: [18, 10749],
+    rollGenreIds: [18],
     avoidGenreIds: [28, 80, 27],
   },
   {
@@ -51,7 +53,8 @@ export const VIBES: Vibe[] = [
     emoji: "🌀",
     hint: "Mind-benders — puzzle plots, unreliable narrators, sci-fi concepts, films you argue about after.",
     genreIds: [878, 9648, 53],
-    avoidGenreIds: [28, 10751, 16],
+    rollGenreIds: [878, 9648],
+    avoidGenreIds: [27, 28, 10751, 16],
   },
   {
     key: "edge",
@@ -92,7 +95,7 @@ export const VIBES: Vibe[] = [
     emoji: "🗺️",
     hint: "Transporting films — adventures, sweeping settings, other countries and eras. Escape hatch cinema.",
     genreIds: [12, 14, 36],
-    avoidGenreIds: [16, 10751],
+    avoidGenreIds: [16, 10751, 28, 878],
   },
   {
     key: "true",
