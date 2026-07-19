@@ -14,6 +14,7 @@ function envInt(name: string, fallback: number): number {
 export const DAILY_LIMITS = {
   profile_regen: envInt("DAILY_PROFILE_REGENS", 10),
   rec_batch: envInt("DAILY_REC_BATCHES", 30), // Balcony Seats (premium)
+  hot_take: envInt("DAILY_HOT_TAKES", 15),
 };
 
 /** Free-tier (General Admission) deal cap. */

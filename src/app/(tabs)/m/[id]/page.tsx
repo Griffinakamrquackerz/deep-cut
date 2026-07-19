@@ -13,6 +13,7 @@ import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
 import JsonLd from "@/components/JsonLd";
 import CurtainReveal from "@/components/CurtainReveal";
+import HotTakesWall from "@/components/HotTakesWall";
 import { siteUrl } from "@/lib/site";
 
 // SEO: every film page is public and crawlable with its own title, description,
@@ -157,6 +158,12 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
             ))}
           </ul>
         )}
+      </div>
+
+      {/* The wall, scoped to this film — takes are content, visible to all */}
+      <div>
+        <p className="eyebrow mb-2 text-ticket">🔥 Hot takes</p>
+        <HotTakesWall movieId={movie.id} movieTitle={movie.title} signedIn={!!user} />
       </div>
 
       {!(user && (await isPremium(user.id))) && <AdSlot index={2} slot="movie-page" />}

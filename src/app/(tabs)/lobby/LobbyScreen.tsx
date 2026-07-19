@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
+import HotTakesWall from "@/components/HotTakesWall";
 import AdSlot from "@/components/AdSlot";
 import FollowButton from "@/components/FollowButton";
 import InviteButton from "@/components/InviteButton";
@@ -45,7 +46,7 @@ const feedName = (actor: { id: string; handle: string | null; display_name: stri
   actor.id === myId ? "You" : actorName(actor);
 
 export default function LobbyScreen({ myId, premium = false }: { myId: string; premium?: boolean }) {
-  const [view, setView] = useState<"feed" | "people">("feed");
+  const [view, setView] = useState<"feed" | "people" | "takes">("feed");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,14 +148,24 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Community</p>
         <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
-          {view === "feed" ? "WHAT FRIENDS ARE WATCHING" : "FIND YOUR PEOPLE"}
+          {view === "feed"
+            ? "WHAT FRIENDS ARE WATCHING"
+            : view === "takes"
+              ? "THE HOT TAKES WALL"
+              : "FIND YOUR PEOPLE"}
         </h1>
+        {view === "takes" && (
+          <p className="mt-1 font-mono text-[0.65rem] text-dim">
+            takes so hot the nitrate catches fire · 250 characters, no mercy
+          </p>
+        )}
       </header>
 
       <div className="flex gap-1.5">
         {(
           [
             { key: "feed", label: "☰ The marquee" },
+            { key: "takes", label: "🔥 Hot takes" },
             { key: "people", label: "★ People" },
           ] as const
         ).map((t) => (
@@ -193,7 +204,9 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         <span className="stamp stamp-gold shrink-0">Party</span>
       </Link>
 
-      {view === "people" ? (
+      {view === "takes" ? (
+        <HotTakesWall />
+      ) : view === "people" ? (
         <>
           <input
             type="search"
