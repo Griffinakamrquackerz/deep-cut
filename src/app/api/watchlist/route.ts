@@ -3,7 +3,7 @@ import { z } from "zod";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cacheMovie } from "@/lib/tmdb";
-import { obscurityFromVoteCount } from "@/lib/obscurity";
+import { effectiveObscurity } from "@/lib/obscurity";
 import { track } from "@/lib/analytics";
 
 const Input = z.object({
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       movie_id: movie.id,
       reason: `Saved from the ${parsed.data.source}`,
-      obscurity: obscurityFromVoteCount(movie.vote_count),
+      obscurity: effectiveObscurity(movie),
       status: "watchlisted",
       batch: 0,
     },

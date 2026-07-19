@@ -5,6 +5,7 @@ import { dealRecs } from "@/lib/engine";
 import { checkAndIncrement, refund, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib/rate-limit";
 import { isPremium } from "@/lib/premium";
 import { RecBatchInput } from "@/lib/schemas";
+import { effectiveObscurity } from "@/lib/obscurity";
 
 // 60s is the safe ceiling on Vercel's free (Hobby) plan.
 export const maxDuration = 60;
@@ -25,17 +26,31 @@ export async function GET() {
       .limit(60);
 
   let { data, error } = await query(
-    "id, title, year, runtime, poster_path, overview, genres, providers, tmdb_rating, imdb_rating, rt_rating",
+    "id, title, year, runtime, poster_path, overview, genres, providers, vote_count, popularity, tmdb_rating, imdb_rating, rt_rating",
   );
   if (error) {
     // Ratings columns may not exist yet (migration 0003 unapplied) — the recs
     // themselves must still load.
     ({ data, error } = await query(
-      "id, title, year, runtime, poster_path, overview, genres, providers",
+      "id, title, year, runtime, poster_path, overview, genres, providers, vote_count, popularity",
     ));
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ recs: data ?? [] });
+
+  // Self-healing obscurity: stored scores predate the fame-cap fix, so re-score
+  // from live movie data at read time — a stale "rare find" corrects itself.
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const recs = rows.map((r) => {
+    const m = r.movies as unknown as {
+      vote_count?: number;
+      popularity?: number | null;
+      year?: number | null;
+    } | null;
+    return m && typeof m.vote_count === "number"
+      ? { ...r, obscurity: effectiveObscurity({ vote_count: m.vote_count, popularity: m.popularity, year: m.year }) }
+      : r;
+  });
+  return NextResponse.json({ recs });
 }
 
 /** Deal a new validated batch. */

@@ -7,7 +7,7 @@ import {
   type LogBrief,
   type MovieBrief,
 } from "./ai";
-import { obscurityFromVoteCount } from "./obscurity";
+import { effectiveObscurity } from "./obscurity";
 import { cacheMovie, discoverMovies, resolveTitleYear, TMDB_GENRE_IDS } from "./tmdb";
 import type { Service } from "./services";
 import { vibeByKey } from "./vibes";
@@ -232,7 +232,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
       if (survivors.length >= 12) break;
       if (excludedIds.has(movie.id)) continue; // in-batch duplicate guard
 
-      const obscurity = obscurityFromVoteCount(movie.vote_count);
+      const obscurity = effectiveObscurity(movie);
       if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
         // Real popularity outside the requested window — skip but exclude from retry.
         excludedIds.add(movie.id);
@@ -308,6 +308,10 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
           genreIds: attempt.genreIds,
           withoutGenreIds: attempt.genreIds ? withoutGenreIds : undefined,
           minRating: vibe ? 5.5 : undefined, // vibe pulls stay watchable
+          // The vault is an archive: no film younger than 18 months. New
+          // releases have low vote counts that mimic obscurity (the Minions
+          // bug); fresh finds are the LLM's job, verified by effectiveObscurity.
+          releasedBefore: new Date(Date.now() - 548 * 86_400_000).toISOString().slice(0, 10),
           services: attempt.services,
           page,
         });
@@ -321,7 +325,7 @@ export async function dealRecs(userId: string, opts: DealOptions): Promise<Dealt
         for (const movie of cached) {
           if (targetMet() || survivors.length >= 12) break;
           if (excludedIds.has(movie.id)) continue;
-          const obscurity = obscurityFromVoteCount(movie.vote_count);
+          const obscurity = effectiveObscurity(movie);
           if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
             excludedIds.add(movie.id);
             continue;

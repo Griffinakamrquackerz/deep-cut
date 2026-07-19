@@ -400,6 +400,7 @@ export interface DiscoverOpts {
   genreIds?: number[];
   withoutGenreIds?: number[]; // exclude ANY of these (comma) — tone-breakers
   minRating?: number; // vote_average floor
+  releasedBefore?: string; // YYYY-MM-DD ceiling — the vault is an archive
   services?: Service[]; // when set, only films streaming on these (US)
   page?: number;
   sortBy?: string;
@@ -508,6 +509,7 @@ export async function discoverMovies(opts: DiscoverOpts): Promise<DiscoverResult
   if (opts.genreIds?.length) qs.with_genres = opts.genreIds.join("|"); // OR
   if (opts.withoutGenreIds?.length) qs.without_genres = opts.withoutGenreIds.join(","); // exclude ANY
   if (opts.minRating) qs["vote_average.gte"] = String(opts.minRating);
+  if (opts.releasedBefore) qs["primary_release_date.lte"] = opts.releasedBefore;
   const providerIds = opts.services?.length ? tmdbProviderIds(opts.services) : [];
   if (providerIds.length) {
     qs.with_watch_providers = providerIds.join("|");
