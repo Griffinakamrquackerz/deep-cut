@@ -39,6 +39,23 @@ declare global {
   }
 }
 
+// Track the most recent real user gesture anywhere in the app. In a single-page
+// app the document persists across tab navigations, so the tap that brought you
+// to a page is a recent interaction we can use to auto-start audio the instant
+// the player is ready — without waiting for a second gesture.
+let lastGestureAt = 0;
+let gestureTrackerInstalled = false;
+function installGestureTracker() {
+  if (gestureTrackerInstalled || typeof document === "undefined") return;
+  gestureTrackerInstalled = true;
+  const mark = () => {
+    lastGestureAt = Date.now();
+  };
+  document.addEventListener("pointerdown", mark, { capture: true, passive: true });
+  document.addEventListener("keydown", mark, { capture: true });
+}
+const RECENT_GESTURE_MS = 4000;
+
 let apiPromise: Promise<SpotifyIFrameAPI> | null = null;
 function loadIframeApi(): Promise<SpotifyIFrameAPI> {
   if (apiPromise) return apiPromise;
@@ -84,6 +101,11 @@ export default function ProfileTheme({
   const controllerRef = useRef<SpotifyController | null>(null);
   const startedRef = useRef(false); // has playback been kicked off at least once?
 
+  // Start listening for gestures app-wide as soon as any turntable mounts.
+  useEffect(() => {
+    installGestureTracker();
+  }, []);
+
   // 1) Resolve the film → theme (unless the owner pinned an override).
   useEffect(() => {
     if (override) {
@@ -121,6 +143,12 @@ export default function ProfileTheme({
         controllerRef.current = controller;
         setReady(true);
         controller.addListener("playback_update", (e) => setPlaying(!e.data.isPaused));
+        // If the visitor interacted recently (e.g. tapped in to this tab),
+        // start the theme now rather than waiting for another gesture.
+        if (!startedRef.current && Date.now() - lastGestureAt < RECENT_GESTURE_MS) {
+          startedRef.current = true;
+          controller.play();
+        }
       });
     });
     return () => {
