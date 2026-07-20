@@ -622,6 +622,8 @@ body {
    theme plays and lifts when it pauses. Playback is driven by Spotify's own
    IFrame API underneath — this is pure decoration over a licensed player. */
 .turntable {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 0.85rem;
@@ -633,6 +635,7 @@ body {
     var(--color-bg);
   cursor: pointer;
   user-select: none;
+  overflow: hidden;
 }
 .tt-deck {
   position: relative;
@@ -723,10 +726,14 @@ body {
    keep it out of sight behind the deck. It must stay in the DOM to play. */
 .tt-engine {
   position: absolute;
-  left: -9999px;
-  top: 0;
-  width: 320px;
-  height: 80px;
-  opacity: 0.01;
+  inset: 0;
+  z-index: -1; /* on-screen so playback is allowed, but tucked behind the deck */
+  opacity: 0;
   pointer-events: none;
+  overflow: hidden;
+}
+.tt-engine iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
 }

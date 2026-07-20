@@ -80,8 +80,17 @@ export default function ProfileTheme({
   const [ready, setReady] = useState(false);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<SpotifyController | null>(null);
   const wantPlayRef = useRef(false); // a gesture arrived before the controller was ready
+  const startedRef = useRef(false); // has playback been kicked off at least once?
+
+  // Start playback now, or queue it if the controller is still loading.
+  const startPlayback = useCallback(() => {
+    startedRef.current = true;
+    if (controllerRef.current) controllerRef.current.play();
+    else wantPlayRef.current = true;
+  }, []);
 
   // 1) Resolve the film → theme (unless the owner pinned an override).
   useEffect(() => {
@@ -108,6 +117,8 @@ export default function ProfileTheme({
   useEffect(() => {
     if (!match || !hostRef.current) return;
     let disposed = false;
+    startedRef.current = false; // a new track starts un-played
+    wantPlayRef.current = false;
     const uri = `spotify:${match.kind}:${match.id}`;
     loadIframeApi().then((api) => {
       if (disposed || !hostRef.current) return;
@@ -139,34 +150,38 @@ export default function ProfileTheme({
     };
   }, [match]);
 
-  // 3) Play on first touch — the browser unlocks audio on the first real
-  //    gesture, so we start the theme the instant the visitor taps/keys.
+  // 3) Play on first touch — browsers unlock audio on the first real gesture,
+  //    so we start the theme the instant the visitor taps/keys ANYWHERE. We
+  //    ignore gestures that land on the record itself: those are handled by
+  //    the card's own onClick, so the two never fight over the same tap.
   useEffect(() => {
     if (!match) return;
-    let done = false;
-    const arm = () => {
-      if (done) return;
-      done = true;
+    const arm = (e: Event) => {
+      if (startedRef.current) return remove();
+      if (cardRef.current && e.target instanceof Node && cardRef.current.contains(e.target)) {
+        return; // let the card's onClick own this one
+      }
       remove();
-      if (controllerRef.current) controllerRef.current.play();
-      else wantPlayRef.current = true; // controller not ready yet
+      startPlayback();
     };
     const remove = () => {
       document.removeEventListener("pointerdown", arm);
-      document.removeEventListener("touchstart", arm);
       document.removeEventListener("keydown", arm);
     };
     document.addEventListener("pointerdown", arm, { passive: true });
-    document.addEventListener("touchstart", arm, { passive: true });
     document.addEventListener("keydown", arm);
     return remove;
-  }, [match]);
+  }, [match, startPlayback]);
 
+  // The record's own tap: first tap starts it, later taps pause/resume.
   const toggle = useCallback(() => {
     sfxPop();
-    if (controllerRef.current) controllerRef.current.togglePlay();
-    else wantPlayRef.current = true;
-  }, []);
+    if (!startedRef.current) {
+      startPlayback();
+    } else if (controllerRef.current) {
+      controllerRef.current.togglePlay();
+    }
+  }, [startPlayback]);
 
   const onPick = useCallback((m: Match) => {
     setMatch(m); // remounts the controller effect with the new uri
@@ -187,6 +202,7 @@ export default function ProfileTheme({
     <div className="mt-2">
       {match && (
         <div
+          ref={cardRef}
           className="turntable"
           role="button"
           tabIndex={0}
