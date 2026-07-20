@@ -12,7 +12,7 @@ interface Pick {
   poster_path?: string | null;
 }
 
-type Step = "films" | "services" | "name" | "printing" | "reveal" | "install";
+type Step = "films" | "services" | "signature" | "name" | "printing" | "reveal" | "install";
 
 const HANDLE_RE = /^[a-z0-9_]{3,24}$/;
 
@@ -32,6 +32,9 @@ export default function OnboardingFlow() {
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<Record<number, string | null>>({});
   const [handle, setHandle] = useState("");
+  const [sig, setSig] = useState<Pick | null>(null);
+  const [sigQuery, setSigQuery] = useState("");
+  const [sigResults, setSigResults] = useState<Pick[]>([]);
   const [nameError, setNameError] = useState<string | null>(null);
   const [savingName, setSavingName] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,6 +77,13 @@ export default function OnboardingFlow() {
     }, 300);
   }, [query]);
 
+  async function searchSignature(q: string) {
+    setSigQuery(q);
+    if (!q.trim()) return setSigResults([]);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`).catch(() => null);
+    if (res?.ok) setSigResults(((await res.json()).results ?? []).slice(0, 6));
+  }
+
   async function saveNameAndFinish() {
     const clean = handle.trim().toLowerCase();
     if (!HANDLE_RE.test(clean)) {
@@ -85,7 +95,7 @@ export default function OnboardingFlow() {
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ handle: clean }),
+      body: JSON.stringify({ handle: clean, signatureMovieId: sig?.id ?? null }),
     });
     if (res.status === 409) {
       setNameError("That name's already on the marquee — try another.");
@@ -195,7 +205,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 2 of 3</p>
+          <p className="eyebrow mb-1">Step 2 of 4</p>
           <h1 className="font-display text-4xl text-cream">WHERE DO YOU WATCH?</h1>
           <p className="mt-1 text-sm text-dim">
             We&apos;ll badge every rec that&apos;s watchable tonight.
@@ -235,10 +245,109 @@ export default function OnboardingFlow() {
             ← Back
           </button>
           <button
-            onClick={() => setStep("name")}
+            onClick={() => setStep("signature")}
             className="flex-1 rounded bg-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg"
           >
             Continue →
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (step === "signature") {
+    return (
+      <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
+        <div>
+          <p className="eyebrow mb-1">Step 3 of 4</p>
+          <h1 className="font-display text-4xl text-cream">YOUR SIGNATURE FILM</h1>
+          <p className="mt-1 text-sm text-dim">
+            Your favorite film of all time — it fronts your profile as a stills
+            collage. Choose like everyone&apos;s watching.
+          </p>
+        </div>
+
+        {sig ? (
+          <div className="ticket-edge rounded bg-surface p-4 text-center">
+            <p className="eyebrow">Now enshrined</p>
+            {sig.poster_path && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={`https://image.tmdb.org/t/p/w342${sig.poster_path}`}
+                alt={sig.title}
+                className="mx-auto mt-2 w-32 rounded shadow-lg"
+              />
+            )}
+            <p className="glow-amber mt-2 font-display text-2xl text-amber">
+              {sig.title.toUpperCase()}{" "}
+              <span className="font-mono text-sm text-dim">{sig.year ?? ""}</span>
+            </p>
+            <button
+              onClick={() => {
+                setSig(null);
+                setSigQuery("");
+              }}
+              className="mt-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim underline"
+            >
+              Pick a different one
+            </button>
+          </div>
+        ) : (
+          <div>
+            <input
+              type="search"
+              value={sigQuery}
+              onChange={(e) => void searchSignature(e.target.value)}
+              placeholder="Search your all-time favorite…"
+              aria-label="Search your signature film"
+              className="w-full rounded border-2 border-amber/60 bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
+            />
+            {sigResults.length > 0 && (
+              <ul className="mt-2 flex flex-col divide-y divide-line rounded border border-line bg-surface">
+                {sigResults.map((r) => (
+                  <li key={r.id}>
+                    <button
+                      onClick={() => {
+                        setSig(r);
+                        setSigResults([]);
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm"
+                    >
+                      {r.poster_path ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={`https://image.tmdb.org/t/p/w92${r.poster_path}`}
+                          alt=""
+                          className="w-8 rounded"
+                        />
+                      ) : (
+                        <span className="w-8 text-center">🎬</span>
+                      )}
+                      <span className="text-cream">
+                        {r.title}{" "}
+                        <span className="font-mono text-xs text-dim">{r.year ?? ""}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <div className="mt-auto flex gap-3">
+          <button
+            onClick={() => setStep("services")}
+            className="rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-dim"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => setStep("name")}
+            disabled={!sig}
+            className="flex-1 rounded bg-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-widest text-bg disabled:opacity-40"
+          >
+            Enshrine it →
           </button>
         </div>
       </main>
@@ -249,7 +358,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 3 of 3</p>
+          <p className="eyebrow mb-1">Step 4 of 4</p>
           <h1 className="font-display text-4xl text-cream">PICK YOUR MARQUEE NAME</h1>
           <p className="mt-1 text-sm text-dim">
             Your handle goes on your taste card and the community marquee — it&apos;s how
@@ -286,7 +395,7 @@ export default function OnboardingFlow() {
         )}
         <div className="mt-auto flex gap-3">
           <button
-            onClick={() => setStep("services")}
+            onClick={() => setStep("signature")}
             className="rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-dim"
           >
             ← Back
@@ -307,7 +416,7 @@ export default function OnboardingFlow() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-4 py-8">
       <div>
-        <p className="eyebrow mb-1">Step 1 of 3</p>
+        <p className="eyebrow mb-1">Step 1 of 4</p>
         <h1 className="font-display text-4xl text-cream">PICK FILMS YOU LOVE</h1>
         <p className="mt-1 text-sm text-dim">
           Any genre, any era. At least 8 — the more the sharper. Deep cuts and
