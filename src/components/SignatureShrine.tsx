@@ -103,7 +103,13 @@ export default function SignatureShrine({
       {/* Theme music — the profile's soundtrack, played through Spotify's own
           licensed embed. Dark until Spotify keys are configured. */}
       <div className="px-4">
-        <ProfileTheme movieId={movieId} filmTitle={title} isMe={isMe} override={themeMusic} />
+        <ProfileTheme
+          movieId={movieId}
+          filmTitle={title}
+          posterPath={posterPath}
+          isMe={isMe}
+          override={themeMusic}
+        />
       </div>
     </div>
   );

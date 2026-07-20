@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { sfxPop } from "@/lib/sfx";
 
-// The profile's theme music — MySpace, but legal. We render Spotify's OWN
-// embed player (it carries the licenses; we host zero audio) matched to the
-// member's signature film. The iframe only mounts on tap, so nothing loads or
-// plays until a visitor asks — no autoplay wall, no wasted bandwidth. Owners
-// get a "not it?" picker to override the auto-match with any track/album.
+// The profile turntable — a spinning-vinyl UI wrapped around Spotify's own
+// embed. We host zero audio; Spotify's IFrame API drives a hidden player and
+// reports play/pause, and our record spins + the tonearm drops in sync. The
+// theme arms itself and fades in on the visitor's first tap anywhere (browsers
+// forbid true autoplay-with-sound), and tapping the record toggles playback.
 
 interface Match {
   kind: "track" | "album";
@@ -15,29 +15,75 @@ interface Match {
   artist: string;
 }
 
-function embedUrl(kind: "track" | "album", id: string): string {
-  return `https://open.spotify.com/embed/${kind}/${id}?theme=0`;
+// --- Spotify IFrame API loader (singleton across the SPA) -------------------
+
+interface SpotifyController {
+  play: () => void;
+  pause: () => void;
+  togglePlay: () => void;
+  loadUri: (uri: string) => void;
+  destroy: () => void;
+  addListener: (event: string, cb: (e: { data: { isPaused: boolean } }) => void) => void;
 }
+interface SpotifyIFrameAPI {
+  createController: (
+    el: HTMLElement,
+    opts: { uri: string; width: string | number; height: string | number },
+    cb: (controller: SpotifyController) => void,
+  ) => void;
+}
+declare global {
+  interface Window {
+    onSpotifyIframeApiReady?: (api: SpotifyIFrameAPI) => void;
+    __spotifyIframeApi?: SpotifyIFrameAPI;
+  }
+}
+
+let apiPromise: Promise<SpotifyIFrameAPI> | null = null;
+function loadIframeApi(): Promise<SpotifyIFrameAPI> {
+  if (apiPromise) return apiPromise;
+  apiPromise = new Promise((resolve) => {
+    if (window.__spotifyIframeApi) return resolve(window.__spotifyIframeApi);
+    window.onSpotifyIframeApiReady = (api) => {
+      window.__spotifyIframeApi = api;
+      resolve(api);
+    };
+    const s = document.createElement("script");
+    s.src = "https://open.spotify.com/embed/iframe-api/v1";
+    s.async = true;
+    document.body.appendChild(s);
+  });
+  return apiPromise;
+}
+
+// ---------------------------------------------------------------------------
 
 export default function ProfileTheme({
   movieId,
   filmTitle,
+  posterPath,
   isMe,
   override,
 }: {
   movieId: number;
   filmTitle: string;
+  posterPath: string | null;
   isMe: boolean;
   override: { kind: "track" | "album"; id: string } | null;
 }) {
   const [match, setMatch] = useState<Match | null>(
     override ? { ...override, name: "", artist: "" } : null,
   );
-  const [loaded, setLoaded] = useState(false); // did the auto-match request return?
-  const [playing, setPlaying] = useState(false); // iframe mounted?
+  const [loaded, setLoaded] = useState(false);
   const [configured, setConfigured] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  // Auto-match unless the owner has pinned an override.
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const controllerRef = useRef<SpotifyController | null>(null);
+  const wantPlayRef = useRef(false); // a gesture arrived before the controller was ready
+
+  // 1) Resolve the film → theme (unless the owner pinned an override).
   useEffect(() => {
     if (override) {
       setLoaded(true);
@@ -58,7 +104,75 @@ export default function ProfileTheme({
     };
   }, [movieId, override]);
 
-  // Spotify not wired up yet → the whole feature is dark. Owner gets a hint.
+  // 2) Build the hidden Spotify controller once we have a match + a host node.
+  useEffect(() => {
+    if (!match || !hostRef.current) return;
+    let disposed = false;
+    const uri = `spotify:${match.kind}:${match.id}`;
+    loadIframeApi().then((api) => {
+      if (disposed || !hostRef.current) return;
+      api.createController(hostRef.current, { uri, width: 320, height: 80 }, (controller) => {
+        if (disposed) {
+          controller.destroy();
+          return;
+        }
+        controllerRef.current = controller;
+        setReady(true);
+        controller.addListener("playback_update", (e) => setPlaying(!e.data.isPaused));
+        // A tap already happened while we were loading → honor it now.
+        if (wantPlayRef.current) {
+          wantPlayRef.current = false;
+          controller.play();
+        }
+      });
+    });
+    return () => {
+      disposed = true;
+      try {
+        controllerRef.current?.destroy();
+      } catch {
+        /* already gone */
+      }
+      controllerRef.current = null;
+      setReady(false);
+      setPlaying(false);
+    };
+  }, [match]);
+
+  // 3) Play on first touch — the browser unlocks audio on the first real
+  //    gesture, so we start the theme the instant the visitor taps/keys.
+  useEffect(() => {
+    if (!match) return;
+    let done = false;
+    const arm = () => {
+      if (done) return;
+      done = true;
+      remove();
+      if (controllerRef.current) controllerRef.current.play();
+      else wantPlayRef.current = true; // controller not ready yet
+    };
+    const remove = () => {
+      document.removeEventListener("pointerdown", arm);
+      document.removeEventListener("touchstart", arm);
+      document.removeEventListener("keydown", arm);
+    };
+    document.addEventListener("pointerdown", arm, { passive: true });
+    document.addEventListener("touchstart", arm, { passive: true });
+    document.addEventListener("keydown", arm);
+    return remove;
+  }, [match]);
+
+  const toggle = useCallback(() => {
+    sfxPop();
+    if (controllerRef.current) controllerRef.current.togglePlay();
+    else wantPlayRef.current = true;
+  }, []);
+
+  const onPick = useCallback((m: Match) => {
+    setMatch(m); // remounts the controller effect with the new uri
+    setPlaying(false);
+  }, []);
+
   if (!configured) {
     return isMe ? (
       <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-widest text-dim">
@@ -66,57 +180,63 @@ export default function ProfileTheme({
       </p>
     ) : null;
   }
-
-  // Still resolving, or genuinely no match and you're a visitor → show nothing.
   if (!loaded) return null;
   if (!match && !isMe) return null;
 
-  const height = match?.kind === "album" ? 232 : 152;
-
   return (
     <div className="mt-2">
-      {match && !playing && (
-        <button
-          onClick={() => {
-            sfxPop();
-            setPlaying(true);
+      {match && (
+        <div
+          className="turntable"
+          role="button"
+          tabIndex={0}
+          aria-label={`${playing ? "Pause" : "Play"} the ${filmTitle} theme`}
+          aria-pressed={playing}
+          onClick={toggle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
           }}
-          className="group flex w-full items-center gap-2 rounded border border-amber/50 bg-bg/70 px-3 py-2 text-left backdrop-blur-sm transition-colors hover:border-amber"
         >
-          <span className="text-base leading-none">▶</span>
-          <span className="min-w-0 flex-1">
+          <div className="tt-deck">
+            <div className={`tt-vinyl ${playing ? "is-spinning" : ""}`}>
+              <div className="tt-label">
+                {posterPath ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={`https://image.tmdb.org/t/p/w185${posterPath}`} alt="" />
+                ) : (
+                  <span>{filmTitle}</span>
+                )}
+              </div>
+            </div>
+            <span className={`tt-arm ${playing ? "is-playing" : ""}`} aria-hidden />
+          </div>
+
+          <div className="min-w-0 flex-1">
             <span className="block font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
-              🎵 Play the theme
+              🎵 {playing ? "Now spinning" : ready ? "Tap to spin" : "Cueing…"}
             </span>
             <span className="block truncate font-display text-sm text-cream">
               {match.name || `${filmTitle} — theme`}
-              {match.artist ? <span className="text-dim"> · {match.artist}</span> : null}
             </span>
-          </span>
-        </button>
-      )}
+            {match.artist && <span className="block truncate text-xs text-dim">{match.artist}</span>}
+          </div>
 
-      {match && playing && (
-        <div className="overflow-hidden rounded border border-amber/40">
-          <iframe
-            title={`${filmTitle} theme`}
-            src={embedUrl(match.kind, match.id)}
-            width="100%"
-            height={height}
-            frameBorder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            className="block w-full"
-          />
+          {/* The licensed audio engine — present but parked off-screen. */}
+          <div className="tt-engine" aria-hidden>
+            <div ref={hostRef} />
+          </div>
         </div>
       )}
 
-      {isMe && <OwnerPicker filmTitle={filmTitle} hasMatch={!!match} onPick={(m) => { setMatch(m); setPlaying(false); }} />}
+      {isMe && <OwnerPicker filmTitle={filmTitle} hasMatch={!!match} onPick={onPick} />}
     </div>
   );
 }
 
-// -- owner-only override --------------------------------------------------
+// -- owner-only override -----------------------------------------------------
 
 function OwnerPicker({
   filmTitle,
