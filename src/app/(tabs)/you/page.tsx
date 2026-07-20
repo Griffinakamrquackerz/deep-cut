@@ -108,6 +108,7 @@ export default async function YouPage() {
               }
             : null
         }
+        themeMusic={style.themeMusic}
         lovedMovies={lovedMovies}
         watches={(history.data ?? []).map((w) => ({
           id: w.id as string,

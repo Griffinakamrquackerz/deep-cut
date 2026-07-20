@@ -136,6 +136,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
               }
             : null
         }
+        themeMusic={style.themeMusic}
         lovedMovies={lovedMovies}
         watches={(watches.data ?? []).map((w) => ({
           id: w.id as string,

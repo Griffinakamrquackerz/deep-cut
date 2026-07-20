@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ShrinePrints from "./ShrinePrints";
+import ProfileTheme from "./ProfileTheme";
 
 /**
  * The signature-film shrine: production stills scattered like photo prints
@@ -38,12 +39,16 @@ export default function SignatureShrine({
   year,
   stills,
   posterPath,
+  isMe = false,
+  themeMusic = null,
 }: {
   movieId: number;
   title: string;
   year: number | null;
   stills: string[];
   posterPath: string | null;
+  isMe?: boolean;
+  themeMusic?: { kind: "track" | "album"; id: string } | null;
 }) {
   const prints = stills.slice(0, 6);
   const usePoster = prints.length < 2; // too few stills → single lobby card
@@ -94,6 +99,12 @@ export default function SignatureShrine({
       </div>
       {/* Sprocket rails top & bottom — the shrine sits on a strip of film. */}
       <div className="film-strip" aria-hidden />
+
+      {/* Theme music — the profile's soundtrack, played through Spotify's own
+          licensed embed. Dark until Spotify keys are configured. */}
+      <div className="px-4">
+        <ProfileTheme movieId={movieId} filmTitle={title} isMe={isMe} override={themeMusic} />
+      </div>
     </div>
   );
 }

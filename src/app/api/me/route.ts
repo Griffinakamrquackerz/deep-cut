@@ -15,6 +15,11 @@ const Input = z.object({
   theme: z.enum(THEME_KEYS).nullish(),
   // null clears the signature film; a number sets it.
   signatureMovieId: z.number().int().positive().nullable().optional(),
+  // Profile theme music override; null reverts to the auto-matched theme.
+  themeMusic: z
+    .object({ kind: z.enum(["track", "album"]), id: z.string().min(1).max(64) })
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -38,6 +43,14 @@ export async function PATCH(request: Request) {
     }
     updates.signature_movie_id = parsed.data.signatureMovieId;
   }
+
+  // Theme music lives only in the events fallback (no column) — handle it on
+  // its own so it can be set/cleared independently of the column-backed style.
+  if (parsed.data.themeMusic !== undefined) {
+    const ok = await writeStyleFallback(user.id, { themeMusic: parsed.data.themeMusic });
+    if (!ok) return NextResponse.json({ error: "style_save_failed" }, { status: 500 });
+  }
+
   if (Object.keys(updates).length === 0) return NextResponse.json({ ok: true });
 
   const db = supabaseAdmin();

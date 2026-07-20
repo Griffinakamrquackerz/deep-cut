@@ -40,6 +40,7 @@ export interface ProfileViewData {
     posterPath: string | null;
     stills: string[];
   } | null;
+  themeMusic: { kind: "track" | "album"; id: string } | null;
   lovedMovies: MovieLite[];
   watches: Array<{
     id: string;
@@ -113,6 +114,8 @@ export default function ProfileView(data: ProfileViewData) {
           year={data.signature.year}
           stills={data.signature.stills}
           posterPath={data.signature.posterPath}
+          isMe={data.isMe}
+          themeMusic={data.themeMusic}
         />
       )}
 
