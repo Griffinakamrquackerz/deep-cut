@@ -36,6 +36,9 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 562, title: "Die Hard", year: 1988 },
   { tmdbId: 12477, title: "Grave of the Fireflies", year: 1988 },
   { tmdbId: 11216, title: "Cinema Paradiso", year: 1988 },
+  { tmdbId: 1091, title: "The Thing", year: 1982 },
+  { tmdbId: 925, title: "Do the Right Thing", year: 1989 },
+  { tmdbId: 639, title: "When Harry Met Sally...", year: 1989 },
 
   // ── the 90s ──
   { tmdbId: 274, title: "The Silence of the Lambs", year: 1991 },
@@ -51,6 +54,15 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 115, title: "The Big Lebowski", year: 1998 },
   { tmdbId: 550, title: "Fight Club", year: 1999 },
   { tmdbId: 603, title: "The Matrix", year: 1999 },
+  { tmdbId: 769, title: "GoodFellas", year: 1990 },
+  { tmdbId: 329, title: "Jurassic Park", year: 1993 },
+  { tmdbId: 2292, title: "Clerks", year: 1994 },
+  { tmdbId: 9603, title: "Clueless", year: 1995 },
+  { tmdbId: 76, title: "Before Sunrise", year: 1995 },
+  { tmdbId: 4232, title: "Scream", year: 1996 },
+  { tmdbId: 597, title: "Titanic", year: 1997 },
+  { tmdbId: 4951, title: "10 Things I Hate About You", year: 1999 },
+  { tmdbId: 1542, title: "Office Space", year: 1999 },
 
   // ── the 2000s ──
   { tmdbId: 77, title: "Memento", year: 2000 },
@@ -68,6 +80,14 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 155, title: "The Dark Knight", year: 2008 },
   { tmdbId: 8321, title: "In Bruges", year: 2008 },
   { tmdbId: 20453, title: "3 Idiots", year: 2009 },
+  { tmdbId: 98, title: "Gladiator", year: 2000 },
+  { tmdbId: 808, title: "Shrek", year: 2001 },
+  { tmdbId: 120, title: "The Lord of the Rings: The Fellowship of the Ring", year: 2001 },
+  { tmdbId: 747, title: "Shaun of the Dead", year: 2004 },
+  { tmdbId: 8193, title: "Napoleon Dynamite", year: 2004 },
+  { tmdbId: 11036, title: "The Notebook", year: 2004 },
+  { tmdbId: 7512, title: "Idiocracy", year: 2006 },
+  { tmdbId: 8363, title: "Superbad", year: 2007 },
 
   // ── the 2010s ──
   { tmdbId: 27205, title: "Inception", year: 2010 },
@@ -97,6 +117,9 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 530915, title: "1917", year: 2019 },
   { tmdbId: 475557, title: "Joker", year: 2019 },
   { tmdbId: 466272, title: "Once Upon a Time in Hollywood", year: 2019 },
+  { tmdbId: 55721, title: "Bridesmaids", year: 2011 },
+  { tmdbId: 157336, title: "Interstellar", year: 2014 },
+  { tmdbId: 531428, title: "Portrait of a Lady on Fire", year: 2019 },
 
   // ── the 2020s ──
   { tmdbId: 581734, title: "Nomadland", year: 2020 },
@@ -108,4 +131,10 @@ export const STARTER_GRID: StarterFilm[] = [
   { tmdbId: 346698, title: "Barbie", year: 2023 },
   { tmdbId: 792307, title: "Poor Things", year: 2023 },
   { tmdbId: 693134, title: "Dune: Part Two", year: 2024 },
+  { tmdbId: 579974, title: "RRR", year: 2022 },
+  { tmdbId: 666277, title: "Past Lives", year: 2023 },
+  { tmdbId: 940721, title: "Godzilla Minus One", year: 2023 },
+  { tmdbId: 933260, title: "The Substance", year: 2024 },
+  { tmdbId: 1064213, title: "Anora", year: 2024 },
+  { tmdbId: 937287, title: "Challengers", year: 2024 },
 ];
