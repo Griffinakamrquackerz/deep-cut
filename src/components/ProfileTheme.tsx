@@ -270,6 +270,13 @@ export default function ProfileTheme({
             }
           }}
         >
+          {/* Bottom layer: the licensed audio engine — on-screen (so it
+              initializes) but sealed under an opaque cover. */}
+          <div className="tt-engine" aria-hidden>
+            <div ref={hostRef} />
+          </div>
+          <div className="tt-cover" aria-hidden />
+
           <div className="tt-deck">
             <div className={`tt-vinyl ${playing ? "is-spinning" : ""}`}>
               <div className="tt-label">
@@ -288,7 +295,7 @@ export default function ProfileTheme({
             </span>
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="tt-meta min-w-0 flex-1">
             <span className="block font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
               🎵 {playing ? "Now spinning" : ready ? "Tap to play the theme" : "Cueing the record…"}
             </span>
@@ -296,11 +303,6 @@ export default function ProfileTheme({
               {match.name || `${filmTitle} — theme`}
             </span>
             {match.artist && <span className="block truncate text-xs text-dim">{match.artist}</span>}
-          </div>
-
-          {/* The licensed audio engine — on-screen but hidden behind the deck. */}
-          <div className="tt-engine" aria-hidden>
-            <div ref={hostRef} />
           </div>
         </div>
       )}

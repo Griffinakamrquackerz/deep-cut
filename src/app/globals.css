@@ -639,9 +639,14 @@ body {
 }
 .tt-deck {
   position: relative;
+  z-index: 2; /* above the engine + cover */
   flex: 0 0 auto;
   width: 74px;
   height: 74px;
+}
+.tt-meta {
+  position: relative;
+  z-index: 2;
 }
 /* The record: black wax with concentric grooves + a faint sheen. */
 .tt-vinyl {
@@ -742,11 +747,13 @@ body {
 }
 /* The Spotify iframe still exists (it's the licensed audio engine) — we just
    keep it out of sight behind the deck. It must stay in the DOM to play. */
+/* The Spotify engine must stay genuinely on-screen (opacity:1, in the viewport)
+   or the embed refuses to initialize — so instead of hiding it, we lay an
+   opaque cover over it. It's visible to the browser, invisible to the eye. */
 .tt-engine {
   position: absolute;
   inset: 0;
-  z-index: -1; /* on-screen so playback is allowed, but tucked behind the deck */
-  opacity: 0;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -754,4 +761,13 @@ body {
   width: 100% !important;
   height: 100% !important;
   border: 0;
+}
+.tt-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 140% at 15% 0%, color-mix(in oklab, var(--color-amber) 8%, transparent), transparent 60%),
+    var(--color-bg);
 }
