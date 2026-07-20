@@ -82,15 +82,7 @@ export default function ProfileTheme({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<SpotifyController | null>(null);
-  const wantPlayRef = useRef(false); // a gesture arrived before the controller was ready
   const startedRef = useRef(false); // has playback been kicked off at least once?
-
-  // Start playback now, or queue it if the controller is still loading.
-  const startPlayback = useCallback(() => {
-    startedRef.current = true;
-    if (controllerRef.current) controllerRef.current.play();
-    else wantPlayRef.current = true;
-  }, []);
 
   // 1) Resolve the film → theme (unless the owner pinned an override).
   useEffect(() => {
@@ -118,7 +110,6 @@ export default function ProfileTheme({
     if (!match || !hostRef.current) return;
     let disposed = false;
     startedRef.current = false; // a new track starts un-played
-    wantPlayRef.current = false;
     const uri = `spotify:${match.kind}:${match.id}`;
     loadIframeApi().then((api) => {
       if (disposed || !hostRef.current) return;
@@ -130,11 +121,6 @@ export default function ProfileTheme({
         controllerRef.current = controller;
         setReady(true);
         controller.addListener("playback_update", (e) => setPlaying(!e.data.isPaused));
-        // A tap already happened while we were loading → honor it now.
-        if (wantPlayRef.current) {
-          wantPlayRef.current = false;
-          controller.play();
-        }
       });
     });
     return () => {
@@ -150,19 +136,23 @@ export default function ProfileTheme({
     };
   }, [match]);
 
-  // 3) Play on first touch — browsers unlock audio on the first real gesture,
-  //    so we start the theme the instant the visitor taps/keys ANYWHERE. We
-  //    ignore gestures that land on the record itself: those are handled by
-  //    the card's own onClick, so the two never fight over the same tap.
+  // 3) Play on first touch — browsers only unlock audio inside a real gesture,
+  //    so we start the theme on the visitor's first tap/keypress ANYWHERE. We
+  //    only act once the controller is live (calling play() outside a gesture,
+  //    or before the player exists, is silently blocked); until then we keep
+  //    listening, so the *next* gesture after it's ready is the one that plays.
+  //    Gestures on the record itself are left to the card's own handler.
   useEffect(() => {
     if (!match) return;
     const arm = (e: Event) => {
       if (startedRef.current) return remove();
+      if (!controllerRef.current) return; // not ready — wait for a later gesture
       if (cardRef.current && e.target instanceof Node && cardRef.current.contains(e.target)) {
-        return; // let the card's onClick own this one
+        return; // the card's onClick owns taps on the record
       }
+      startedRef.current = true;
+      controllerRef.current.play();
       remove();
-      startPlayback();
     };
     const remove = () => {
       document.removeEventListener("pointerdown", arm);
@@ -171,17 +161,20 @@ export default function ProfileTheme({
     document.addEventListener("pointerdown", arm, { passive: true });
     document.addEventListener("keydown", arm);
     return remove;
-  }, [match, startPlayback]);
+  }, [match]);
 
-  // The record's own tap: first tap starts it, later taps pause/resume.
+  // The record's own tap: first tap starts it, later taps pause/resume. Always
+  // runs inside the tap gesture, so the browser lets the audio through.
   const toggle = useCallback(() => {
+    if (!controllerRef.current) return; // still cueing — ignore early taps
     sfxPop();
     if (!startedRef.current) {
-      startPlayback();
-    } else if (controllerRef.current) {
+      startedRef.current = true;
+      controllerRef.current.play();
+    } else {
       controllerRef.current.togglePlay();
     }
-  }, [startPlayback]);
+  }, []);
 
   const onPick = useCallback((m: Match) => {
     setMatch(m); // remounts the controller effect with the new uri
@@ -228,11 +221,15 @@ export default function ProfileTheme({
               </div>
             </div>
             <span className={`tt-arm ${playing ? "is-playing" : ""}`} aria-hidden />
+            {/* Play / pause badge so it reads unmistakably as a player. */}
+            <span className="tt-badge" aria-hidden>
+              {playing ? "❚❚" : "▶"}
+            </span>
           </div>
 
           <div className="min-w-0 flex-1">
             <span className="block font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
-              🎵 {playing ? "Now spinning" : ready ? "Tap to spin" : "Cueing…"}
+              🎵 {playing ? "Now spinning" : ready ? "Tap to play the theme" : "Cueing the record…"}
             </span>
             <span className="block truncate font-display text-sm text-cream">
               {match.name || `${filmTitle} — theme`}
@@ -240,7 +237,7 @@ export default function ProfileTheme({
             {match.artist && <span className="block truncate text-xs text-dim">{match.artist}</span>}
           </div>
 
-          {/* The licensed audio engine — present but parked off-screen. */}
+          {/* The licensed audio engine — on-screen but hidden behind the deck. */}
           <div className="tt-engine" aria-hidden>
             <div ref={hostRef} />
           </div>

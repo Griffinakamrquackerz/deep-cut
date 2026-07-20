@@ -722,6 +722,24 @@ body {
   background: #d9d3c7;
 }
 .tt-arm.is-playing { transform: rotate(14deg); }
+/* Play/pause badge pinned to the deck's corner. */
+.tt-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-amber);
+  color: var(--color-bg);
+  font-size: 0.5rem;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
 /* The Spotify iframe still exists (it's the licensed audio engine) — we just
    keep it out of sight behind the deck. It must stay in the DOM to play. */
 .tt-engine {
