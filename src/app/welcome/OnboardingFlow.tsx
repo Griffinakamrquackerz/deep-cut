@@ -262,8 +262,8 @@ export default function OnboardingFlow() {
           <p className="eyebrow mb-1">Step 3 of 4</p>
           <h1 className="font-display text-4xl text-cream">YOUR SIGNATURE FILM</h1>
           <p className="mt-1 text-sm text-dim">
-            Your favorite film of all time — it fronts your profile as a stills
-            collage. Choose like everyone&apos;s watching.
+            Choose your favorite film so we can customize your profile — it
+            fronts your page as a stills collage.
           </p>
         </div>
 
