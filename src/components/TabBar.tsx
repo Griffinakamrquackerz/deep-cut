@@ -8,8 +8,8 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { href: "/you", label: "You", glyph: "🎟" },
-  { href: "/settings", label: "Settings", glyph: "🎛" },
+  { href: "/you", label: "You", glyph: "🎟", usher: "youtab" },
+  { href: "/settings", label: "Settings", glyph: "🎛", usher: "settingstab" },
 ] as const;
 
 function SideTab({
@@ -17,15 +17,18 @@ function SideTab({
   label,
   glyph,
   active,
+  usher,
 }: {
   href: string;
   label: string;
   glyph: string;
   active: boolean;
+  usher?: string;
 }) {
   return (
     <Link
       href={href}
+      data-usher={usher}
       aria-current={active ? "page" : undefined}
       className={`flex flex-col items-center gap-0.5 py-2.5 font-mono text-[0.6rem] uppercase tracking-widest transition-transform active:scale-90 ${
         active ? "text-amber [&>span:last-child]:glow-amber" : "text-dim hover:text-cream"

@@ -9,6 +9,7 @@ import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
 import DealReels from "./DealReels";
+import UsherTour from "./UsherTour";
 import HouseDark from "./HouseDark";
 import AdSlot from "./AdSlot";
 import Confetti from "./Confetti";
@@ -211,6 +212,7 @@ export default function TonightScreen({
   return (
     <section className="flex flex-col gap-4">
       <Confetti trigger={confetti} />
+      <UsherTour />
       <header>
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Tonight</p>
@@ -288,7 +290,7 @@ export default function TonightScreen({
       )}
 
       {/* Front-door modes: the two-player standoff and the lean-back channel */}
-      <div className="grid grid-cols-2 gap-2">
+      <div data-usher="doors" className="grid grid-cols-2 gap-2">
         <Link
           href="/settle"
           onClick={() => sfxClick()}
@@ -350,7 +352,7 @@ export default function TonightScreen({
             </p>
           )}
         </div>
-        <label className="flex items-center gap-3">
+        <label data-usher="dial" className="flex items-center gap-3">
           <span className="eyebrow shrink-0">Obscurity</span>
           <input
             type="range"
@@ -378,6 +380,7 @@ export default function TonightScreen({
         <button
           onClick={deal}
           disabled={dealing}
+          data-usher="deal"
           className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
         >
           {dealing ? (
