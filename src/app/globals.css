@@ -405,6 +405,15 @@ body {
   100% { opacity: 0; }
 }
 
+/* A fresh print taped over the old one — fade in with a tiny settle. */
+.print-in {
+  animation: print-in 0.6s ease-out both;
+}
+@keyframes print-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* Poster wiggle on hover. */
 .wiggle:hover { animation: wiggle 0.4s ease-in-out; }
 
@@ -570,6 +579,7 @@ body {
   .cue-mark,
   .bulb-frame::before,
   .reel-strip,
+  .print-in,
   .reel-spin,
   .marquee-toast,
   .stamp-slam,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ShrinePrints from "./ShrinePrints";
 
 /**
  * The signature-film shrine: production stills scattered like photo prints
@@ -68,32 +69,7 @@ export default function SignatureShrine({
             </div>
           )
         ) : (
-          prints.map((p, i) => {
-            const slot = SLOTS[i];
-            return (
-              <div
-                key={p}
-                className="shrine-photo absolute"
-                style={{
-                  left: slot.left,
-                  top: slot.top,
-                  width: slot.width,
-                  zIndex: slot.z,
-                  transform: `rotate(${slot.rotate + jitter(movieId, i, 3)}deg)`,
-                }}
-              >
-                <span className="shrine-tape" aria-hidden />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://image.tmdb.org/t/p/w780${p}`}
-                  alt=""
-                  loading={i < 3 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="block aspect-video w-full object-cover"
-                />
-              </div>
-            );
-          })
+          <ShrinePrints movieId={movieId} stills={stills} />
         )}
 
         {/* Legibility scrim + projector vignette, light enough to keep the wall loud. */}

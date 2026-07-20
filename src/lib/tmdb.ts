@@ -214,7 +214,7 @@ export function pickBestVideo(videos: TmdbVideo[]): { key: string; name: string 
 }
 
 /** Top production stills (backdrop file_paths) for a film, best-voted first. */
-export async function getMovieStills(tmdbId: number, limit = 6): Promise<string[]> {
+export async function getMovieStills(tmdbId: number, limit = 14): Promise<string[]> {
   const data = await tmdbFetch<{
     backdrops?: Array<{ file_path: string; vote_count: number }>;
   }>(`/movie/${tmdbId}/images`, { include_image_language: "null,en" });
