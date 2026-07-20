@@ -57,6 +57,7 @@ function installGestureTracker() {
     lastGestureAt = Date.now();
   };
   document.addEventListener("pointerdown", mark, { capture: true, passive: true });
+  document.addEventListener("touchstart", mark, { capture: true, passive: true });
   document.addEventListener("keydown", mark, { capture: true });
 }
 const RECENT_GESTURE_MS = 4000;
@@ -190,9 +191,13 @@ export default function ProfileTheme({
     };
     const remove = () => {
       document.removeEventListener("pointerdown", arm);
+      document.removeEventListener("touchstart", arm);
       document.removeEventListener("keydown", arm);
     };
+    // pointerdown/touchstart fire at the START of a tap OR a scroll, so this
+    // covers both "tap anywhere" and "scroll to play" on touch devices.
     document.addEventListener("pointerdown", arm, { passive: true });
+    document.addEventListener("touchstart", arm, { passive: true });
     document.addEventListener("keydown", arm);
     return remove;
   }, [match]);
