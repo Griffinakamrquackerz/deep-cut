@@ -15,6 +15,13 @@ interface Match {
   artist: string;
 }
 
+// Plain Spotify embed URL — the reliable fallback when the control script is
+// blocked (some iOS content blockers kill spotifycdn.com), so the theme still
+// plays via Spotify's own button.
+function embedUrl(kind: "track" | "album", id: string): string {
+  return `https://open.spotify.com/embed/${kind}/${id}?theme=0`;
+}
+
 // --- Spotify IFrame API loader (singleton across the SPA) -------------------
 
 interface SpotifyController {
@@ -96,8 +103,7 @@ export default function ProfileTheme({
   const [configured, setConfigured] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
-  const [fallback, setFallback] = useState(false); // watchdog tripped (diagnostic)
-  const [dbg, setDbg] = useState({ api: false, cb: false }); // owner-only diagnostics
+  const [fallback, setFallback] = useState(false); // control script blocked → plain embed
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -137,10 +143,8 @@ export default function ProfileTheme({
     startedRef.current = false; // a new track starts un-played
     const uri = `spotify:${match.kind}:${match.id}`;
     loadIframeApi().then((api) => {
-      setDbg((d) => ({ ...d, api: true }));
       if (disposed || !hostRef.current) return;
       api.createController(hostRef.current, { uri, width: 320, height: 80 }, (controller) => {
-        setDbg((d) => ({ ...d, cb: true }));
         if (disposed) {
           controller.destroy();
           return;
@@ -209,7 +213,7 @@ export default function ProfileTheme({
     if (ready) return;
     const t = setTimeout(() => {
       if (!controllerRef.current) setFallback(true);
-    }, 5000);
+    }, 4000);
     return () => clearTimeout(t);
   }, [match, ready]);
 
@@ -243,7 +247,32 @@ export default function ProfileTheme({
 
   return (
     <div className="mt-2">
-      {match && (
+      {/* Blocked-script fallback: Spotify's own player, framed to match the
+          house — a labelled marquee card, not a bare green bar. */}
+      {match && fallback && !ready && (
+        <div className="overflow-hidden rounded border border-amber/50 bg-bg">
+          <div className="flex items-center gap-2 px-3 pt-2">
+            <span className="text-sm leading-none">🎵</span>
+            <span className="font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
+              {filmTitle} — the theme · tap play
+            </span>
+          </div>
+          <div className="p-2">
+            <iframe
+              title={`${filmTitle} theme`}
+              src={embedUrl(match.kind, match.id)}
+              width="100%"
+              height={match.kind === "album" ? 232 : 152}
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="block w-full rounded"
+            />
+          </div>
+        </div>
+      )}
+
+      {match && !(fallback && !ready) && (
         <div
           ref={cardRef}
           className="turntable"
@@ -294,13 +323,6 @@ export default function ProfileTheme({
             {match.artist && <span className="block truncate text-xs text-dim">{match.artist}</span>}
           </div>
         </div>
-      )}
-
-      {isMe && match && (
-        <p className="mt-1 rounded border border-amber/60 bg-bg px-2 py-1 text-center font-mono text-[0.7rem] font-bold uppercase tracking-widest text-amber">
-          DBG → api:{dbg.api ? "Y" : "N"} · cb:{dbg.cb ? "Y" : "N"} · ready:{ready ? "Y" : "N"} · play:
-          {playing ? "Y" : "N"} · wd:{fallback ? "Y" : "N"}
-        </p>
       )}
 
       {isMe && <OwnerPicker filmTitle={filmTitle} hasMatch={!!match} onPick={onPick} />}
