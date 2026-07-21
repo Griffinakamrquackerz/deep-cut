@@ -297,9 +297,9 @@ export default function ProfileTheme({
       )}
 
       {isMe && match && (
-        <p className="mt-1 font-mono text-[0.5rem] uppercase tracking-widest text-dim/70">
-          dbg · api:{dbg.api ? "y" : "n"} cb:{dbg.cb ? "y" : "n"} ready:{ready ? "y" : "n"} play:
-          {playing ? "y" : "n"} wd:{fallback ? "y" : "n"} · {match.kind}:{match.id.slice(0, 6)}
+        <p className="mt-1 rounded border border-amber/60 bg-bg px-2 py-1 text-center font-mono text-[0.7rem] font-bold uppercase tracking-widest text-amber">
+          DBG → api:{dbg.api ? "Y" : "N"} · cb:{dbg.cb ? "Y" : "N"} · ready:{ready ? "Y" : "N"} · play:
+          {playing ? "Y" : "N"} · wd:{fallback ? "Y" : "N"}
         </p>
       )}
 
