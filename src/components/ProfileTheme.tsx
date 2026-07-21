@@ -15,11 +15,6 @@ interface Match {
   artist: string;
 }
 
-// Plain Spotify embed URL — the reliable fallback player.
-function embedUrl(kind: "track" | "album", id: string): string {
-  return `https://open.spotify.com/embed/${kind}/${id}?theme=0`;
-}
-
 // --- Spotify IFrame API loader (singleton across the SPA) -------------------
 
 interface SpotifyController {
@@ -101,7 +96,8 @@ export default function ProfileTheme({
   const [configured, setConfigured] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
-  const [fallback, setFallback] = useState(false); // turntable engine failed → plain embed
+  const [fallback, setFallback] = useState(false); // watchdog tripped (diagnostic)
+  const [dbg, setDbg] = useState({ api: false, cb: false }); // owner-only diagnostics
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -141,8 +137,10 @@ export default function ProfileTheme({
     startedRef.current = false; // a new track starts un-played
     const uri = `spotify:${match.kind}:${match.id}`;
     loadIframeApi().then((api) => {
+      setDbg((d) => ({ ...d, api: true }));
       if (disposed || !hostRef.current) return;
       api.createController(hostRef.current, { uri, width: 320, height: 80 }, (controller) => {
+        setDbg((d) => ({ ...d, cb: true }));
         if (disposed) {
           controller.destroy();
           return;
@@ -245,21 +243,7 @@ export default function ProfileTheme({
 
   return (
     <div className="mt-2">
-      {match && fallback && !ready && (
-        <div className="overflow-hidden rounded border border-amber/40">
-          <iframe
-            title={`${filmTitle} theme`}
-            src={embedUrl(match.kind, match.id)}
-            width="100%"
-            height={match.kind === "album" ? 232 : 152}
-            frameBorder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            className="block w-full"
-          />
-        </div>
-      )}
-      {match && !(fallback && !ready) && (
+      {match && (
         <div
           ref={cardRef}
           className="turntable"
@@ -310,6 +294,13 @@ export default function ProfileTheme({
             {match.artist && <span className="block truncate text-xs text-dim">{match.artist}</span>}
           </div>
         </div>
+      )}
+
+      {isMe && match && (
+        <p className="mt-1 font-mono text-[0.5rem] uppercase tracking-widest text-dim/70">
+          dbg · api:{dbg.api ? "y" : "n"} cb:{dbg.cb ? "y" : "n"} ready:{ready ? "y" : "n"} play:
+          {playing ? "y" : "n"} wd:{fallback ? "y" : "n"} · {match.kind}:{match.id.slice(0, 6)}
+        </p>
       )}
 
       {isMe && <OwnerPicker filmTitle={filmTitle} hasMatch={!!match} onPick={onPick} />}
