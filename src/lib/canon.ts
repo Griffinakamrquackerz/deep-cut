@@ -3,6 +3,9 @@
 // artists' favorite artists, directors' favorite directors. Hand-picked per
 // channel mood, resolved against TMDB by title + year at request time (ids
 // drift less than titles do, but titles are what a programmer knows cold).
+// Resolution prefers an exact title inside the year band — TMDB ranks search by
+// popularity, and a "close enough" year is how a pick ends up as the wrong film
+// (see pickCanonHit).
 //
 // Curation bar: would a rep theater put it on a midnight double bill? Famous
 //-among-cinephiles is fine (Le Samouraï); famous-at-brunch is not (Amélie).
@@ -86,6 +89,11 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Upstream Color", y: 2013 },
     { t: "Enemy", y: 2013 },
     { t: "Under the Skin", y: 2013 },
+    { t: "Enter the Void", y: 2009 },
+    { t: "Possession", y: 1981 },
+    { t: "Synecdoche, New York", y: 2008 },
+    { t: "Waking Life", y: 2001 },
+    { t: "Beyond the Black Rainbow", y: 2010 },
   ],
   edge: [
     { t: "Le Samouraï", y: 1967 },
@@ -197,3 +205,29 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Free Solo", y: 2018 },
   ],
 };
+
+/** The slice of a TMDB search hit the shelf matcher needs. */
+export interface CanonSearchHit {
+  title: string;
+  year: number | null;
+  poster_path: string | null;
+}
+
+/**
+ * Which search hit a shelf pick resolves to.
+ *
+ * Title + year alone is not enough. TMDB ranks search by popularity, so the
+ * Scare shelf's { t: "House", y: 1977 } — Hausu — resolved to National
+ * Lampoon's *Animal House* (1978): inside the ±1-year tolerance, vastly more
+ * popular, and the first hit that passed. The repertory shelf then opened on a
+ * frat comedy. An exact title inside the year band wins; the loose band stays
+ * as the fallback it was meant to be, for TMDB's retitled, transliterated or
+ * year-shifted records ("Lake Mungo" is filed under 2009, not 2008).
+ */
+export function pickCanonHit<T extends CanonSearchHit>(hits: T[], pick: CanonPick): T | null {
+  const band = hits.filter(
+    (h) => h.year != null && Math.abs(h.year - pick.y) <= 1 && h.poster_path,
+  );
+  const want = pick.t.trim().toLowerCase();
+  return band.find((h) => h.title.trim().toLowerCase() === want) ?? band[0] ?? null;
+}

@@ -6,13 +6,21 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SignalSource = "roll_pick" | "settle_verdict" | "hot_take" | "take_fire";
+export type SignalSource =
+  | "roll_pick"
+  | "settle_verdict"
+  | "hot_take"
+  | "take_fire"
+  | "blend_parent";
 
 const SOURCE_LABEL: Record<SignalSource, string> = {
   roll_pick: "picked it out of a Just Roll It lineup",
   settle_verdict: "accepted it as a Settle It verdict",
   hot_take: "wrote a hot take about it",
   take_fire: "fired 🔥 on a take about it",
+  // Naming a film as a parent in This Meets That is a real endorsement —
+  // you reached for it unprompted.
+  blend_parent: "named it as a parent film in This Meets That",
 };
 
 export async function recordTasteSignal(

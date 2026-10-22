@@ -4,9 +4,8 @@ import { Bebas_Neue, IBM_Plex_Mono, Karla } from "next/font/google";
 import PwaSetup from "@/components/PwaSetup";
 import JsonLd from "@/components/JsonLd";
 import { siteUrl } from "@/lib/site";
+import { ADSENSE_CLIENT } from "@/lib/adsense";
 import "./globals.css";
-
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 
 const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 const plexMono = IBM_Plex_Mono({
@@ -21,11 +20,11 @@ const SITE_URL = siteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Deep Cut — movies you haven't met yet",
+    default: "Deep Cut — an independent streaming house",
     template: "%s · Deep Cut",
   },
   description:
-    "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+    "An independent streaming house: fourteen channels of award-winning shorts, the good films hiding on the services you already pay for, and a film fund members vote to spend.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
@@ -35,16 +34,27 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Deep Cut",
-    title: "Deep Cut — movies you haven't met yet",
+    title: "Deep Cut — an independent streaming house",
     description:
-      "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+      "An independent streaming house: fourteen channels of award-winning shorts, the good films hiding on the services you already pay for, and a film fund members vote to spend.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deep Cut — movies you haven't met yet",
-    description: "An AI repertory theater for films you haven't met yet.",
+    title: "Deep Cut — an independent streaming house",
+    description:
+      "Award-winning shorts, the films your streaming services never show you, and a fund members vote to spend on an independent feature.",
   },
+  // How AdSense confirms we own thedeepcut.xyz.
+  //
+  // One of Google's three accepted proofs (the others being the loader snippet
+  // in <head> and an ads.txt line — /ads.txt serves that one from the same env
+  // var, so two of the three are covered by setting it). This is the reliable
+  // one here: `metadata` is rendered into the flushed document head on the
+  // server, so it's in the very first bytes a crawler receives, before any
+  // streaming or hydration. Absent entirely until the publisher id is set —
+  // an empty content="" would be a claim to own nothing.
+  ...(ADSENSE_CLIENT ? { other: { "google-adsense-account": ADSENSE_CLIENT } } : {}),
 };
 
 export const viewport: Viewport = {
@@ -58,6 +68,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${bebas.variable} ${plexMono.variable} ${karla.variable}`}>
       <body className="min-h-dvh text-cream">
+        {/*
+          The ad loader. Mounted in the body on purpose: beforeInteractive would
+          put it in the flushed <head> but fetch it at high priority on every
+          page, paying for advertising with load time on a site that mostly
+          isn't showing an ad yet.
+
+          Site verification does NOT depend on this tag — it can't, since a
+          crawler reading the initial HTML sees this arrive in the streamed
+          payload rather than the head. That job belongs to the
+          google-adsense-account meta tag in `metadata` above, which Next emits
+          into the real head server-side.
+        */}
         {ADSENSE_CLIENT && (
           <Script
             async
@@ -76,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alternateName: "The Deep Cut",
             url: SITE_URL,
             description:
-              "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+              "An independent streaming house: fourteen channels of award-winning shorts, the good films hiding on the services you already pay for, and a film fund members vote to spend.",
           }}
         />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}

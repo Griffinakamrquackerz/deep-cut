@@ -1,41 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
-
-// VAPID public keys are base64url; the push manager wants a Uint8Array.
-function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(b64);
-  const out = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-  return out;
-}
+import { askAndSubscribe, pushSupported, unsubscribe, vapidKey } from "@/lib/push-client";
 
 type State = "loading" | "unsupported" | "off" | "on" | "denied" | "working";
 
 /**
- * The Friday Night Deal opt-in. Subscribes the browser to web push and stores
- * the subscription server-side. Degrades to a clear "not available" when the
- * browser can't do push or the house hasn't wired VAPID keys yet — never an
- * error the user has to decode.
+ * The off switch — and the deliberate way in for anyone who said "not now".
+ *
+ * One toggle covers everything the house sends: the Friday deal, tags, and
+ * films people hand you. It used to say "Friday Night Deal" and only mean
+ * that; the label has to keep pace with what turning it on signs you up for.
+ *
+ * Subscribing itself lives in lib/push-client, shared with the in-app prompts,
+ * so the toggle and the prompts can't disagree about what "on" means.
  */
 export default function NotificationsToggle() {
   const [state, setState] = useState<State>("loading");
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const supported =
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window;
-      if (!supported) return alive && setState("unsupported");
-      // Push must be configured on the server for the toggle to mean anything.
-      const key = await fetch("/api/push/vapid")
-        .then((r) => r.json())
-        .then((d) => d.key as string | null)
-        .catch(() => null);
-      if (!key) return alive && setState("unsupported");
+    void (async () => {
+      if (!pushSupported()) return alive && setState("unsupported");
+      // With no key on the server the toggle would be a switch wired to
+      // nothing, so it hides rather than lying.
+      if (!(await vapidKey())) return alive && setState("unsupported");
       if (Notification.permission === "denied") return alive && setState("denied");
       const reg = await navigator.serviceWorker.ready.catch(() => null);
       const existing = reg ? await reg.pushManager.getSubscription() : null;
@@ -48,47 +36,14 @@ export default function NotificationsToggle() {
 
   async function enable() {
     setState("working");
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        setState(perm === "denied" ? "denied" : "off");
-        return;
-      }
-      const key = await fetch("/api/push/vapid")
-        .then((r) => r.json())
-        .then((d) => d.key as string | null);
-      if (!key) return setState("unsupported");
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(key),
-      });
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sub.toJSON()),
-      });
-      const body = await res.json().catch(() => ({}));
-      setState(res.ok && body.ok !== false ? "on" : "off");
-    } catch {
-      setState("off");
-    }
+    const result = await askAndSubscribe();
+    setState(result === "on" ? "on" : result === "denied" ? "denied" : "off");
   }
 
   async function disable() {
     setState("working");
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(sub.endpoint)}`, {
-          method: "DELETE",
-        }).catch(() => null);
-        await sub.unsubscribe().catch(() => null);
-      }
-    } finally {
-      setState("off");
-    }
+    await unsubscribe();
+    setState("off");
   }
 
   if (state === "loading" || state === "unsupported") return null;
@@ -99,7 +54,7 @@ export default function NotificationsToggle() {
 
   return (
     <div>
-      <p className="eyebrow mb-2">Friday Night Deal</p>
+      <p className="eyebrow mb-2">Notifications</p>
       <button
         onClick={() => (on ? void disable() : void enable())}
         disabled={busy || denied}
@@ -108,12 +63,12 @@ export default function NotificationsToggle() {
       >
         <span className="text-left">
           <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-            🎬 Weekly deal alert
+            🎬 Alerts
           </span>
           <span className="font-mono text-[0.6rem] text-dim">
             {denied
               ? "blocked in your browser settings — turn it back on there"
-              : "one deep cut, dealt to you every Friday night"}
+              : "the Friday deal, tags, and films people send you"}
           </span>
         </span>
         <span

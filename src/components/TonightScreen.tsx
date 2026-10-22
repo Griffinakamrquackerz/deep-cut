@@ -1,5 +1,6 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import NowShowing from "@/components/NowShowing";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Poster from "./Poster";
 import ObscurityDots from "./ObscurityDots";
@@ -9,19 +10,23 @@ import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
 import MarqueeBulbs from "./MarqueeBulbs";
 import DealReels from "./DealReels";
-import UsherTour from "./UsherTour";
 import HouseDark from "./HouseDark";
 import AdSlot from "./AdSlot";
+import HouseCall from "./HouseCall";
+import FundBar from "./FundBar";
 import Confetti from "./Confetti";
 import { sfxChime, sfxClick, sfxPop, haptic } from "@/lib/sfx";
 import { toast } from "@/lib/toast";
 import { SERVICES, type Service } from "@/lib/services";
 import { VIBES, vibeByKey } from "@/lib/vibes";
+import { gemLabel } from "@/lib/gem";
 
 interface RecRow {
   id: string;
   reason: string;
   obscurity: number;
+  /** Acclaim-vs-reach, 1-5; null when we have no rating to judge on. */
+  gem?: number | null;
   status: string;
   movies: {
     id: number;
@@ -43,29 +48,25 @@ function availableServices(rec: RecRow): Service[] {
   return SERVICES.filter((s) => p[s]);
 }
 
-interface MorningAfter {
-  recId: string;
-  movie: { id: number; title: string; year: number | null; poster_path: string | null };
-}
-
 export default function TonightScreen({
   myServices,
   premium = false,
-  morningAfter = null,
 }: {
   myServices: Service[];
   premium?: boolean;
-  morningAfter?: MorningAfter | null;
 }) {
-  const [ma, setMa] = useState<MorningAfter | null>(morningAfter);
   const [recs, setRecs] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
   const [depth, setDepth] = useState(2); // obscurity dial: min obscurity — house default skips the top 40
   const [mineOnly, setMineOnly] = useState(false);
   const [vibe, setVibe] = useState<string | null>(null);
+  const [tuning, setTuning] = useState(false);
   const [reacting, setReacting] = useState<RecRow | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // An empty deal used to end in a paragraph telling you which three controls
+  // to go and change. The controls are the fix, so offer the fix.
+  const [widenable, setWidenable] = useState(false);
   const [confetti, setConfetti] = useState(0);
 
   const load = useCallback(async () => {
@@ -87,7 +88,16 @@ export default function TonightScreen({
     void load();
   }, [load]);
 
-  async function deal() {
+  /**
+   * Deal a batch.
+   *
+   * Takes the settings explicitly rather than reading state, because the
+   * "open it up" retry changes two of them and then deals immediately —
+   * and React would still be holding the old values at that point.
+   */
+  async function deal(override?: { depth?: number; mineOnly?: boolean }) {
+    const useDepth = override?.depth ?? depth;
+    const useMine = override?.mineOnly ?? mineOnly;
     sfxClick();
     haptic(12);
     setDealing(true);
@@ -96,9 +106,9 @@ export default function TonightScreen({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        obscurityMin: depth,
+        obscurityMin: useDepth,
         obscurityMax: 5,
-        myServicesOnly: mineOnly,
+        myServicesOnly: useMine,
         vibe,
       }),
     });
@@ -117,10 +127,23 @@ export default function TonightScreen({
       const data = await res.json().catch(() => null);
       const dealt = data?.dealt ?? 0;
       if (dealt === 0) {
+        // Say which of your own settings squeezed it to nothing, rather than
+        // listing every dial. Stacking the mood, the deep end of the obscurity
+        // dial and your own streaming services is a narrow slice of a big
+        // catalogue, and the intersection can genuinely be empty.
+        const tight = [
+          vibe ? "that mood" : null,
+          useDepth >= 4 ? "the deep end of the dial" : null,
+          useMine ? "your services only" : null,
+        ].filter(Boolean);
         setMessage(
-          "The engine came back empty — every candidate was already in your history or didn't check out. Widen the obscurity dial, uncheck 'my services only', or add more loved films and try again (this attempt didn't count against your daily limit).",
+          tight.length
+            ? `Nothing left in ${tight.join(" + ")} that you haven't already seen. This attempt didn't count against your daily limit.`
+            : "The house came up empty — every candidate was already in your history. Add a few more loved films and try again (this attempt didn't count against your daily limit).",
         );
+        setWidenable(useMine || useDepth > 1);
       } else {
+        setWidenable(false);
         const v = vibeByKey(vibe);
         haptic([30, 40, 30]);
         toast(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` · ${v.label}` : ""}`, {
@@ -132,6 +155,25 @@ export default function TonightScreen({
     await load();
     setDealing(false);
   }
+
+  // Cold-start magic moment: a brand-new user who lands with zero recs gets
+  // their first batch dealt automatically instead of staring at "the house is
+  // dark". Fires once ever (localStorage), only on a clean empty state — so it
+  // never hijacks a returning user's daily deal budget.
+  const autoDealtRef = useRef(false);
+  useEffect(() => {
+    if (autoDealtRef.current || loading || dealing || recs.length > 0 || message) return;
+    try {
+      if (localStorage.getItem("dc_autodealt")) return;
+      localStorage.setItem("dc_autodealt", "1");
+    } catch {
+      /* private mode — just skip the one-time auto-deal */
+      return;
+    }
+    autoDealtRef.current = true;
+    void deal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, recs.length, dealing, message]);
 
   async function setStatus(rec: RecRow, status: string) {
     if (status === "watchlisted") {
@@ -167,27 +209,6 @@ export default function TonightScreen({
     setRecs((prev) => prev.filter((r) => r.id !== rec.id));
   }
 
-  async function morningLog(reaction: "loved" | "fine" | "not_for_me") {
-    if (!ma) return;
-    const current = ma;
-    setMa(null); // optimistic dismiss
-    if (reaction === "loved") {
-      sfxChime();
-      haptic([20, 30, 20]);
-      setConfetti((c) => c + 1);
-      toast("Logged with love", { tone: "ticket", icon: "❤" });
-    } else {
-      sfxPop();
-      toast("Logged — that sharpens your taste", { tone: "amber", icon: "✓" });
-    }
-    setRecs((prev) => prev.filter((r) => r.id !== current.recId));
-    await fetch("/api/logs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ movieId: current.movie.id, recId: current.recId, reaction }),
-    });
-  }
-
   function tapReason(rec: RecRow) {
     void fetch("/api/events", {
       method: "POST",
@@ -195,6 +216,19 @@ export default function TonightScreen({
       body: JSON.stringify({ name: "reason_tapped", props: { recId: rec.id } }),
     });
   }
+
+  // One line standing in for the whole console. Platforms only appear when the
+  // filter is actually on — "all platforms" every time is noise.
+  const tuneSummary = useMemo(() => {
+    const v = vibeByKey(vibe);
+    return [
+      v ? `${v.emoji} ${v.label}` : "🎭 Any vibe",
+      "◆".repeat(depth) + "◇".repeat(5 - depth),
+      mineOnly ? "my platforms" : null,
+    ]
+      .filter(Boolean)
+      .join("  ·  ");
+  }, [vibe, depth, mineOnly]);
 
   const visible = useMemo(
     () =>
@@ -212,118 +246,85 @@ export default function TonightScreen({
   return (
     <section className="flex flex-col gap-4">
       <Confetti trigger={confetti} />
-      <UsherTour />
       <header>
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Tonight</p>
         <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
-          MOVIES YOU HAVEN&apos;T MET YET
+          MOVIES YOU HAVEN&apos;T SEEN YET
         </h1>
       </header>
 
-      {/* Morning-after loop — close the loop on last night's deal */}
-      {ma && (
-        <div className="film-card deal-in flex items-center gap-3 rounded-lg border border-amber/40 bg-amber/5 p-3">
-          {ma.movie.poster_path && (
-            <Link
-              href={`/m/${ma.movie.id}?trailer=1`}
-              onClick={() => sfxClick()}
-              className="wiggle shrink-0"
-              aria-label={`${ma.movie.title} — trailer & info`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://image.tmdb.org/t/p/w200${ma.movie.poster_path}`}
-                alt=""
-                className="h-20 w-14 rounded object-cover"
-              />
-            </Link>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow text-amber">🌅 The morning after</p>
-            <p className="mt-0.5 text-sm text-cream">
-              Last night we dealt you{" "}
-              <Link
-                href={`/m/${ma.movie.id}?trailer=1`}
-                onClick={() => sfxClick()}
-                className="font-display text-lg text-amber underline decoration-dotted underline-offset-4"
-              >
-                {ma.movie.title}
-              </Link>
-              . Did you catch it?{" "}
-              <Link
-                href={`/m/${ma.movie.id}?trailer=1`}
-                onClick={() => sfxClick()}
-                className="whitespace-nowrap font-mono text-[0.6rem] uppercase tracking-wider text-dim underline"
-              >
-                ▶ trailer &amp; info
-              </Link>
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <button
-                onClick={() => void morningLog("loved")}
-                className="rounded-full border border-ticket px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-ticket"
-              >
-                ❤ Loved it
-              </button>
-              <button
-                onClick={() => void morningLog("fine")}
-                className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
-              >
-                — It was fine
-              </button>
-              <button
-                onClick={() => void morningLog("not_for_me")}
-                className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim"
-              >
-                ✕ Not for me
-              </button>
-              <button
-                onClick={() => setMa(null)}
-                className="rounded-full px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-dim/70"
-              >
-                Haven&apos;t yet →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Now Showing — the basement television, cropped out of its own
+          photograph, in the slot the morning-after card used to hold. It flips
+          channels on its own; clicking it opens the room. */}
+      <NowShowing />
 
-      {/* Front-door modes: the two-player standoff and the lean-back channel */}
-      <div data-usher="doors" className="grid grid-cols-2 gap-2">
+      {/* The games, demoted to a row of chips.
+          They used to be three full-width doors of equal weight, all camp, all
+          shouting — which is what made the front room feel busy, not the fact
+          that the features exist. Now Showing is the hero, the dealer and the
+          dial are the loop, and these three are a utility rail: same features,
+          a third of the noise, and the page finally has a top.
+          The kicker lines go with the doors. "Can't agree?" was doing the
+          explaining, and that job belongs to the studio tour and to the screens
+          themselves, not to the front room on every single visit. */}
+      <div data-usher="doors" className="grid grid-cols-3 gap-2">
         <Link
           href="/settle"
+          data-usher="settle"
           onClick={() => sfxClick()}
-          className="bulb-frame bg-gradient-to-br from-ticket/10 to-transparent p-3"
+          className="flex min-h-[46px] items-center justify-center rounded-lg border border-line bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-cream"
         >
-          <p className="font-display text-lg leading-tight text-cream">
-            ⚖️ CAN&apos;T AGREE?
-            <br />
-            <span className="text-ticket">SETTLE IT.</span>
-          </p>
-          <p className="mt-1 font-mono text-[0.55rem] text-dim">
-            Two of you, five questions — the house rules.
-          </p>
+          ⚖️&nbsp;&nbsp;SETTLE IT
         </Link>
         <Link
           href="/roll"
+          data-usher="roll"
           onClick={() => sfxClick()}
-          className="bulb-frame bg-gradient-to-br from-amber/10 to-transparent p-3"
+          className="flex min-h-[46px] items-center justify-center rounded-lg border border-line bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-cream"
         >
-          <p className="font-display text-lg leading-tight text-cream">
-            📺 TIRED BRAIN?
-            <br />
-            <span className="text-amber">JUST ROLL IT.</span>
-          </p>
-          <p className="mt-1 font-mono text-[0.55rem] text-dim">
-            A channel of deep cuts — trailers roll, you lean back.
-          </p>
+          📺&nbsp;&nbsp;JUST ROLL IT
+        </Link>
+        {/* The staff pick. Video stores hand-wrote these on index cards and
+            taped them to the shelf, which is exactly the register this app is
+            in — and a recommendation with a name attached carries weight that
+            "FEATURED" never does. */}
+        <Link
+          href="/blend"
+          data-usher="blend"
+          onClick={() => sfxClick()}
+          className="flex min-h-[46px] flex-col items-center justify-center rounded-lg border border-amber bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-amber"
+        >
+          <span className="mb-0.5 text-[0.45rem] font-medium tracking-widest">
+            ★ GRIFF&apos;S FAVORITE
+          </span>
+          🧬&nbsp;&nbsp;THIS MEETS THAT
         </Link>
       </div>
 
+      {/* Tonight I want… — one line by default.
+          Expanded, this console pushed every dealt film below the fold: you
+          scrolled past the marquee, Now Showing, the games rail AND
+          five rows of controls before meeting a single movie. The controls
+          outranked the product. The dial is one click away; the deal button
+          never moves. */}
       <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
+        <button
+          data-usher="dial"
+          onClick={() => {
+            sfxPop();
+            setTuning((t) => !t);
+          }}
+          aria-expanded={tuning}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="truncate font-mono text-xs tracking-wide text-cream">{tuneSummary}</span>
+          <span className="shrink-0 text-amber">{tuning ? "▴" : "▾"}</span>
+        </button>
+
+        {tuning && (
+        <>
         <div>
-          <p className="eyebrow mb-1.5">Tonight I want…</p>
           <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
             {VIBES.map((v) => {
               const on = vibe === v.key;
@@ -352,7 +353,7 @@ export default function TonightScreen({
             </p>
           )}
         </div>
-        <label data-usher="dial" className="flex items-center gap-3">
+        <label className="flex items-center gap-3">
           <span className="eyebrow shrink-0">Obscurity</span>
           <input
             type="range"
@@ -377,8 +378,10 @@ export default function TonightScreen({
           />
           my services only
         </label>
+        </>
+        )}
         <button
-          onClick={deal}
+          onClick={() => void deal()}
           disabled={dealing}
           data-usher="deal"
           className="pulse-cta rounded bg-ticket px-4 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream disabled:animate-none disabled:opacity-50"
@@ -394,6 +397,30 @@ export default function TonightScreen({
       </div>
 
       {message && <p className="font-mono text-xs text-ticket">{message}</p>}
+      {widenable && (
+        <button
+          onClick={() => {
+            // Loosen the soft constraints, keep the mood. Services are a
+            // preference and the obscurity floor is a dial; the vibe is what
+            // was actually asked for, and an off-vibe film is worse than none.
+            const nextDepth = Math.max(1, depth - 1);
+            setMineOnly(false);
+            setDepth(nextDepth);
+            setWidenable(false);
+            setMessage(null);
+            // Passed through, not read back off state — see deal().
+            void deal({ depth: nextDepth, mineOnly: false });
+          }}
+          disabled={dealing}
+          className="self-start rounded border border-amber px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-amber disabled:opacity-50"
+        >
+          {dealing ? "…" : "↔ Open it up and try again"}
+        </button>
+      )}
+
+      {/* Above the feed and outside the loading branch: the open call is worth
+          seeing even on a night when no film gets dealt. */}
+      <HouseCall />
 
       {loading ? (
         <FilmLeader label="rolling film" />
@@ -442,8 +469,13 @@ export default function TonightScreen({
                     year={m.year}
                     genres={m.genres}
                   />
-                  {rec.obscurity === 5 && (
-                    <span className="stamp stamp-gold absolute -left-2 top-2">Rare find</span>
+                  {/* Earned on acclaim-vs-reach, not reach alone: a stamp
+                      that only meant "few votes" was promising quality it had
+                      never checked. */}
+                  {gemLabel(rec.gem ?? null) && (
+                    <span className="stamp stamp-gold absolute -left-2 top-2">
+                      {gemLabel(rec.gem ?? null)}
+                    </span>
                   )}
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -518,6 +550,11 @@ export default function TonightScreen({
           {recs.length - visible.length} more hidden by your filters
         </p>
       )}
+
+      {/* The Fund, on the screen people actually open. Members earn votes by
+          supporting and would otherwise never find out — there's no room in the
+          tab bar, and Settings is where you go when something's wrong. */}
+      <FundBar compact />
 
       {reacting && reacting.movies && (
         <ReactionSheet

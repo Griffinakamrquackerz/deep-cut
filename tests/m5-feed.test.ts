@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actorName, mergeFeed, type FeedItem } from "@/lib/feed";
 
 const actor = { id: "u1", handle: "griffin", display_name: "Griffin" };
-const movie = { id: 1, title: "Living in Oblivion", year: 1995, poster_path: null, genres: [] };
+const movie = { id: 1, title: "Living in Oblivion", year: 1995, poster_path: null, genres: [], tmdb: null, imdb: null, rt: null };
 
 function watch(id: string, at: string): FeedItem {
   return {

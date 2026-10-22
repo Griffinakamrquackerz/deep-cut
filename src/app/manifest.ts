@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Deep Cut",
     short_name: "Deep Cut",
-    description: "Movies you haven't met yet.",
+    description: "Movies you haven't seen yet.",
     id: "/",
     start_url: "/",
     display: "standalone",

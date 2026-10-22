@@ -6,6 +6,7 @@ import FilmLeader from "@/components/FilmLeader";
 import RatingsBadges from "@/components/RatingsBadges";
 import VerdictMedia from "./VerdictMedia";
 import type { MovieRatings } from "@/lib/tmdb";
+import type { Service } from "@/lib/services";
 import { sfxClick, sfxGavel, sfxPop, haptic } from "@/lib/sfx";
 import {
   SETTLE_QUESTIONS,
@@ -61,7 +62,11 @@ function toAnswers(name: string, sheet: Sheet): SettleAnswers {
 }
 
 /** Build the ranked pool: TMDB real-data blended with curated house picks. */
-async function buildVerdicts(p1: SettleAnswers, p2: SettleAnswers): Promise<Verdict[]> {
+async function buildVerdicts(
+  p1: SettleAnswers,
+  p2: SettleAnswers,
+  mineOnly = false,
+): Promise<Verdict[]> {
   const q = poolQueryFor(p1, p2);
   try {
     const res = await fetch("/api/settle/pool", {
@@ -72,17 +77,25 @@ async function buildVerdicts(p1: SettleAnswers, p2: SettleAnswers): Promise<Verd
         obscurityMin: q.obscurityMin,
         obscurityMax: q.obscurityMax,
         eitherShort: q.eitherShort,
+        myServicesOnly: mineOnly,
       }),
     });
     if (res.ok) {
       const data = await res.json();
       const real = candidatesToFilms(data.candidates ?? [], q.eitherShort);
-      if (real.length >= 6) return rankVerdicts(p1, p2, [...real, ...SETTLE_POOL]);
+      // Platforms filter: rank ONLY streamable films, never pad with the curated
+      // docket (no streaming data). Unfiltered: splice curated in as before.
+      if (mineOnly) {
+        if (real.length >= 3) return rankVerdicts(p1, p2, real);
+        // too few on their platforms → fall through to the curated docket
+      } else if (real.length >= 6) {
+        return rankVerdicts(p1, p2, [...real, ...SETTLE_POOL]);
+      }
     }
   } catch {
     /* fall through to curated */
   }
-  return rankVerdicts(p1, p2); // offline / error → the curated docket still rules
+  return rankVerdicts(p1, p2); // offline / error / thin platforms → curated docket rules
 }
 
 function ProgressBulbs({ at }: { at: number }) {
@@ -151,9 +164,10 @@ function Quiz({ player, onDone }: { player: string; onDone: (sheet: Sheet) => vo
   );
 }
 
-export default function SettleFlow() {
+export default function SettleFlow({ myServices = [] }: { myServices?: Service[] }) {
   const [stage, setStage] = useState<Stage>("intro");
   const [bestOf3, setBestOf3] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false); // "only on my platforms"
   const [p1Name, setP1Name] = useState("");
   const [p2Name, setP2Name] = useState("");
   const [p1, setP1] = useState<SettleAnswers | null>(null);
@@ -198,7 +212,7 @@ export default function SettleFlow() {
     const answers2 = toAnswers(name2, sheet);
     setP2(answers2);
     setStage("computing");
-    const ranked = await buildVerdicts(p1, answers2);
+    const ranked = await buildVerdicts(p1, answers2, mineOnly);
     setVerdicts(ranked);
     setVi(0);
     setExhibitIdx(0);
@@ -347,6 +361,34 @@ export default function SettleFlow() {
               {bestOf3 ? "On" : "Off"}
             </span>
           </button>
+          {myServices.length > 0 && (
+            <button
+              onClick={() => {
+                sfxPop();
+                setMineOnly((b) => !b);
+              }}
+              aria-pressed={mineOnly}
+              className={`flex items-center justify-between rounded border px-3 py-2.5 ${
+                mineOnly ? "border-amber bg-surface" : "border-line bg-surface"
+              }`}
+            >
+              <span className="text-left">
+                <span className="block font-mono text-xs uppercase tracking-wider text-cream">
+                  📺 Only on my platforms
+                </span>
+                <span className="font-mono text-[0.6rem] text-dim">
+                  the verdict only rules on films you can stream
+                </span>
+              </span>
+              <span
+                className={`rounded-full border px-3 py-1 font-mono text-[0.65rem] uppercase ${
+                  mineOnly ? "border-amber text-amber" : "border-line text-dim"
+                }`}
+              >
+                {mineOnly ? "On" : "Off"}
+              </span>
+            </button>
+          )}
           <button
             onClick={() => {
               sfxClick();

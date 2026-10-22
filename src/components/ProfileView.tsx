@@ -7,7 +7,9 @@ import SignatureShrine from "@/components/SignatureShrine";
 import ShowMore from "@/components/ShowMore";
 import ProjectionistCard from "@/components/ProjectionistCard";
 import SafetyActions from "@/components/SafetyActions";
+import TonightStatus from "@/components/TonightStatus";
 import type { TasteStats } from "@/lib/rank";
+import type { TonightCard } from "@/lib/tonight";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -57,6 +59,8 @@ export interface ProfileViewData {
   }>;
   followerCount: number;
   followingCount: number;
+  /** Their live "watching tonight" plan, if they have one up. */
+  tonight?: TonightCard | null;
   isMe: boolean;
   viewerSignedIn: boolean;
   iFollow: boolean;
@@ -106,6 +110,12 @@ export default function ProfileView(data: ProfileViewData) {
           ) : null}
         </div>
       </header>
+
+      <TonightStatus
+        initial={data.tonight ?? null}
+        editable={data.isMe}
+        name={person.handle ? `@${person.handle}` : (person.display_name ?? "They")}
+      />
 
       {data.signature && (
         <SignatureShrine

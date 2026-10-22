@@ -7,6 +7,7 @@ import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
 import { computeTasteStats } from "@/lib/rank";
 import { getVisibilityMap } from "@/lib/playlist-visibility";
+import { tonightCard } from "@/lib/tonight";
 import ProfileView, { type MovieLite } from "@/components/ProfileView";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -42,7 +43,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
   const me = await currentUser();
   const isMe = me?.id === person.id;
 
-  const [profile, loved, watches, playlists, followerCount, followingCount, iFollow] =
+  const [profile, loved, watches, playlists, followerCount, followingCount, iFollow, tonight] =
     await Promise.all([
       db.from("taste_profiles").select("threads").eq("user_id", person.id).maybeSingle(),
       db
@@ -79,6 +80,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
             .eq("followee_id", person.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      // Pre-migration-0012 this table doesn't exist; no plan is the right
+      // fallback, not a broken page.
+      tonightCard(db, person.id).catch(() => null),
     ]);
 
   const [{ data: sigMovie }, sigStills] = style.signatureMovieId
@@ -147,6 +151,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
         playlists={playlistsForView}
         followerCount={followerCount.count ?? 0}
         followingCount={followingCount.count ?? 0}
+        tonight={tonight}
         isMe={isMe}
         viewerSignedIn={!!me}
         iFollow={!!iFollow.data}
@@ -161,7 +166,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ key: s
     <main className="px-4 pb-16 pt-6">
       <Link href="/" className="mb-5 block text-center">
         <span className="eyebrow">Deep Cut</span>
-        <span className="block font-display text-2xl text-amber">MOVIES YOU HAVEN&apos;T MET YET</span>
+        <span className="block font-display text-2xl text-amber">MOVIES YOU HAVEN&apos;T SEEN YET</span>
       </Link>
       {inner}
       <Link

@@ -1,38 +1,33 @@
 # Deep Cut — Developer Handoff
 
-**App:** Deep Cut — "Movies you haven't met yet." An AI ticket-dealer reads the films you
+**App:** Deep Cut — "Movies you haven't seen yet." An AI ticket-dealer reads the films you
 love, writes a taste profile, and deals nightly picks with an obscurity dial. Campy
 midnight-repertory-theater design language throughout.
 
-- **Production:** https://deepcut-beta.vercel.app (cutting over to **https://thedeepcut.xyz** — see Cutover)
-- **Deploy verification:** `GET /api/version` returns `{ "build": "<marker>" }` — bump the
-  marker in `src/app/api/version/route.ts` on every release and poll it after deploys.
-  Current: `apple-pack-v40`.
+- **Production:** **https://thedeepcut.xyz** (cutover live — domain verified serving the app 2026-09-17; the `deepcut-beta.vercel.app` alias may still resolve, but the custom domain is canonical — see Cutover)
+- **Deploy verification:** `GET /api/version` returns `{ "build": "<marker>" }` —
+  bump the marker in `src/app/api/version/route.ts` on each release and verify
+  it after deploys. The production endpoint reported `taste-blend-v268` when
+  this handoff was checked; verify the live value before shipping.
 - **Owner:** griffin@hostfluencer.com
 
 ---
 
 ## 1. Repo layout — READ THIS FIRST
 
-Deep Cut lives in **`deep-cut/`** inside the `HostfluencerV` monorepo, next to an unrelated
-Next.js app at the repo root ("virlo-clone" / Hostfluencer).
+Deep Cut has its own GitHub repository: `Griffinakamrquackerz/deep-cut`.
+The Next.js web app and API live at the repository root; the Expo iOS/Android
+client lives in `deep-cut-native/`. HostfluencerV is a separate, unrelated
+project and is not part of this repository.
 
-**Two things keep them from destroying each other:**
-1. The Vercel **deepcut** project sets **Root Directory = `deep-cut`**. Never unset it.
-2. The **root** `tsconfig.json` must keep `"deep-cut"` in its `exclude` array. A commit once
-   dropped it and every Vercel build failed for 9 hours (root builds typecheck deep-cut's
-   `@/*` aliases against the wrong app). If root builds start failing with
-   `Cannot find module '@/components/...'` in a `./deep-cut/...` path — this is why.
-
-Work happens on branch `claude/deep-cut-build-0jvef6`, merged `--no-ff` to `main`;
-Vercel deploys `main`. There is also a second Vercel project (hostfluencer-v) building the
-repo root — its preview builds of this branch are noise, ignore them.
+Vercel deploys this repository from its root. Do not configure a `deep-cut/`
+subdirectory as the Vercel root.
 
 ## 2. Stack
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | Next.js 15 App Router, TypeScript strict, React 19 | `deep-cut/src/app` |
+| Framework | Next.js 15 App Router, TypeScript strict, React 19 | `src/app` |
 | Styling | Tailwind v4 (`@theme` tokens in `globals.css`) | Camp CSS: marquee bulbs, stamps, neon, film-strip, themes |
 | DB/Auth/Storage | Supabase (Postgres + RLS, magic link + password auth, `avatars` bucket) | Server uses service-role (`src/lib/supabase/admin.ts`); routes self-guard with `currentUser()` |
 | LLM | Groq free tier via OpenAI-compatible fetch (`src/lib/ai.ts`) | Primary `openai/gpt-oss-120b`, auto-fallback `llama-3.3-70b-versatile` on 429; strict-JSON + Zod + one repair pass |
@@ -133,20 +128,15 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
 4. Share links all use `window.location.origin` — no code changes needed.
 5. AdSense (later): apply with thedeepcut.xyz, set `NEXT_PUBLIC_ADSENSE_CLIENT`.
 
-## 8. App Store roadmap (the reason for this handoff)
+## 8. Native app and store roadmap
 
-Done in-app: account deletion (5.1.1v), block/report + terms (1.2), privacy policy.
-Remaining:
-1. **Capacitor wrapper** — the app is a fast PWA; wrap it and add real native surface
-   (push notifications, native share, haptics) to clear guideline 4.2 ("not just a website").
-2. **Push notifications** — also the retention play ("Friday Night Deal").
-3. **Sign in with Apple** — required *only if* Google sign-in is enabled
-   (`NEXT_PUBLIC_ENABLE_GOOGLE`; currently off, Google OAuth never configured).
-4. **TMDB commercial license** — inquiry to partnerships@themoviedb.org pending; don't ship
-   ads in the store build before this answer.
-5. Privacy nutrition labels — the `/privacy` page enumerates every processor (Supabase,
-   Vercel, Groq, TMDB/OMDb/YouTube); labels follow directly from it.
-6. Nice-to-haves before launch: Sentry, Brevo, migrations 0003/0004, Settle It share image.
+The iOS/Android client is an Expo app in `deep-cut-native/`, not a Capacitor
+wrapper. Authentication, onboarding, Tonight, social, TV, and participation
+surfaces are present; continue checking native/web feature parity against the
+current source. Follow `deep-cut-native/LAUNCH.md` for EAS, TestFlight, and
+store-specific tasks. Confirm current Apple account, listing, privacy, and
+commercial-use requirements before release; this document's former Capacitor
+checklist is obsolete.
 
 ## 9. Working conventions
 

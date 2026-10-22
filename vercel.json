@@ -1,5 +1,16 @@
 {
   "crons": [
-    { "path": "/api/cron/friday-deal", "schedule": "0 23 * * 5" }
+    {
+      "path": "/api/cron/friday-deal",
+      "schedule": "0 23 * * 5"
+    },
+    {
+      "path": "/api/cron/waitlist-trickle",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/programme",
+      "schedule": "0 16 1 * *"
+    }
   ]
 }

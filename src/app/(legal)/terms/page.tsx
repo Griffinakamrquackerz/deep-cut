@@ -51,20 +51,33 @@ export default function TermsPage() {
         best-effort and may be wrong — check before you rent.
       </p>
 
-      <h2>5. No warranties</h2>
+            <h2>5. The Indie Film Fund, Points &amp; Credits</h2>
+      <p>
+        Contributions, donations, or subscription fees directed to the Deep Cut Indie Film Fund
+        support independent filmmaking grants, productions, and community curation.
+        Patron points, voting ballots, test screening access, and film credits are community
+        patronage perks granted at the discretion of the house.
+      </p>
+      <p>
+        Points, votes, and credits do not represent equity, stock, partnership shares, profit
+        participation, or securities of any kind. They carry no expectation of financial return,
+        dividends, or ownership in any intellectual property or film production.
+      </p>
+
+      <h2>6. No warranties</h2>
       <p>
         Deep Cut is provided as-is, without warranties of any kind. We are not liable for a
         bad movie night, a spoiled plot, or indirect damages of any sort, to the maximum
         extent permitted by law.
       </p>
 
-      <h2>6. Changes</h2>
+      <h2>7. Changes</h2>
       <p>
         We may update these terms; material changes will be announced in the app. Continuing
         to use Deep Cut after changes means you accept them.
       </p>
 
-      <h2>7. Contact</h2>
+      <h2>8. Contact</h2>
       <p>Questions: griffin@hostfluencer.com</p>
     </>
   );

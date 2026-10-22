@@ -77,7 +77,7 @@ self.addEventListener("push", (event) => {
   }
   const title = data.title || "Deep Cut";
   const options = {
-    body: data.body || "Your Friday night deal is ready.",
+    body: data.body || "Something's waiting at Deep Cut.",
     icon: "/api/icon/192",
     badge: "/api/icon/192",
     tag: data.tag || "deepcut",

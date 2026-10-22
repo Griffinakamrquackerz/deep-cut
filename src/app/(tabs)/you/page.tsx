@@ -8,6 +8,7 @@ import { resolveStyle } from "@/lib/profile-style";
 import { getMovieStills } from "@/lib/tmdb";
 import { themeClass } from "@/lib/themes";
 import { getVisibilityMap } from "@/lib/playlist-visibility";
+import { tonightCard } from "@/lib/tonight";
 import ProfileView, { type MovieLite } from "@/components/ProfileView";
 
 export default async function YouPage() {
@@ -30,7 +31,7 @@ export default async function YouPage() {
     signature_movie_id?: number | null;
   } | null;
 
-  const [profile, watchlist, loved, history, playlists, followerCount, followingCount] =
+  const [profile, watchlist, loved, history, playlists, followerCount, followingCount, tonight] =
     await Promise.all([
       db.from("taste_profiles").select("threads, version, generated_at").eq("user_id", user.id).maybeSingle(),
       db
@@ -58,6 +59,9 @@ export default async function YouPage() {
         .limit(50),
       db.from("follows").select("follower_id", { count: "exact", head: true }).eq("followee_id", user.id),
       db.from("follows").select("followee_id", { count: "exact", head: true }).eq("follower_id", user.id),
+      // Pre-migration-0012 this table doesn't exist; an empty prompt is the
+      // right fallback, not a broken page.
+      tonightCard(db, user.id).catch(() => null),
     ]);
 
   const votes = [...(loved.data ?? []), ...(history.data ?? [])]
@@ -125,6 +129,7 @@ export default async function YouPage() {
         }))}
         followerCount={followerCount.count ?? 0}
         followingCount={followingCount.count ?? 0}
+        tonight={tonight}
         isMe
         viewerSignedIn
         iFollow={false}

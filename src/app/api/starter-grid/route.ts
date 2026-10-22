@@ -43,5 +43,15 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ posters });
+  // `films` gives native clients the full shelf (id/title/year/poster) in one
+  // call; `posters` alone remains for the web onboarding, which imports the
+  // grid's titles directly.
+  const films = STARTER_GRID.map((f) => ({
+    id: f.tmdbId,
+    title: f.title,
+    year: f.year,
+    poster: posters[f.tmdbId] ?? null,
+  }));
+
+  return NextResponse.json({ posters, films });
 }

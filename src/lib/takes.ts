@@ -6,6 +6,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBlockedIds } from "./safety";
+import { resolveMentions } from "./mentions";
+import { notifyMany } from "./notifications";
 
 export const TAKE_MAX = 250;
 
@@ -28,6 +30,13 @@ export interface TakeComment {
   createdAt: string;
   author: { id: string; handle: string | null; displayName: string | null; avatarUrl: string | null };
   mine: boolean;
+  /**
+   * Handles tagged in this comment that still resolve to somebody, resolved
+   * fresh at read time. Ids are what's stored; handles are what's rendered,
+   * so renaming yourself re-points every mention of you rather than orphaning
+   * them.
+   */
+  mentions: string[];
 }
 
 export async function createTake(
@@ -92,12 +101,53 @@ export async function createComment(
     .eq("name", "hot_take")
     .maybeSingle();
   if (!take) return null;
+
+  // Resolve the @handles before storing, so the comment carries who it meant
+  // rather than only what it said.
+  const mentioned = await resolveMentions(db, body).catch(() => []);
+
   const { data, error } = await db
     .from("events")
-    .insert({ user_id: userId, name: "take_comment", props: { take_id: takeId, body } })
+    .insert({
+      user_id: userId,
+      name: "take_comment",
+      props: { take_id: takeId, body, mentions: mentioned.map((m) => m.id) },
+    })
     .select("id")
     .single();
-  return error || !data ? null : { id: data.id as string };
+  if (error || !data) return null;
+
+  // The ping is a courtesy on top of a comment that has already been posted,
+  // so it must never be able to fail the post. notifyMany logs its own errors
+  // and skips the author tagging themselves.
+  if (mentioned.length) {
+    const { data: author } = await db
+      .from("users")
+      .select("handle, display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    const from = (author?.handle ? `@${author.handle}` : author?.display_name) ?? "Someone";
+
+    await notifyMany(
+      db,
+      mentioned.map((m) => m.id),
+      {
+        actorId: userId,
+        kind: "mention",
+        props: { commentId: data.id as string, takeId },
+        push: {
+          title: `💬 ${from} tagged you`,
+          // The comment itself, trimmed — enough to know whether it wants an
+          // answer now or later, which is the only thing a lock screen decides.
+          body: body.length > 120 ? `${body.slice(0, 119)}…` : body,
+          path: "/lobby",
+          tag: `mention-${data.id as string}`,
+        },
+      },
+    );
+  }
+
+  return { id: data.id as string };
 }
 
 export async function deleteComment(
@@ -131,15 +181,29 @@ export async function listComments(
   if (!comments.length) return [];
 
   const userIds = [...new Set(comments.map((c) => c.user_id as string))];
-  const { data: authors } = await db
+  // Everyone tagged anywhere in the thread, so their CURRENT handle is what
+  // renders — the stored mention is an id, and handles can change.
+  const mentionIds = [
+    ...new Set(
+      comments.flatMap((c) => {
+        const m = ((c.props ?? {}) as Record<string, unknown>).mentions;
+        return Array.isArray(m) ? (m as unknown[]).map(String) : [];
+      }),
+    ),
+  ];
+
+  const { data: people } = await db
     .from("users")
     .select("id, handle, display_name, avatar_url")
-    .in("id", userIds);
-  const authorById = new Map((authors ?? []).map((a) => [a.id as string, a]));
+    .in("id", [...new Set([...userIds, ...mentionIds])]);
+  const byId = new Map(((people ?? []) as Record<string, unknown>[]).map((a) => [String(a.id), a]));
 
   return comments.map((c) => {
     const p = (c.props ?? {}) as Record<string, unknown>;
-    const a = authorById.get(c.user_id as string);
+    const a = byId.get(c.user_id as string);
+    const mentions = (Array.isArray(p.mentions) ? (p.mentions as unknown[]) : [])
+      .map((id) => byId.get(String(id))?.handle as string | undefined)
+      .filter((h): h is string => !!h);
     return {
       id: c.id as string,
       body: typeof p.body === "string" ? p.body.slice(0, TAKE_MAX) : "",
@@ -151,6 +215,7 @@ export async function listComments(
         avatarUrl: (a?.avatar_url as string | null) ?? null,
       },
       mine: viewerId === (c.user_id as string),
+      mentions,
     };
   });
 }

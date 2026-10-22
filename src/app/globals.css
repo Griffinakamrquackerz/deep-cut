@@ -771,3 +771,159 @@ body {
     radial-gradient(120% 140% at 15% 0%, color-mix(in oklab, var(--color-amber) 8%, transparent), transparent 60%),
     var(--color-bg);
 }
+
+/* ── This Meets That — the splice bench ──────────────────────────────
+   An empty slot breathes so the next one to fill reads as the live one,
+   and the specimen scan sweeps the parents while the model is thinking.
+   A 15s wait with nothing moving reads as broken; a lab doing work reads
+   as anticipation. */
+.slot-live {
+  animation: slot-breathe 2.2s ease-in-out infinite;
+}
+@keyframes slot-breathe {
+  0%, 100% { border-color: rgba(255, 180, 84, 0.35); box-shadow: 0 0 0 0 rgba(255, 180, 84, 0); }
+  50% { border-color: rgba(255, 180, 84, 0.9); box-shadow: 0 0 14px 1px rgba(255, 180, 84, 0.25); }
+}
+
+/* A bar of light travelling down a poster, like a flatbed scanner. */
+.specimen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 180, 84, 0.55) 45%,
+    rgba(255, 245, 220, 0.85) 50%,
+    rgba(255, 180, 84, 0.55) 55%,
+    transparent 100%
+  );
+  background-size: 100% 220%;
+  animation: specimen-scan 1.6s linear infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+@keyframes specimen-scan {
+  from { background-position: 0 -120%; }
+  to { background-position: 0 120%; }
+}
+
+/* The strands twist while the splice runs. */
+.helix {
+  display: inline-block;
+  animation: helix-spin 1.4s linear infinite;
+}
+@keyframes helix-spin {
+  to { transform: rotateY(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-live, .specimen::after, .helix { animation: none; }
+}
+
+/* Each "for instance" example fades in as it rotates — a hard swap every few
+   seconds reads as a glitch rather than a carousel. */
+.example-swap { animation: example-swap 420ms ease-out both; }
+@keyframes example-swap {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .example-swap { animation: none; }
+}
+
+/* ── The Late Show ─────────────────────────────────────────────────────
+   A television in a basement. The tube is 4:3 on purpose: most short films
+   are 16:9 and some are scope, so nearly everything letterboxes inside it —
+   which is exactly what a widescreen film looked like on a CRT. */
+
+.crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ── The console's projector ───────────────────────────────────────────
+   The camera standing in the beam is drawn rather than photographed, because
+   a photograph of a hologram doesn't turn. Slow: a hologram spinning like a
+   rotisserie chicken reads as a toy, one turning like it's being examined
+   reads like a message someone left you. */
+.holo-spin {
+  animation: holo-spin 9s linear infinite;
+  transform-style: preserve-3d;
+}
+@keyframes holo-spin {
+  to { transform: rotateY(360deg); }
+}
+
+/* Unstable on purpose — the real ones never hold still. Steps rather than
+   eases: a hologram that fades smoothly in and out is a dimmer switch, one
+   that drops a frame and snaps back is a projection struggling to hold. */
+.holo-flicker { animation: holo-flicker 4.1s steps(1, end) infinite; }
+@keyframes holo-flicker {
+  0%, 5%, 9%, 26%, 30%, 48%, 53%, 71%, 76%, 100% { opacity: 0.92; }
+  6%, 8% { opacity: 0.34; }
+  7% { opacity: 0.72; }
+  27%, 29% { opacity: 0.55; }
+  49%, 52% { opacity: 0.28; }
+  50% { opacity: 0.8; }
+  72%, 75% { opacity: 0.6; }
+}
+
+/* The beam breathes on its own clock, so the two never sync into a pulse. */
+.holo-beam { animation: holo-beam 2.7s ease-in-out infinite; }
+@keyframes holo-beam {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-spin, .holo-flicker, .holo-beam { animation: none; }
+  .holo-flicker { opacity: 0.85; }
+}
+
+/* The tube's glass isn't flat — a soft vignette sells the curve. */
+.crt-glass {
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.75),
+    inset 0 0 12px rgba(0, 0, 0, 0.9);
+}
+
+/* You look around the basement by scrolling it, but a scrollbar under a
+   photograph of a room reads as a bug. The container is still a scroll
+   container — arrow keys, trackpads and touch all work — it just doesn't
+   advertise it. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* A front-loading VCR takes the tape straight DOWN into the slot. It does not
+   shrink into the middle of the picture. The deck's face plate is painted over
+   the tape, so descending reads as going inside the machine — nothing fades. */
+@keyframes tape-load {
+  0%   { transform: translateY(0); }
+  25%  { transform: translateY(0); }           /* held out, waiting to be taken */
+  86%  { transform: translateY(74px); }        /* drawn in */
+  100% { transform: translateY(80px); }        /* the mechanism seats it */
+}
+.tape-load { animation: tape-load 1.02s cubic-bezier(0.55, 0, 0.35, 1) forwards; }
+
+/* ⏏ — the old tape comes out and the next one goes down after it, one
+   continuous travel. The film underneath has already changed; the deck is
+   catching up with it, not holding it up. */
+@keyframes tape-swap {
+  0%    { transform: translateY(80px); }
+  37.5% { transform: translateY(0); }           /* out it comes */
+  87.5% { transform: translateY(74px); }        /* and the next goes down */
+  100%  { transform: translateY(80px); }
+}
+.tape-swap { animation: tape-swap 1.12s cubic-bezier(0.4, 0, 0.35, 1) forwards; }
+
+/* A flourish nobody can dismiss is a toll booth. Under reduced motion the
+   tape simply isn't there, and the picture cuts straight in. */
+@media (prefers-reduced-motion: reduce) {
+  .tape-load, .tape-swap { animation: none; }
+}

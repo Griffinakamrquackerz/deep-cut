@@ -6,3 +6,6 @@ out/
 .env.*.local
 *.tsbuildinfo
 next-env.d.ts
+
+# Python cache from local asset tooling
+__pycache__/

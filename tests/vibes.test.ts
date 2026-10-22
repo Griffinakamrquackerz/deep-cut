@@ -52,3 +52,54 @@ describe("RecBatchInput vibe field", () => {
     expect(RecBatchInput.safeParse({ vibe: "yolo" }).success).toBe(false);
   });
 });
+
+describe("genre-defining vibes stay inside their genre", () => {
+  // "Scare me" carried Thriller(53) in BOTH its pull and its gate, and the gate
+  // accepts a film matching ANY of requireGenreIds — so a pure thriller passed
+  // as horror. Dealt live under "Scare me": K.G.F: Chapter 1
+  // (Action/Thriller/Adventure/Crime, via the LLM round) and The Substitute
+  // (Action/Crime/Drama/Thriller, via the loved-similar round).
+  it("Scare me is horror-only — no thriller in the pull or the gate", () => {
+    const scare = vibeByKey("scare")!;
+    expect(scare.genreIds).toEqual([TMDB_GENRE_IDS.Horror]);
+    expect(scare.requireGenreIds).toEqual([TMDB_GENRE_IDS.Horror]);
+    expect(scare.rollGenreIds).toEqual([TMDB_GENRE_IDS.Horror]);
+    const everyScareGenre = [
+      ...scare.genreIds,
+      ...(scare.requireGenreIds ?? []),
+      ...(scare.rollGenreIds ?? []),
+    ];
+    expect(everyScareGenre).not.toContain(TMDB_GENRE_IDS.Thriller);
+  });
+
+  it("Swoon is romance-only — a drama pull the gate rejects is wasted budget", () => {
+    const swoon = vibeByKey("swoon")!;
+    expect(swoon.genreIds).toEqual([TMDB_GENRE_IDS.Romance]);
+    expect(swoon.requireGenreIds).toEqual([TMDB_GENRE_IDS.Romance]);
+    const everySwoonGenre = [
+      ...swoon.genreIds,
+      ...(swoon.requireGenreIds ?? []),
+      ...(swoon.rollGenreIds ?? []),
+    ];
+    expect(everySwoonGenre).not.toContain(TMDB_GENRE_IDS.Drama);
+  });
+
+  // A gate narrower than the pull can only ever throw away pages the Discover
+  // budget already paid for (that was Swoon: pulled Drama, gated on Romance).
+  it("a vibe's gate is never narrower than the genres it pulls", () => {
+    for (const v of VIBES) {
+      if (!v.requireGenreIds?.length) continue;
+      for (const id of v.requireGenreIds) {
+        expect(v.genreIds, `${v.key} requires ${id} but never pulls it`).toContain(id);
+      }
+    }
+  });
+
+  it("every requireGenreIds entry is a real TMDB genre id", () => {
+    for (const v of VIBES) {
+      for (const id of v.requireGenreIds ?? []) {
+        expect(REAL_GENRE_IDS.has(id), `${v.key} carries a bogus genre id ${id}`).toBe(true);
+      }
+    }
+  });
+});

@@ -5,6 +5,7 @@ import MarqueeBulbs from "@/components/MarqueeBulbs";
 import AdSlot from "@/components/AdSlot";
 import { sfxClick, sfxPop } from "@/lib/sfx";
 import { VIBES, type Vibe } from "@/lib/vibes";
+import type { Service } from "@/lib/services";
 
 // "Just Roll It" — the lean-back channel. Pick a channel, then stop deciding:
 // trailers for deep cuts roll one after another until something grabs you.
@@ -32,11 +33,19 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export default function RollChannel() {
+export default function RollChannel({
+  myServices = [],
+  premium = false,
+}: {
+  myServices?: Service[];
+  /** Members don't see ads. This screen used to be the one that forgot. */
+  premium?: boolean;
+}) {
   const [channel, setChannel] = useState<Vibe | null>(null);
   const [queue, setQueue] = useState<ChannelFilm[]>([]);
   const [idx, setIdx] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false); // "only on my platforms"
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(true);
   const [elapsed, setElapsed] = useState(0);
@@ -71,12 +80,17 @@ export default function RollChannel() {
         vibe: v.key,
         // Random slice per tune-in — the channel shouldn't rerun last night's lineup.
         pageStart: 1 + Math.floor(Math.random() * 3),
+        myServicesOnly: mineOnly,
       }),
     }).catch(() => null);
     const data = res?.ok ? await res!.json().catch(() => null) : null;
     const films = (data?.candidates ?? []) as ChannelFilm[];
     if (!films.length) {
-      setError("Static on that frequency — try another channel.");
+      setError(
+        mineOnly
+          ? "Nothing on your platforms in this channel right now — try another, or flip off “my platforms”."
+          : "Static on that frequency — try another channel.",
+      );
       setChannel(null);
       setLoading(false);
       return;
@@ -93,6 +107,13 @@ export default function RollChannel() {
     setElapsed(0);
     setMuted(true);
   }, [queue.length]);
+
+  // Rewind to the film you just skipped past. Clamps at the top of the reel.
+  const prev = useCallback(() => {
+    setIdx((i) => Math.max(0, i - 1));
+    setElapsed(0);
+    setMuted(true);
+  }, []);
 
   // Fetch the current + next trailers (prefetch keeps the channel seamless).
   useEffect(() => {
@@ -125,6 +146,20 @@ export default function RollChannel() {
           </p>
         </header>
         {error && <p className="text-center font-mono text-xs text-ticket">{error}</p>}
+        {myServices.length > 0 && (
+          <button
+            onClick={() => {
+              sfxPop();
+              setMineOnly((v) => !v);
+            }}
+            aria-pressed={mineOnly}
+            className={`mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded border px-4 py-2.5 font-mono text-[0.7rem] uppercase tracking-widest ${
+              mineOnly ? "border-amber bg-amber/15 text-amber" : "border-line text-dim"
+            }`}
+          >
+            📺 {mineOnly ? "Only on my platforms ✓" : "Only on my platforms"}
+          </button>
+        )}
         <div className="mx-auto grid w-full max-w-sm grid-cols-1 gap-2">
           {VIBES.map((v, i) => (
             <button
@@ -227,7 +262,7 @@ export default function RollChannel() {
         {film.overview && <p className="mt-1 line-clamp-2 text-sm text-dim">{film.overview}</p>}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <Link
           href={`/m/${film.id}`}
           onClick={() => {
@@ -239,19 +274,32 @@ export default function RollChannel() {
               body: JSON.stringify({ movieId: film.id, source: "roll_pick" }),
             }).catch(() => null);
           }}
-          className="pulse-cta flex-1 rounded bg-ticket px-4 py-3 text-center font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
+          className="pulse-cta block w-full rounded bg-ticket px-4 py-3 text-center font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
         >
           🎟 That&apos;s the one
         </Link>
-        <button
-          onClick={() => {
-            sfxClick();
-            next();
-          }}
-          className="rounded border border-amber px-4 py-3 font-mono text-xs uppercase tracking-widest text-amber"
-        >
-          Keep rolling ▸
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              sfxClick();
+              prev();
+            }}
+            disabled={idx === 0}
+            aria-label="Previous trailer"
+            className="flex-1 rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-dim disabled:opacity-40"
+          >
+            ◂ Back
+          </button>
+          <button
+            onClick={() => {
+              sfxClick();
+              next();
+            }}
+            className="flex-1 rounded border border-amber px-4 py-3 font-mono text-xs uppercase tracking-widest text-amber"
+          >
+            Keep rolling ▸
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -272,7 +320,7 @@ export default function RollChannel() {
         </button>
       </div>
 
-      <AdSlot index={2} className="mt-2" />
+      {!premium && <AdSlot index={2} className="mt-2" />}
     </main>
   );
 }

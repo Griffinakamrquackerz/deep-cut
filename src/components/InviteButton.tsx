@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { sfxPop } from "@/lib/sfx";
 
-const PITCH = "Deal me in 🎬 Deep Cut finds movies you haven't met yet — an AI ticket-dealer that reads your taste. Free, takes 2 minutes:";
+const PITCH = "Deal me in 🎬 Deep Cut finds movies you haven't seen yet. Tell it what you love, it deals your picks. Free, takes 2 minutes:";
 
 /**
  * Invite-a-friend share. Native share sheet on phones, clipboard fallback.
