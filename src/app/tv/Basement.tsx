@@ -72,7 +72,7 @@ function roundRect(
 
 /** Ease both ends of a step between spots. */
 const ease = (t: number) =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 function lerpCam(a: Cam, b: Cam, t: number): Cam {
   return {
@@ -805,11 +805,3 @@ export default function Basement({ onSit }: { onSit: () => void }) {
     </section>
   );
 }
-
-
-
-
-
-
-
-
