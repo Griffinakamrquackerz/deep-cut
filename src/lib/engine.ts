@@ -9,8 +9,8 @@ import {
   type LogBrief,
   type MovieBrief,
 } from "./ai";
-import { effectiveObscurity } from "./obscurity";
-import { byGemScore, passesRecommendationRating } from "./recommendation-quality";
+import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "./obscurity";
+import { byRecommendationFit, passesRecommendationRating } from "./recommendation-quality";
 import { repeatExclusionTitles } from "./repeat-exclusions";
 import { createDealTiming } from "./deal-timing";
 import { orderedLookahead } from "./ordered-lookahead";
@@ -112,7 +112,7 @@ async function getRepeatLogs(db: Db, userId: string) {
   }
 }
 
-type SimilarCandidate = { id: number; from: string };
+type SimilarCandidate = { id: number; from: string; obscurity: number; order: number };
 type SimilarResult = Awaited<ReturnType<typeof cacheMovie>>;
 type SimilarSource = ReturnType<typeof orderedLookahead<SimilarCandidate, SimilarResult>> & {
   lookups: { started: number; skipped: number; consumed: number };
@@ -131,6 +131,7 @@ async function buildSimilarSource(
   seeds: Array<{ id: number; title: string }>,
   batch: number,
   excludedIds: ReadonlySet<number>,
+  obscurityTarget: number,
 ): Promise<SimilarSource> {
   const seen = new Set<number>();
   const graph: SimilarCandidate[] = [];
@@ -142,9 +143,19 @@ async function buildSimilarSource(
     for (const r of list) {
       if (seen.has(r.id)) continue;
       seen.add(r.id);
-      graph.push({ id: r.id, from: seeds[i].title });
+      graph.push({
+        id: r.id,
+        from: seeds[i].title,
+        obscurity: effectiveObscurity(r),
+        order: graph.length,
+      });
     }
   });
+  graph.sort(
+    (a, b) =>
+      Math.abs(a.obscurity - obscurityTarget) - Math.abs(b.obscurity - obscurityTarget) ||
+      a.order - b.order,
+  );
   const lookups = { started: 0, skipped: 0, consumed: 0 };
   const fetchedIds = new Set<number>();
   const source = orderedLookahead(graph, SIMILAR_CONCURRENCY, SIMILAR_PREFETCH, async ({ id }) => {
@@ -344,14 +355,13 @@ export async function getOrCreateProfile(userId: string): Promise<TasteProfile> 
   return regenerateProfile(userId);
 }
 
-/** Everything the user has loved, logged, or been dealt — never recommend again. */
-const RECYCLE_AFTER_DAYS = 30;
+/** Explicitly engaged films stay excluded; untouched active deals can return. */
 async function getExclusions(
   userId: string,
 ): Promise<{
   ids: Set<number>;
   titles: string[];
-  /** Dealt but never engaged: re-dealable after the cooldown (see below). */
+  /** Untouched active deals eligible to be re-dealt immediately. */
   recyclable: Map<number, string>;
 }> {
   const db = supabaseAdmin();
@@ -393,38 +403,38 @@ async function getExclusions(
     getRepeatLogs(db, userId),
   ]);
   const ids = new Set<number>();
-  const titles: string[] = [];
+  const titlesByMovie = new Map<number, string>();
   const recyclable = new Map<number, string>();
   const engaged = new Set<number>();
   for (const r of [...loved, ...logs]) engaged.add(r.movie_id);
-  const recycleCutoff = Date.now() - RECYCLE_AFTER_DAYS * 86_400_000;
   for (const rows of [loved, logs, recs]) {
     for (const r of rows ?? []) {
-      // Unengaged dealt films come back later: an `active` recommendation older
-      // than the cooldown that the member never touched (no loved/watch entry)
-      // stops excluding its film — "offer it again at a later time". Anything
-      // they DID engage with (watchlisted, dismissed after viewing, logged,
-      // loved) is a verdict and stays excluded forever. Rows without a status
-      // (legacy or synthetic) keep the old always-exclude behaviour.
-      const rec = r as unknown as { id?: string; status?: string; created_at?: string };
+      // An untouched active deal is not a verdict, so it is immediately
+      // eligible again. Watchlisted, seen, dismissed, logged, and loved films
+      // remain excluded; in particular, dismissed is the explicit "not for me"
+      // signal. Rows without a status keep the old always-exclude behaviour.
+      const rec = r as unknown as { id?: string; status?: string };
       if (
         !ids.has(r.movie_id) &&
         rec.status === "active" &&
-        rec.created_at != null &&
-        Date.parse(rec.created_at) < recycleCutoff &&
         !engaged.has(r.movie_id)
       ) {
         if (rec.id) recyclable.set(r.movie_id, rec.id);
       } else if (rec.status !== undefined && rec.status !== "active") {
-        engaged.add(r.movie_id); // watchlisted/dismissed = a verdict, never recycled
+        engaged.add(r.movie_id); // watchlisted/seen/dismissed = a verdict, never recycled
       }
       if (ids.has(r.movie_id)) continue;
       ids.add(r.movie_id);
       const m = r.movies as unknown as { title: string; year: number | null } | null;
-      if (m) titles.push(`${m.title} (${m.year ?? "?"})`);
+      if (m && !titlesByMovie.has(r.movie_id)) {
+        titlesByMovie.set(r.movie_id, `${m.title} (${m.year ?? "?"})`);
+      }
     }
   }
   for (const movieId of recyclable.keys()) ids.delete(movieId);
+  const titles = [...titlesByMovie]
+    .filter(([movieId]) => !recyclable.has(movieId))
+    .map(([, title]) => title);
   // Keep the existing source-prioritized head; append only verified history
   // titles repeatedly proposed in recent logs. The ID exclusion set is unchanged.
   return { ids, titles: repeatExclusionTitles(titles, repeats), recyclable };
@@ -479,6 +489,7 @@ async function dealRecsWithTiming(
   timing: ReturnType<typeof createDealTiming>,
 ): Promise<DealtRec[]> {
   const db = supabaseAdmin();
+  const obscurityTarget = Math.min(5, Math.max(MIN_LESS_SEEN_OBSCURITY, opts.obscurityMin));
   // Timings are accumulated even when a request throws. Never log DB messages,
   // details, IDs or titles: only validated SQLSTATE/PostgREST codes and counts.
   const diagnostics: Record<string, number> = {};
@@ -545,11 +556,15 @@ async function dealRecsWithTiming(
     // follows is rejected and counted like any other insert failure. Letting a
     // delete outage reject here would sink the whole batch instead.
     try {
-      await db.from("recommendations")
+      const { error } = await db.from("recommendations")
         .delete()
         .eq("user_id", userId)
         .eq("movie_id", movieId)
         .eq("status", "active");
+      if (error) {
+        diagnostics.recycle_failed = (diagnostics.recycle_failed ?? 0) + 1;
+        return;
+      }
       diagnostics.recycled = (diagnostics.recycled ?? 0) + 1;
     } catch {
       diagnostics.recycle_failed = (diagnostics.recycle_failed ?? 0) + 1;
@@ -587,6 +602,7 @@ async function dealRecsWithTiming(
   const offVibe = (genres: string[]): boolean => {
     if (!vibe) return false;
     const ids = movieGenreIds(genres);
+    if (ids.length === 0) return true;
     if (vibe.avoidGenreIds?.some((a) => ids.includes(a))) return true;
     if (vibe.requireGenreIds?.length && !vibe.requireGenreIds.some((r) => ids.includes(r)))
       return true;
@@ -613,7 +629,7 @@ async function dealRecsWithTiming(
   // was six arbitrary rows either way.
   const similarSeeds = lovedBriefs.slice(0, 6);
   const similarReady = lovedBriefs.length > 0
-    ? buildSimilarSource(similarSeeds, batch, excludedIds).catch(() => null)
+    ? buildSimilarSource(similarSeeds, batch, excludedIds, obscurityTarget).catch(() => null)
     : Promise.resolve(null);
 
   // Single LLM round — Discover below tops up any shortfall in seconds,
@@ -634,8 +650,8 @@ async function dealRecsWithTiming(
       lovedTitles: lovedBriefs.map((m) => `${m.title} (${m.year ?? "?"})`),
       exclusionTitles: excludedTitles,
       services,
-      obscurityMin: opts.obscurityMin,
-      obscurityMax: opts.obscurityMax,
+      obscurityMin: obscurityTarget,
+      obscurityMax: 5,
       myServicesOnly: opts.myServicesOnly,
       vibe: vibe ? { label: vibe.label, hint: vibe.hint } : null,
       recentSparks: sparks.map(signalLine),
@@ -683,7 +699,7 @@ async function dealRecsWithTiming(
     const acceptedIds = new Set<number>();
     // Rank the model's list by acclaim-vs-reach before gating: its output order
     // is thought-order, not quality, and the slots are scarce.
-    const ranked = byGemScore(resolved, ({ movie }) => movie);
+    const ranked = byRecommendationFit(resolved, ({ movie }) => movie, obscurityTarget);
     for (const { cand, movie } of ranked) {
       if (survivors.length + accepted.length >= 12) break;
       // in-batch duplicate guard (the model repeating itself counts too)
@@ -691,8 +707,8 @@ async function dealRecsWithTiming(
       if (!passesQuality(movie, "llm")) continue;
 
       const obscurity = effectiveObscurity(movie);
-      if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
-        // Real popularity outside the requested window — skip but exclude from retry.
+      if (obscurity < MIN_LESS_SEEN_OBSCURITY) {
+        // The global floor rejects mainstream picks; the dial only ranks the rest.
         excludedIds.add(movie.id);
         excludedTitles.push(`${movie.title} (${movie.year ?? "?"})`);
         continue;
@@ -766,7 +782,7 @@ async function dealRecsWithTiming(
   // deal behaves exactly as it did before this overlap existed.
   let similar = await similarReady;
   if (!similar && lovedBriefs.length > 0) {
-    similar = await buildSimilarSource(similarSeeds, batch, excludedIds).catch(() => null);
+    similar = await buildSimilarSource(similarSeeds, batch, excludedIds, obscurityTarget).catch(() => null);
   }
   if (similar) timing.note("similar_ready_before_selection", similar.stats.completed);
 
@@ -777,14 +793,9 @@ async function dealRecsWithTiming(
     timing.mark("loved_similar_graph");
     similarStage = "loved_similar_lookup_and_persist";
     if (lovedBriefs.length > 0 && survivors.length < 12 && similar) {
-      // Consume in graph order, never completion order. Only enrichment runs
-      // ahead; exclusions, gates and recommendation writes remain sequential.
-      // Graph order IS this stage's taste ordering — TMDB's similar index ranks
-      // by similarity to what the member actually loved, so it outranks any
-      // global acclaim metric. byGemScore ordering is applied to the sources
-      // with no personal order (the LLM list, Discover pages), not this one;
-      // buffering here would also over-fetch and change the pinned consumption
-      // semantics (see tests: pre-speed equality, excluded-lookup skipping).
+      // Consume in preference order, never completion order. The graph remains
+      // the taste source; vote-count closeness reorders within it, with graph
+      // order as the stable tie-break. Exclusions, gates and writes stay sequential.
       let simAdded = 0;
       for await (const {
         item: { id, from },
@@ -797,9 +808,8 @@ async function dealRecsWithTiming(
         if (excludedIds.has(movie.id)) { similarCounts.excluded++; continue; }
         if (!passesQuality(movie, "similar")) continue;
         const obscurity = effectiveObscurity(movie);
-        // In-band only → guarantees these are genuine deep cuts, not the
-        // blockbuster "you loved X so here's the other famous one" pull.
-        if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
+        // Enforce the global less-seen floor; the dial is a ranking preference.
+        if (obscurity < MIN_LESS_SEEN_OBSCURITY) {
           similarCounts.out_of_band++;
           excludedIds.add(movie.id);
           continue;
@@ -888,6 +898,10 @@ async function dealRecsWithTiming(
     const svc = services as Service[];
     const wantServices = opts.myServicesOnly && svc.length > 0;
     const threadTitle = profile.threads[0]?.title ?? "your taste";
+    const discoverSort =
+      obscurityTarget === 3 ? "vote_count.desc" :
+      obscurityTarget === 4 ? "vote_average.desc" :
+      "vote_count.asc";
 
     // Tone vibes (mind, weird, laugh) source by TMDB keyword, not just genre —
     // the only way to reach surreal mind-melters like Enter the Void that no
@@ -902,9 +916,11 @@ async function dealRecsWithTiming(
     type Attempt = { genreIds?: number[]; keywordIds?: number[]; services?: Service[] };
     // A TONE vibe (mind, weird, edge…) is NOT its genre — a bare "any sci-fi"
     // pull for "Melt my brain" drags in ordinary genre films that miss the mood.
-    // So when a tone vibe has a keyword net, we source by keyword ONLY and drop
-    // the bare-genre attempts entirely. Genre-defining vibes (scare→Horror,
-    // laugh→Comedy) keep the bare-genre top-up — that pull is still on-vibe.
+    // So when a tone vibe has a keyword net, keyword pulls keep the vibe's
+    // genreIds ANDed in — TMDB returns films carrying BOTH the genre and the
+    // keyword, so stand-up comedy never lands on "Melt my brain". Bare genre
+    // attempts are dropped entirely for tone vibes; the keyword-only fallback
+    // keeps genreIds too.
     const dropBareGenre = !!vibe && !vibe.requireGenreIds?.length && hasKw;
     const genreAttempts: Attempt[] = dropBareGenre
       ? []
@@ -915,17 +931,11 @@ async function dealRecsWithTiming(
         : vibe
           ? [{ genreIds }]
           : [{ genreIds }, {}];
-    // Pool-widening last resorts (tone vibes). The OR-union of every vibe
-    // keyword is ONE pool, and a heavy member drains it — batch 215's live
-    // preview found 37 of 40 vault films already in exclusion history. Two
-    // wider pulls run only after the union attempts: a rotated single-keyword
-    // pull (a different keyword focus each batch, so its own pool rotates) and
-    // the vibe's genre net without keywords. Genre-defining vibes already end
-    // broad, so they skip both — an off-vibe film is still worse than a short
-    // batch, and their genre attempts were never removed.
+    // Pool-widening last resorts (tone vibes). Keyword-only wideners keep the
+    // vibe's genreIds ANDed in so the pool stays on-vibe even when it widens.
     const toneWideners: Attempt[] = !dropBareGenre ? [] : [
       ...(keywordIds.length > 0
-        ? [{ keywordIds: [keywordIds[(batch - 1) % keywordIds.length]] }]
+        ? [{ keywordIds: [keywordIds[(batch - 1) % keywordIds.length]], genreIds }]
         : []),
       { genreIds },
     ];
@@ -955,7 +965,7 @@ async function dealRecsWithTiming(
         ? wantServices
           ? [
               { genreIds, keywordIds, services: svc },
-              { keywordIds, services: svc },
+              { keywordIds, services: svc, genreIds },
               ...genreAttempts,
               // Last resort: the vibe, without the streaming filter.
               //
@@ -970,12 +980,22 @@ async function dealRecsWithTiming(
               // worth rewiring your evening for beats no film at all, and the
               // availability line on the card already says where to find it.
               { genreIds, keywordIds },
+              { keywordIds, genreIds },
+              // Pure keyword-only pull for tone vibes: no genre filter, so the
+              // mood (keyword) can surface off-genre gems that the genre net
+              // would miss. The offVibe gate still rejects tone-breakers, so
+              // nothing off-mood slips through.
               { keywordIds },
               ...toneWideners,
               ...blendWideners,
             ]
           : [
               { genreIds, keywordIds },
+              { keywordIds, genreIds },
+              // Pure keyword-only pull for tone vibes: no genre filter, so the
+              // mood (keyword) can surface off-genre gems that the genre net
+              // would miss. The offVibe gate still rejects tone-breakers, so
+              // nothing off-mood slips through.
               { keywordIds },
               ...genreAttempts,
               ...toneWideners,
@@ -1014,23 +1034,21 @@ async function dealRecsWithTiming(
       // pool while page 1 returned 20 ids.
       for (let p = 0; p < 3 && !targetMet() && survivors.length < 12 && pagesUsed < cap; p++) {
         pagesUsed++;
-        const page = isWidener ? p + 1 : (((batch - 1) * 3 + p) % 12) + 1;
+        // Always try page 1 first (p === 0) before rotating. The old formula
+        // started batch 2 at page 4, so a narrow pool with only 1-3 pages of
+        // results returned nothing on every subsequent deal — "the house is
+        // dark." Page 1 is tried first, then pages 2-3 rotate.
+        const page = isWidener ? p + 1 : (p === 0 ? 1 : (((batch - 1) * 3 + (p - 1)) % 12) + 2);
         diagnostics.discover_pages++;
         let found = await measured("discover_fetch_ms", () => discoverMovies({
-          obscurityMin: opts.obscurityMin,
-          obscurityMax: opts.obscurityMax,
+          obscurityMin: MIN_LESS_SEEN_OBSCURITY,
+          obscurityMax: 5,
           genreIds: attempt.genreIds,
           keywordIds: attempt.keywordIds,
           withoutGenreIds: attempt.genreIds || attempt.keywordIds ? withoutGenreIds : undefined,
-          // Deepest-cut-first, NOT most-popular and NOT best-rated. This call
-          // inherited popularity.desc until it was set to vote_average.desc —
-          // but "highest rated within the vote band" surfaced beloved classics
-          // whose IMDb fame (25k+ votes) caps them below the obscurity band, so
-          // every candidate was enriched and then rejected (live preview, batch
-          // 215: 39 fetched, 0 dealt). Sorting by vote_count.asc walks the vault
-          // from the deepest end; the rating floor (below) and the 6.5 IMDb gate
-          // still hold the quality bar, and byGemScore ranks what survives.
-          sortBy: "vote_count.asc",
+          // Source in the direction of the selected goal, then apply the same
+          // soft preference to the verified page before choosing survivors.
+          sortBy: discoverSort,
           // Required with vote-count sorting: the floor that keeps the deep end
           // from being unrated junk.
           minVotes: 300,
@@ -1060,12 +1078,12 @@ async function dealRecsWithTiming(
           // makes an attribution trail untrustworthy.
           diagnostics.discover_pages++;
           found = await measured("discover_fetch_ms", () => discoverMovies({
-            obscurityMin: opts.obscurityMin,
-            obscurityMax: opts.obscurityMax,
+            obscurityMin: MIN_LESS_SEEN_OBSCURITY,
+            obscurityMax: 5,
             genreIds: attempt.genreIds,
             keywordIds: attempt.keywordIds,
             withoutGenreIds: attempt.genreIds || attempt.keywordIds ? withoutGenreIds : undefined,
-            sortBy: "vote_count.asc",
+            sortBy: discoverSort,
             minVotes: 300,
             minRating: vibe ? 5.5 : 6,
             releasedBefore: new Date(Date.now() - 548 * 86_400_000).toISOString().slice(0, 10),
@@ -1089,12 +1107,12 @@ async function dealRecsWithTiming(
 
         // Rank the page by acclaim-vs-reach, not TMDB's vote_average order —
         // most-loved-least-seen means little without weighing how few saw it.
-        for (const movie of byGemScore(cached, (m) => m)) {
+        for (const movie of byRecommendationFit(cached, (m) => m, obscurityTarget)) {
           if (targetMet() || survivors.length >= 12) break;
           if (excludedIds.has(movie.id)) continue;
           if (!passesQuality(movie, "discover")) continue;
           const obscurity = effectiveObscurity(movie);
-          if (obscurity < opts.obscurityMin || obscurity > opts.obscurityMax) {
+          if (obscurity < MIN_LESS_SEEN_OBSCURITY) {
             excludedIds.add(movie.id);
             continue;
           }

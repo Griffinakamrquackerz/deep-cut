@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import { colors, fonts, mono } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { VIBES, type Rec, type Reaction } from "@/lib/types";
+import { byRecommendationPreference } from "@/lib/recommendation-quality";
 import AdSlot from "@/components/AdSlot";
 import HouseCall from "@/components/HouseCall";
 import Confetti from "@/components/Confetti";
@@ -48,7 +49,7 @@ export default function Tonight() {
   const [recs, setRecs] = useState<Rec[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
-  const [depth, setDepth] = useState(2); // obscurity dial: min obscurity
+  const [depth, setDepth] = useState(3); // less-seen films; the quality gate still applies
   const [mineOnly, setMineOnly] = useState(false);
   const [vibe, setVibe] = useState<string | null>(null);
   const [tuning, setTuning] = useState(false);
@@ -136,7 +137,7 @@ export default function Tonight() {
       } else if (!res.ok) {
         setMessage("The projector jammed. Try again in a minute.");
       } else if ((res.data?.dealt ?? 0) === 0) {
-        setMessage("Came up empty — widen the dial. Didn't count against your limit.");
+        setMessage("No qualifying deep cuts on this pass. Try again or switch off your platform filter.");
       } else {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -193,6 +194,11 @@ export default function Tonight() {
       .filter(Boolean)
       .join("  ·  ");
   }, [vibe, depth, mineOnly]);
+
+  const rankedRecs = useMemo(
+    () => byRecommendationPreference(recs, depth),
+    [recs, depth],
+  );
 
   const header = useMemo(
     () => (
@@ -286,10 +292,10 @@ export default function Tonight() {
 
           {/* Obscurity slider + diamond readout, like the web dial */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={styles.controlLabel}>Obscurity</Text>
+            <Text style={styles.controlLabel}>Obscurity goal</Text>
             <Slider
               style={{ flex: 1, height: 36 }}
-              minimumValue={1}
+              minimumValue={3}
               maximumValue={5}
               step={1}
               value={depth}
@@ -299,6 +305,7 @@ export default function Tonight() {
               thumbTintColor={colors.cream}
             />
             <Text style={styles.dialReadout}>
+              {depth === 3 ? "Niche" : depth === 4 ? "Obscure" : "Deep cut"}{" "}
               {"◆".repeat(depth)}
               {"◇".repeat(5 - depth)}
             </Text>
@@ -333,7 +340,7 @@ export default function Tonight() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <FlatList
-        data={recs}
+        data={rankedRecs}
         keyExtractor={(r) => r.id}
         ListHeaderComponent={header}
         contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}

@@ -66,7 +66,10 @@ vi.mock("@/lib/tmdb", () => ({
   getSimilarMovies: mocks.getSimilarMovies,
   discoverMovies: mocks.discoverMovies,
   resolveKeywordIds: vi.fn(async () => mocks.keywordIds),
-  TMDB_GENRE_IDS: { Drama: 18, Horror: 27 },
+  TMDB_GENRE_IDS: {
+    Drama: 18, Horror: 27, Comedy: 35, Family: 10751, Animation: 16,
+    Mystery: 9648, "Science Fiction": 878, Thriller: 53,
+  },
 }));
 
 vi.mock("@/lib/signals", () => ({
@@ -339,7 +342,7 @@ describe("dealRecs — the deal is unchanged by the speed work", () => {
       mocks.getSimilarMovies.mockImplementation(async (id: number) =>
         [0, 1, 2].map((offset) => ({ id: 1000 + (id - 900) * 10 + offset })));
       const recs = await engine("mock-user", {
-        obscurityMin: 3, obscurityMax: 5, myServicesOnly: false,
+        obscurityMin: 4, obscurityMax: 5, myServicesOnly: false,
       });
       return {
         recs,
@@ -408,7 +411,7 @@ describe("dealRecs — the deal is unchanged by the speed work", () => {
       // enriches them and SQL rejects them; the new engine excludes them early.
       mocks.discoverMovies.mockResolvedValue(repeats.map((id) => ({ id })));
       const recs = await engine("mock-user", {
-        obscurityMin: 3, obscurityMax: 5, myServicesOnly: false, vibe,
+        obscurityMin: 4, obscurityMax: 5, myServicesOnly: false, vibe,
       });
       // The vault's sort strategy is deliberate post-speed policy (deepest-cut-
       // first), not part of what "unchanged by the speed work" pins — so it is
@@ -436,7 +439,9 @@ describe("dealRecs — the deal is unchanged by the speed work", () => {
     expect(current.requests.slice(0, 5).every(([opts]) => opts.keywordIds?.[0] === 123)).toBe(true);
     expect(current.requests[5][0].keywordIds).toBeUndefined();
     expect(current.requests[5][0].genreIds).toBeDefined();
-    expect(current.requests[3][0].genreIds).toBeUndefined();
+    // Keyword-only attempts for tone vibes keep the vibe's genreIds ANDed in,
+    // so stand-up comedy never lands on "Melt my brain".
+    expect(current.requests[3][0].genreIds).toBeDefined();
   });
 
   it.each(["mind", "weird"])("preserves fresh %s keyword fallback picks and their order", async (vibe) => {
@@ -450,11 +455,11 @@ describe("dealRecs — the deal is unchanged by the speed work", () => {
       });
       mocks.discoverMovies.mockResolvedValueOnce([301, 302, 303, 304, 305].map((id) => ({ id })));
       const recs = await engine("mock-user", {
-        obscurityMin: 3, obscurityMax: 5, myServicesOnly: false, vibe,
+        obscurityMin: 4, obscurityMax: 5, myServicesOnly: false, vibe,
       });
       // Same normalization as above: the vault sort is deliberate new policy.
       const requests = structuredClone(mocks.discoverMovies.mock.calls)
-        .map(([opts]) => [{ ...opts, sortBy: "normalized" }]);
+        .map(([opts]) => [{ ...opts, obscurityMin: 3, sortBy: "normalized" }]);
       return { recs, requests };
     }
     const baseline = await replay(baselineDealRecs);
@@ -677,22 +682,23 @@ describe("dealRecs — the deal is unchanged by the speed work", () => {
     // Before the reserve the tail of the budget was two more same-pool crawls
     // (pages 4 and 5), which is where the live preview's dead end came from.
     expect(requests).toHaveLength(6);
-    expect(requests.map((opts) => opts.page)).toEqual([4, 1, 4, 1, 1, 1]);
-    // Services-on attempts first (each empty page-4 attempt retried from page 1),
-    // then the services-off wideners that fill the slate.
-    expect(requests.slice(0, 4).every((opts) => opts.services?.includes("tubi"))).toBe(true);
-    expect(requests.slice(4).every((opts) => opts.services === undefined)).toBe(true);
+    expect(requests.map((opts) => opts.page)).toEqual([1, 1, 1, 5, 1, 1]);
+    // Page 1 is tried first now (no more page-4 start), so every attempt
+    // opens on page 1. Services-on attempts first (each empty), then the
+    // services-off wideners that fill the slate.
+    expect(requests.slice(0, 2).every((opts) => opts.services?.includes("tubi"))).toBe(true);
+    expect(requests.slice(2).every((opts) => opts.services === undefined)).toBe(true);
     for (const opts of requests.slice(0, 5)) {
       expect(opts).toMatchObject({
-        obscurityMin: 4, obscurityMax: 5, keywordIds: [9887],
-        withoutGenreIds: [10751, 16], sortBy: "vote_count.asc",
+        obscurityMin: 3, obscurityMax: 5, keywordIds: [9887],
+        withoutGenreIds: [10751, 16], sortBy: "vote_average.desc",
         minVotes: 300, minRating: 5.5, region: "US",
       });
     }
     // The final widener is the vibe's genre net: pool-changing and keyword-free.
     expect(requests[5]).toMatchObject({
-      obscurityMin: 4, obscurityMax: 5, genreIds: [14, 878, 27],
-      withoutGenreIds: [10751, 16], sortBy: "vote_count.asc",
+      obscurityMin: 3, obscurityMax: 5, genreIds: [14, 878, 27],
+      withoutGenreIds: [10751, 16], sortBy: "vote_average.desc",
       minVotes: 300, minRating: 5.5, region: "US",
     });
     expect(requests[5].keywordIds).toBeUndefined();
@@ -744,10 +750,10 @@ it("reaches both pool-changing wideners when the rotated pages are empty and pag
     expect((timingRecord().meta as Record<string, number>).discover_pages).toBe(6);
   });
   it("retries from page 1 when a narrow search page is empty at a high batch number", async () => {
-    // Regression: batch 214+ starts page rotation at page 4. A narrow vibe
-    // search with only 1-2 pages of results looks empty from page 4, so the
-    // vault was abandoned (4/12 slates). The first page of an attempt must be
-    // re-fetched at page 1 before the attempt is given up on.
+    // Regression: batch 214+ used to start page rotation at page 4. A narrow vibe
+    // search with only 1-2 pages of results looked empty from page 4, so the
+    // vault was abandoned. Page 1 is now tried first (p === 0), so a narrow pool
+    // is found immediately instead of being missed.
     mocks.lastBatch = 213;
     mocks.services = [{ service: "tubi" }];
     mocks.keywordIds = [9887];
@@ -759,36 +765,77 @@ it("reaches both pool-changing wideners when the rotated pages are empty and pag
     const recs = await dealRecs("mock-user", {
       obscurityMin: 4, obscurityMax: 5, myServicesOnly: true, vibe: "weird",
     });
-    // The page-4 attempt was empty, the page-1 retry was not: the film is dealt.
+    // Page 1 is tried first now, so the film is dealt on the first attempt.
     expect(recs.map((r) => r.movieId)).toContain(302);
     expect(recs.find((r) => r.movieId === 302)?.reason).toContain("Vault pull");
     const requests = mocks.discoverMovies.mock.calls.map(([opts]) => opts);
-    expect(requests.length).toBeGreaterThanOrEqual(2);
-    expect(requests[0].page).toBe(4);
-    expect(requests[1].page).toBe(1);
-    // The retry keeps every other filter identical to the abandoned attempt.
-    expect(requests[1]).toMatchObject({
-      obscurityMin: 4, obscurityMax: 5, keywordIds: [9887],
+    expect(requests.length).toBeGreaterThanOrEqual(1);
+    expect(requests[0].page).toBe(1);
+    expect(requests[0]).toMatchObject({
+      obscurityMin: 3, obscurityMax: 5, keywordIds: [9887],
       services: ["tubi"], region: "US",
     });
   });
 
 
   it("recycles a stale, unengaged recommendation back into the deal", async () => {
-    // Dealt long ago, never touched: not a verdict, so the film is offered
-    // again. The stale row must be deleted first — the unique (user_id,
-    // movie_id) constraint would otherwise reject the re-deal.
+    // Just dealt, never touched: not a verdict, so it is immediately offered
+    // again. Recycled titles must also be removed from the LLM's title list.
     mocks.history.recommendations = [{
       movie_id: 601, movies: { title: "Stale pick", year: 2000 },
-      id: "rec-601", status: "active", created_at: "2020-01-01T00:00:00Z",
+      id: "rec-601", status: "active", created_at: new Date().toISOString(),
     }] as unknown as typeof mocks.history.recommendations;
     mocks.getSimilarMovies.mockResolvedValue([]);
     mocks.discoverMovies.mockResolvedValue([{ id: 601 }]);
+    let promptTitles: string[] = [];
+    const generate = mocks.generateRecCandidates.getMockImplementation()!;
+    mocks.generateRecCandidates.mockImplementation(async (...args) => {
+      promptTitles = [...args[0].exclusionTitles];
+      return generate(...args);
+    });
     const recs = await dealRecs("mock-user", {
       obscurityMin: 3, obscurityMax: 5, myServicesOnly: false,
     });
     expect(recs.map((r) => r.movieId)).toContain(601);
+    expect(promptTitles).not.toContain("Stale pick (2000)");
     expect(mocks.deletes).toEqual([{ table: "recommendations", movieId: 601 }]);
+  });
+
+  it("keeps the less-seen floor when a legacy client requests a lower tier", async () => {
+    mocks.generateRecCandidates.mockResolvedValue({ raw: "mock", candidates: { recs: [] } });
+    mocks.getSimilarMovies.mockResolvedValue([]);
+    mocks.discoverMovies.mockResolvedValue([]);
+    await dealRecs("mock-user", {
+      obscurityMin: 1, obscurityMax: 5, myServicesOnly: false,
+    });
+    expect(mocks.generateRecCandidates.mock.calls[0][0].obscurityMin).toBe(3);
+    expect(mocks.discoverMovies.mock.calls.length).toBeGreaterThan(0);
+    expect(mocks.discoverMovies.mock.calls.every(([opts]) => opts.obscurityMin === 3)).toBe(true);
+  });
+
+  it("rejects comedy leaks for Melt my brain from LLM, similar, and Discover", async () => {
+    mocks.generateRecCandidates.mockResolvedValue({
+      raw: "mock",
+      candidates: { recs: [{ title: "7201", year: 2000, reason: "Comedy leak" }] },
+    });
+    mocks.getSimilarMovies.mockResolvedValue([{ id: 7202 }]);
+    mocks.discoverMovies.mockResolvedValue([{ id: 7203 }]);
+    const cache = mocks.cacheMovie.getMockImplementation()!;
+    mocks.cacheMovie.mockImplementation(async (id: number) => {
+      const movie = await cache(id);
+      return [7201, 7202, 7203].includes(id) ? { ...movie, genres: ["Comedy"] } : movie;
+    });
+
+    const recs = await dealRecs("mock-user", {
+      obscurityMin: 4, obscurityMax: 5, myServicesOnly: false, vibe: "mind",
+    });
+
+    for (const movieId of [7201, 7202, 7203]) {
+      expect(recs.map((r) => r.movieId)).not.toContain(movieId);
+    }
+    expect(mocks.cacheMovie.mock.calls.map(([id]) => id)).toEqual(
+      expect.arrayContaining([7201, 7202, 7203]),
+    );
   });
 
   it("engaged recommendations are never recycled", async () => {
@@ -801,6 +848,20 @@ it("reaches both pool-changing wideners when the rotated pages are empty and pag
       obscurityMin: 3, obscurityMax: 5, myServicesOnly: false,
     });
     expect(recs.map((r) => r.movieId)).not.toContain(602);
+    expect(mocks.deletes).toEqual([]);
+  });
+
+  it("keeps an explicit not-for-me dismissal out of every later deal", async () => {
+    mocks.history.recommendations = [{
+      movie_id: 603, movies: { title: "Rejected pick", year: 2000 },
+      id: "rec-603", status: "dismissed", created_at: new Date().toISOString(),
+    }] as unknown as typeof mocks.history.recommendations;
+    mocks.getSimilarMovies.mockResolvedValue([]);
+    mocks.discoverMovies.mockResolvedValue([{ id: 603 }]);
+    const recs = await dealRecs("mock-user", {
+      obscurityMin: 3, obscurityMax: 5, myServicesOnly: false,
+    });
+    expect(recs.map((r) => r.movieId)).not.toContain(603);
     expect(mocks.deletes).toEqual([]);
   });
 
@@ -861,14 +922,17 @@ it("reaches both pool-changing wideners when the rotated pages are empty and pag
       obscurityMin: 3, obscurityMax: 5, myServicesOnly: false, vibe: "weird",
     });
     const requests = mocks.discoverMovies.mock.calls.map(([opts]) => opts);
-    // union -> union keywords -> rotated keyword -> genre net, one page each.
-    expect(requests.length).toBe(4);
+    // union -> union keywords -> pure keyword-only -> rotated keyword -> genre net, one page each.
+    expect(requests.length).toBe(5);
     expect(requests[0].keywordIds).toEqual([9887, 9256]);
     expect(requests[1].keywordIds).toEqual([9887, 9256]);
-    expect(requests[2].keywordIds).toEqual([9887]);
-    expect(requests[3].keywordIds).toBeUndefined();
+    expect(requests[2].keywordIds).toEqual([9887, 9256]);
+    expect(requests[2].genreIds).toBeUndefined();
+    expect(requests[3].keywordIds).toEqual([9887]);
     expect(requests[3].genreIds).toBeDefined();
-    expect((timingRecord().meta as Record<string, number>).discover_pages).toBe(4);
+    expect(requests[4].keywordIds).toBeUndefined();
+    expect(requests[4].genreIds).toBeDefined();
+    expect((timingRecord().meta as Record<string, number>).discover_pages).toBe(5);
   });
 
   it("continues paging when a nonempty Discover page contains only excluded IDs", async () => {
@@ -1139,5 +1203,3 @@ it("reaches both pool-changing wideners when the rotated pages are empty and pag
     expect(stages).not.toContain("tracking");
   });
 });
-
-

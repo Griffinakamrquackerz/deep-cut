@@ -6,7 +6,7 @@ import { regionFromRequest } from "@/lib/region";
 import { checkAndIncrement, refund, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib/rate-limit";
 import { isPremium } from "@/lib/premium";
 import { RecBatchInput } from "@/lib/schemas";
-import { effectiveObscurity } from "@/lib/obscurity";
+import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "@/lib/obscurity";
 import { gemScore } from "@/lib/gem";
 import { isAdminEmail } from "@/lib/admin";
 
@@ -84,23 +84,17 @@ export async function GET() {
   // rec dealt before the IMDb fame cap could still sit in the marquee showing
   // ◆◇◇◇◇ under a dial whose floor is ◆◆. Obscurity 1 means everyone has met
   // it — Pride & Prejudice, No Country, Kill Bill — and "movies you haven't seen
-  // yet" is the whole promise, so those are never a valid deal at any dial
-  // setting. Retire them rather than displaying a film that contradicts the
-  // filter it was dealt under.
+  // yet" is the whole promise, so anything below the shared ◆◆◆ less-seen floor
+  // is never a valid deal at any dial setting. Retire it rather than displaying
+  // a film that contradicts the pool it was dealt from.
   const stale = recs.filter(
-    (r) => r.status === "active" && typeof r.obscurity === "number" && r.obscurity < 2,
+    (r) =>
+      r.status === "active" &&
+      typeof r.obscurity === "number" &&
+      r.obscurity < MIN_LESS_SEEN_OBSCURITY,
   );
-  if (stale.length > 0) {
-    // Dismissed, not deleted: that keeps them in the exclusion list so the
-    // engine never deals them again. Fire-and-forget — a failed cleanup must
-    // never cost the reader their recs.
-    void db
-      .from("recommendations")
-      .update({ status: "dismissed" })
-      .eq("user_id", user.id)
-      .in("id", stale.map((r) => r.id as string))
-      .then(undefined, () => undefined);
-  }
+  // Hide old deals that no longer meet today's floor, but don't convert an
+  // automatic cleanup into a permanent "not for me" verdict.
   const staleIds = new Set(stale.map((r) => r.id));
   const live = recs.filter((r) => !staleIds.has(r.id));
 
@@ -155,7 +149,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
-  if (parsed.data.obscurityMin > parsed.data.obscurityMax) {
+  if (Math.max(MIN_LESS_SEEN_OBSCURITY, parsed.data.obscurityMin) > parsed.data.obscurityMax) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
 

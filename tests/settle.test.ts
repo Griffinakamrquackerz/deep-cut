@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SETTLE_POOL,
+  SETTLE_DEEP_CUT_POOL,
   SETTLE_QUESTIONS,
   candidatesToFilms,
   poolQueryFor,
@@ -67,6 +68,20 @@ describe("settle pool & questions", () => {
       "Don't care",
     ]);
   });
+
+  it("only exposes eligible, well-regarded hidden gems in the curated fallback", () => {
+    expect(SETTLE_DEEP_CUT_POOL.length).toBeGreaterThan(0);
+    for (const f of SETTLE_DEEP_CUT_POOL) {
+      expect(f.obscurity).toBeGreaterThanOrEqual(2);
+      expect(f.houseConviction).toBeGreaterThanOrEqual(4);
+    }
+    expect(SETTLE_QUESTIONS[4].options.map((o) => o.label)).toEqual([
+      "A little hidden",
+      "A real hidden gem",
+      "As deep as possible",
+    ]);
+  });
+
 });
 
 describe("scoring", () => {
@@ -93,11 +108,11 @@ describe("scoring", () => {
   });
 
   it("rewards obscurity proximity to the averaged dial", () => {
-    const p1 = player({ obscurity: 0 });
-    const p2 = player({ obscurity: 4 }); // target 2
+    const p1 = player({ obscurity: 2 });
+    const p2 = player({ obscurity: 4 }); // target 3
     expect(
-      scoreFilm(film({ obscurity: 2 }), p1, p2) - scoreFilm(film({ obscurity: 4 }), p1, p2),
-    ).toBeCloseTo(2, 6);
+      scoreFilm(film({ obscurity: 3 }), p1, p2) - scoreFilm(film({ obscurity: 4 }), p1, p2),
+    ).toBeCloseTo(1, 6);
   });
 });
 
@@ -146,6 +161,13 @@ describe("real-data pool mapping", () => {
     ...over,
   });
 
+  it("uses IMDb reach when mapping the visible obscurity score", () => {
+    const [film] = candidatesToFilms([
+      cand({ vote_count: 5_000, popularity: 5, imdb_votes: 80_000 }),
+    ], false);
+    expect(film.obscurity).toBe(1);
+  });
+
   it("derives mood from genre ids and carries poster + tmdbId through", () => {
     const [f] = candidatesToFilms([cand({})], false);
     expect(f.mood).toBe("scared");
@@ -171,5 +193,12 @@ describe("real-data pool mapping", () => {
     expect(q.genreIds).toContain(35); // comedy
     expect(q.genreIds).toContain(27); // horror
     expect(q.eitherShort).toBe(true);
+    expect(q.obscurityMin).toBeGreaterThanOrEqual(3);
+  });
+
+  it("cannot lower the server request below hidden-gem obscurity", () => {
+    const q = poolQueryFor(player({ obscurity: 2 }), player({ obscurity: 2 }));
+    expect(q.obscurityMin).toBe(3);
+    expect(q.obscurityMax).toBe(5);
   });
 });

@@ -51,6 +51,12 @@ describe("RecBatchInput vibe field", () => {
   it("rejects an unknown vibe key", () => {
     expect(RecBatchInput.safeParse({ vibe: "yolo" }).success).toBe(false);
   });
+
+  it("defaults the obscurity floor to niche-or-deeper", () => {
+    const parsed = RecBatchInput.safeParse({});
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.obscurityMin).toBe(3);
+  });
 });
 
 describe("genre-defining vibes stay inside their genre", () => {
@@ -101,5 +107,11 @@ describe("genre-defining vibes stay inside their genre", () => {
         expect(REAL_GENRE_IDS.has(id), `${v.key} carries a bogus genre id ${id}`).toBe(true);
       }
     }
+  });
+
+  it("Melt my brain excludes comedy while allowing cross-genre mind-benders", () => {
+    const mind = vibeByKey("mind")!;
+    expect(mind.avoidGenreIds).toContain(TMDB_GENRE_IDS.Comedy);
+    expect(mind.requireGenreIds).toBeUndefined();
   });
 });

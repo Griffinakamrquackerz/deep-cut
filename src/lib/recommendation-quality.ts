@@ -1,4 +1,5 @@
 import { gemScore } from "./gem";
+import { effectiveObscurity } from "./obscurity";
 
 // Editorial rating exceptions, not an inferred "cult" classifier. A model's
 // description, TMDB keyword or high vote count cannot add a film to this list.
@@ -64,3 +65,48 @@ export function byGemScore<T>(items: T[], pick: (item: T) => Parameters<typeof g
     .map(({ item }) => item);
 }
 
+type RecommendationFitInput =
+  Parameters<typeof effectiveObscurity>[0] &
+  Parameters<typeof gemRank>[0];
+
+/** Quality leads; the obscurity dial is a soft preference within the pool. */
+export function byRecommendationFit<T>(
+  items: T[],
+  pick: (item: T) => RecommendationFitInput,
+  target: number,
+): T[] {
+  return items
+    .map((item, index) => {
+      const movie = pick(item);
+      const distance = Math.abs(effectiveObscurity(movie) - target);
+      return { item, index, rank: gemRank(movie) * 3 + (2 - distance) };
+    })
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map(({ item }) => item);
+}
+
+/** Reorder each existing batch softly without moving older batches above newer ones. */
+export function byRecommendationPreference<T extends {
+  obscurity: number;
+  gem?: number | null;
+  status: string;
+  batch?: number;
+}>(items: T[], target: number): T[] {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = `${item.status}:${item.batch ?? 0}`;
+    const group = groups.get(key) ?? [];
+    group.push(item);
+    groups.set(key, group);
+  }
+  return [...groups.values()].flatMap((group) =>
+    group
+      .map((item, index) => ({
+        item,
+        index,
+        rank: (item.gem ?? 0) * 3 + (2 - Math.abs(item.obscurity - target)),
+      }))
+      .sort((a, b) => b.rank - a.rank || a.index - b.index)
+      .map(({ item }) => item),
+  );
+}

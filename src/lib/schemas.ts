@@ -21,7 +21,7 @@ export const WatchLogInput = z.object({
 });
 
 export const RecBatchInput = z.object({
-  obscurityMin: z.number().int().min(1).max(5).default(2), // house default: skip the top 40
+  obscurityMin: z.number().int().min(1).max(5).default(3), // practical floor: less-seen films only
   obscurityMax: z.number().int().min(1).max(5).default(5),
   myServicesOnly: z.boolean().default(false),
   vibe: z.enum(VIBE_KEYS).nullish(),

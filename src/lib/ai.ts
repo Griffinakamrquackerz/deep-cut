@@ -397,7 +397,7 @@ export async function generateTasteProfile(
 
 // ── Stage B — recommendation candidates ─────────────────────────────
 
-const RECS_SYSTEM = `You are the recommendation engine of Deep Cut. You receive a user's taste threads, loved films, an exclusion list, their streaming services, and a requested obscurity range (1=everyone knows it, 5=deep cut).
+const RECS_SYSTEM = `You are the recommendation engine of Deep Cut. You receive a user's taste threads, loved films, an exclusion list, their streaming services, and an obscurity goal (1=everyone knows it, 5=deep cut).
 
 Produce exactly 12 candidate films.
 
@@ -405,9 +405,9 @@ Rules:
 - Every candidate must be a REAL, released feature film. Never invent titles. Use the film's original release year.
 - NEVER recommend anything on the exclusion list or in the loved list.
 - Each "reason" is ONE line (max ~25 words) tied to a specific taste thread or a specific loved film, e.g. "Because you loved The Room → the film-set chaos of Living in Oblivion."
-- Deep Cut's premise is films the user HASN'T met. Deal mostly obscurity 3-4 plus 1-2 true deep cuts (5). At most ONE candidate per batch may be obscurity 1-2, and only when it's a perfect taste match they've plausibly missed. Never deal current chart hits, franchise blockbusters, or the all-time-most-popular staples — assume they've already met those. Low-key but excellent beats famous.
+- Deep Cut's premise is films the user HASN'T met. The verified pipeline enforces a global minimum obscurity of 3; never propose levels 1-2. Within levels 3-5, the user's goal is a ranking preference, not a hard cutoff. Favor it when quality and taste fit are comparable. Never deal current chart hits, franchise blockbusters, or the all-time-most-popular staples — assume they've already met those. Low-key but excellent beats famous.
 - Big-budget STREAMING ORIGINALS are not deep cuts either, however few people rated them. A wide-release Netflix/Apple/Amazon/Disney+ title built around A-list stars was marketed to millions — it is a mainstream film that merely skipped cinemas. Never deal one.
-- EXCEPTION — cult midnight-movie energy is always in-bounds when it falls INSIDE the requested obscurity range: beloved weirdness (Clerks, They Live, Rocky Horror tier) is Deep Cut material. This is a hidden-gems service, not a top-40 list — even a cult title must be one the member plausibly hasn't met, so never reach for a film so famous everyone has already seen it. What's banned is generic mainstream, not beloved weirdness.
+- EXCEPTION — cult midnight-movie energy is in-bounds above the global obscurity floor: beloved weirdness (Clerks, They Live, Rocky Horror tier) can be Deep Cut material. This is a hidden-gems service, not a top-40 list — even a cult title must be one the member plausibly hasn't met, so never reach for a film so famous everyone has already seen it. What's banned is generic mainstream, not beloved weirdness.
 - Lean modern and relevant: include at least 3 films from the last 10 years, and keep the whole batch mostly post-1970. At MOST one pre-1970 film, and only a true perfect-fit classic — otherwise skip that era entirely. Avoid defaulting to the canonical "greatest of all time" lists; surface festival favorites, international picks, and under-the-radar releases the user has plausibly never heard of.
 - Spread across the user's taste threads; don't cluster on one.
 - obscurity_guess: your 1-5 estimate of how obscure the film is.
@@ -442,7 +442,7 @@ export async function generateRecCandidates(
     req.exclusionTitles.length ? req.exclusionTitles.join("; ") : "(none)",
     "\nSTREAMING SERVICES:",
     req.services.length ? req.services.join(", ") : "(unknown)",
-    `\nREQUESTED OBSCURITY RANGE: ${req.obscurityMin}-${req.obscurityMax}`,
+    `\nOBSCURITY GOAL (soft ranking preference, not a cutoff): ${req.obscurityMin}. All picks must still be less-seen (verified score 3-5); the app will enforce this.`,
     req.recentSparks?.length
       ? `\nCAUGHT THEIR EYE LATELY (weak signals — lean toward this energy, but loved films outrank these):\n${req.recentSparks.join("\n")}`
       : "",

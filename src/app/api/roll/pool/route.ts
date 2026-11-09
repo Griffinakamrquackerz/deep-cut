@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { discoverSettleCandidates, resolveKeywordIds, searchMovies } from "@/lib/tmdb";
+import {
+  cacheMovie,
+  discoverSettleCandidates,
+  resolveKeywordIds,
+  searchMovies,
+  TMDB_GENRE_IDS,
+} from "@/lib/tmdb";
 import { vibeByKey, VIBE_KEYS } from "@/lib/vibes";
 import { HOUSE_CANON, pickCanonHit, type CanonPick } from "@/lib/canon";
-import { effectiveObscurity } from "@/lib/obscurity";
+import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "@/lib/obscurity";
+import { passesRecommendationRating } from "@/lib/recommendation-quality";
 import { currentUser } from "@/lib/supabase/server";
 import { regionForRequest, serviceAvailableIn } from "@/lib/region";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -12,11 +19,11 @@ import { tmdbProviderIds, type Service } from "@/lib/services";
 export const maxDuration = 30;
 
 // The channel's projector. Two reels spliced together:
-//  1. House canon — the hand-programmed cinephile shelf (artists' favorite
-//     artists), ~10 random picks resolved against TMDB by title+year.
+//  1. House canon — the hand-programmed cinephile shelf, screened by the same
+//     quality, fame, and channel-fit gates as every other source.
 //  2. Hidden-gem discover — most-loved-least-seen (vote_average.desc inside
-//     the 200–8000-vote band), 18-month age gate, 6.5 rating floor, channel
-//     tone exclusions.
+//     the less-seen vote band, 18-month age gate, verified rating/fame gates,
+//     and channel tone exclusions.
 // Public like the rest of Roll/Settle.
 
 const Input = z.object({
@@ -42,6 +49,13 @@ interface Candidate {
   year: number | null;
   poster_path: string | null;
   overview: string;
+  genre_ids: number[];
+  vote_count: number;
+  vote_average: number;
+  popularity: number;
+  imdb_votes: number | null;
+  ratings: { imdb: number | null; tmdb: number | null; rt: number | null };
+  original_language?: string;
   canon?: boolean;
 }
 
@@ -56,13 +70,20 @@ async function resolveCanon(pick: CanonPick): Promise<Candidate | null> {
   // An exact title inside the year band beats a more popular near-match — the
   // Scare shelf's "House" (Hausu) otherwise resolves to Animal House.
   const match = pickCanonHit(results, pick);
-  const candidate: Candidate | null = match
+  const movie = match ? await cacheMovie(match.id) : null;
+  const candidate: Candidate | null = movie
     ? {
-        id: match.id,
-        title: match.title,
-        year: match.year,
-        poster_path: match.poster_path,
-        overview: match.overview ?? "",
+        id: movie.id,
+        title: movie.title,
+        year: movie.year,
+        poster_path: movie.poster_path,
+        overview: movie.overview,
+        genre_ids: movie.genres.map((name) => TMDB_GENRE_IDS[name]).filter((id) => id != null),
+        vote_count: movie.vote_count,
+        vote_average: movie.ratings.tmdb ?? 0,
+        popularity: movie.popularity,
+        imdb_votes: movie.imdb_votes,
+        ratings: movie.ratings,
         canon: true,
       }
     : null;
@@ -120,7 +141,7 @@ export async function POST(request: Request) {
   const common = {
     genreIds: vibe.rollGenreIds ?? vibe.genreIds,
     withoutGenreIds: vibe.avoidGenreIds,
-    obscurityMin: 3,
+    obscurityMin: MIN_LESS_SEEN_OBSCURITY,
     obscurityMax: 5,
     minRating: 6.5,
     minRuntime: 75,
@@ -132,6 +153,14 @@ export async function POST(request: Request) {
   // catches on-tone films no genre net would — the surreal Drama that isn't
   // "sci-fi". Kept in-tone by the channel's avoid-genres. Empty if no keywords.
   const keywordIds = vibe.keywords?.length ? await resolveKeywordIds(vibe.keywords) : [];
+
+  const passesChannel = (candidate: Candidate) =>
+    candidate.genre_ids.length > 0 &&
+    passesRecommendationRating(candidate) &&
+    effectiveObscurity(candidate) >= MIN_LESS_SEEN_OBSCURITY &&
+    !vibe.avoidGenreIds?.some((genreId) => candidate.genre_ids.includes(genreId)) &&
+    (!vibe.requireGenreIds?.length ||
+      vibe.requireGenreIds.some((genreId) => candidate.genre_ids.includes(genreId)));
 
   try {
     const [canonResolved, timeless, modern, toned] = await Promise.all([
@@ -165,40 +194,60 @@ export async function POST(request: Request) {
     }
 
     const seen = new Set<number>();
-    const candidates: Candidate[] = [];
+    const candidates: Array<
+      Pick<Candidate, "id" | "title" | "year" | "poster_path" | "overview" | "canon">
+    > = [];
     for (const c of canonResolved) {
-      if (c && !seen.has(c.id)) {
+      if (c && !seen.has(c.id) && passesChannel(c)) {
         seen.add(c.id);
-        candidates.push(c);
+        candidates.push({
+          id: c.id,
+          title: c.title,
+          year: c.year,
+          poster_path: c.poster_path,
+          overview: c.overview,
+          canon: true,
+        });
       }
     }
+    const reelIds = new Set(seen);
+    const algorithmReel = reel
+      .filter((c) => {
+        if (
+          reelIds.has(c.id) ||
+          !c.poster_path ||
+          CANON_ONLY_LANGS.has(c.original_language)
+        )
+          return false;
+        reelIds.add(c.id);
+        return true;
+      })
+      .slice(0, 30);
+    const enrichedReel = await Promise.all(
+      algorithmReel.map(async (candidate) => {
+        const movie = await cacheMovie(candidate.id).catch(() => null);
+        if (!movie) return null;
+        return {
+          ...candidate,
+          title: movie.title,
+          year: movie.year,
+          poster_path: movie.poster_path,
+          overview: movie.overview,
+          genre_ids: movie.genres.map((name) => TMDB_GENRE_IDS[name]).filter((id) => id != null),
+          vote_count: movie.vote_count,
+          vote_average: movie.ratings.tmdb ?? 0,
+          popularity: movie.popularity,
+          imdb_votes: movie.imdb_votes,
+          ratings: movie.ratings,
+        };
+      }),
+    );
     // Cap pre-1970 titles in the algorithmic reel so the channel stays modern
-    // (the curated canon shelf above is exempt — that's the repertory point).
+    // without exempting curated titles from the channel's hard quality gates.
     let classicShown = 0;
-    for (const c of reel) {
-      if (seen.has(c.id) || !c.poster_path) continue;
-      if (CANON_ONLY_LANGS.has(c.original_language)) continue;
-      // Genre-defining channels (laugh→Comedy, scare→Horror) must actually BE
-      // that genre — the keyword-only reel can otherwise surface a film that
-      // merely shares a tag (a "satire" drama sneaking onto Make me laugh).
-      if (
-        vibe.requireGenreIds?.length &&
-        !vibe.requireGenreIds.some((g) => c.genre_ids.includes(g))
-      )
-        continue;
+    for (const c of enrichedReel) {
+      if (!c || seen.has(c.id) || !passesChannel(c)) continue;
       if (c.year != null && c.year < 1970 && classicShown >= 2) continue;
-      // Fame caps the reel: a film buzzing right now isn't a deep cut this
-      // month, whatever its vote count says. (House picks are exempt — a
-      // canon classic stays canon even when it trends.)
-      if (effectiveObscurity(c) < 3) continue;
-      // Quality bar, any passport: a genuinely great non-English film travels
-      // (1000+ votes = international reach); a home-crowd favorite with an
-      // inflated rating doesn't. Low-vote masterpieces ride the canon shelf.
-      if (c.original_language !== "en" && c.vote_count < 1000) continue;
-      // Time is the other judge: an old film with a high rating earned it, a
-      // recent one needs real reach — fan-bombed ratings cluster in the last
-      // decade (Gabriel's Inferno tier). Recent low-vote gems ride the canon.
-      if (c.year && c.year >= new Date().getFullYear() - 10 && c.vote_count < 3000) continue;
       seen.add(c.id);
       if (c.year != null && c.year < 1970) classicShown++;
       candidates.push({

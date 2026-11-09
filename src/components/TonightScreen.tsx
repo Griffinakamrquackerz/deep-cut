@@ -20,6 +20,7 @@ import { toast } from "@/lib/toast";
 import { SERVICES, type Service } from "@/lib/services";
 import { VIBES, vibeByKey } from "@/lib/vibes";
 import { gemLabel } from "@/lib/gem";
+import { byRecommendationPreference } from "@/lib/recommendation-quality";
 
 interface RecRow {
   id: string;
@@ -27,6 +28,7 @@ interface RecRow {
   obscurity: number;
   /** Acclaim-vs-reach, 1-5; null when we have no rating to judge on. */
   gem?: number | null;
+  batch: number;
   status: string;
   movies: {
     id: number;
@@ -58,7 +60,7 @@ export default function TonightScreen({
   const [recs, setRecs] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dealing, setDealing] = useState(false);
-  const [depth, setDepth] = useState(2); // obscurity dial: min obscurity — house default skips the top 40
+  const [depth, setDepth] = useState(3); // less-seen films; the quality gate still applies
   const [mineOnly, setMineOnly] = useState(false);
   const [vibe, setVibe] = useState<string | null>(null);
   const [tuning, setTuning] = useState(false);
@@ -70,10 +72,17 @@ export default function TonightScreen({
   const [confetti, setConfetti] = useState(0);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/recs");
+    let res: Response;
+    try {
+      res = await fetch("/api/recs");
+    } catch {
+      setLoading(false);
+      setMessage("Couldn't reach the house — check your connection and try again.");
+      return;
+    }
     if (res.ok) {
-      const data = await res.json();
-      setRecs((data.recs ?? []).filter((r: RecRow) => r.status === "active"));
+      const data = await res.json().catch(() => null);
+      setRecs((data?.recs ?? []).filter((r: RecRow) => r.status === "active"));
     } else {
       // Never fail silently — an empty marquee must mean genuinely no recs.
       const data = await res.json().catch(() => null);
@@ -102,57 +111,66 @@ export default function TonightScreen({
     haptic(12);
     setDealing(true);
     setMessage(null);
-    const res = await fetch("/api/recs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        obscurityMin: useDepth,
-        obscurityMax: 5,
-        myServicesOnly: useMine,
-        vibe,
-      }),
-    });
-    if (res.status === 429) {
-      const data = await res.json().catch(() => null);
-      setMessage(
-        data?.premium === false
-          ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 3 months free in Settings."
-          : "You've hit today's deal limit — back tomorrow.",
-      );
-    } else if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
-      setMessage(`The projector jammed${detail}. Try again in a minute.`);
-    } else {
-      const data = await res.json().catch(() => null);
-      const dealt = data?.dealt ?? 0;
-      if (dealt === 0) {
-        // Say which of your own settings squeezed it to nothing, rather than
-        // listing every dial. Stacking the mood, the deep end of the obscurity
-        // dial and your own streaming services is a narrow slice of a big
-        // catalogue, and the intersection can genuinely be empty.
-        const tight = [
-          vibe ? "that mood" : null,
-          useDepth >= 4 ? "the deep end of the dial" : null,
-          useMine ? "your services only" : null,
-        ].filter(Boolean);
+    try {
+      const res = await fetch("/api/recs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          obscurityMin: useDepth,
+          obscurityMax: 5,
+          myServicesOnly: useMine,
+          vibe,
+        }),
+      });
+      if (res.status === 429) {
+        const data = await res.json().catch(() => null);
         setMessage(
-          tight.length
-            ? `Nothing left in ${tight.join(" + ")} that you haven't already seen. This attempt didn't count against your daily limit.`
-            : "The house came up empty — every candidate was already in your history. Add a few more loved films and try again (this attempt didn't count against your daily limit).",
+          data?.premium === false
+            ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 3 months free in Settings."
+            : "You've hit today's deal limit — back tomorrow.",
         );
-        setWidenable(useMine || useDepth > 1);
+      } else if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
+        setMessage(`The projector jammed${detail}. Try again in a minute.`);
       } else {
-        setWidenable(false);
-        const v = vibeByKey(vibe);
-        haptic([30, 40, 30]);
-        toast(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` · ${v.label}` : ""}`, {
-          tone: "ticket",
-          icon: "🎟",
-        });
+        const data = await res.json().catch(() => null);
+        const dealt = data?.dealt ?? 0;
+        if (dealt === 0) {
+          // Say which of your own settings squeezed it to nothing, rather than
+          // listing every dial. Stacking the mood, the deep end of the obscurity
+          // dial and your own streaming services is a narrow slice of a big
+          // catalogue, and the intersection can genuinely be empty.
+          const tight = [
+            vibe ? "that mood" : null,
+            useMine ? "your services only" : null,
+          ].filter(Boolean);
+          setMessage(
+            tight.length
+              ? `No qualifying films matched ${tight.join(" + ")} on this pass. This attempt didn't count against your daily limit.`
+              : "The house came up empty on this pass. Untouched picks can return; try again in a moment (this attempt didn't count against your daily limit).",
+          );
+          setWidenable(useMine);
+        } else {
+          setWidenable(false);
+          const v = vibeByKey(vibe);
+          haptic([30, 40, 30]);
+          toast(`Dealt ${dealt} fresh film${dealt === 1 ? "" : "s"}${v ? ` · ${v.label}` : ""}`, {
+            tone: "ticket",
+            icon: "🎟",
+          });
+        }
       }
+    } catch {
+      // A network failure on the deal request must not leave the button stuck.
+      setMessage("Couldn't reach the house — check your connection and try again.");
     }
-    await load();
+    try {
+      await load();
+    } catch {
+      // load() already set its own error message and loading=false; don't
+      // let a load failure leave the deal button stuck.
+    }
     setDealing(false);
   }
 
@@ -232,21 +250,23 @@ export default function TonightScreen({
 
   const visible = useMemo(
     () =>
-      recs.filter((r) => {
-        if (r.obscurity < depth) return false;
-        if (mineOnly) {
-          const avail = availableServices(r);
-          if (!avail.some((s) => myServices.includes(s))) return false;
-        }
-        return true;
-      }),
+      byRecommendationPreference(
+        recs.filter((r) => {
+          if (mineOnly) {
+            const avail = availableServices(r);
+            if (!avail.some((s) => myServices.includes(s))) return false;
+          }
+          return true;
+        }),
+        depth,
+      ),
     [recs, depth, mineOnly, myServices],
   );
 
   return (
     <section className="flex flex-col gap-4">
       <Confetti trigger={confetti} />
-      <header>
+      <header className="program-header">
         <MarqueeBulbs />
         <p className="eyebrow mt-2">Tonight</p>
         <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
@@ -354,17 +374,19 @@ export default function TonightScreen({
           )}
         </div>
         <label className="flex items-center gap-3">
-          <span className="eyebrow shrink-0">Obscurity</span>
+          <span className="eyebrow shrink-0">Obscurity goal</span>
           <input
             type="range"
-            min={1}
+            min={3}
             max={5}
             value={depth}
             onChange={(e) => setDepth(Number(e.target.value))}
             className="w-full accent-amber"
-            aria-label="Minimum obscurity"
+            aria-label="Obscurity preference: niche to deep cut"
           />
-          <span className="font-mono text-xs tracking-widest text-amber">
+          <span className="text-right font-mono text-[0.6rem] uppercase tracking-wider text-amber">
+            {depth === 3 ? "Niche" : depth === 4 ? "Obscure" : "Deep cut"}
+            <br />
             {"◆".repeat(depth)}
             {"◇".repeat(5 - depth)}
           </span>
@@ -400,16 +422,11 @@ export default function TonightScreen({
       {widenable && (
         <button
           onClick={() => {
-            // Loosen the soft constraints, keep the mood. Services are a
-            // preference and the obscurity floor is a dial; the vibe is what
-            // was actually asked for, and an off-vibe film is worse than none.
-            const nextDepth = Math.max(1, depth - 1);
+              // Services are a filter; obscurity is a ranking preference.
             setMineOnly(false);
-            setDepth(nextDepth);
             setWidenable(false);
             setMessage(null);
-            // Passed through, not read back off state — see deal().
-            void deal({ depth: nextDepth, mineOnly: false });
+            void deal({ depth, mineOnly: false });
           }}
           disabled={dealing}
           className="self-start rounded border border-amber px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-amber disabled:opacity-50"
@@ -436,7 +453,7 @@ export default function TonightScreen({
           {recs.length > 0 && (
             <button
               onClick={() => {
-                setDepth(1);
+                setDepth(3);
                 setMineOnly(false);
               }}
               className="rounded border border-amber px-3 py-2 font-mono text-xs uppercase tracking-widest text-amber"

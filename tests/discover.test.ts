@@ -9,7 +9,7 @@ describe("Discover fallback — vote bands", () => {
     expect(voteBandForObscurity(1, 5)).toEqual({ gte: 50, lte: undefined });
   });
 
-  it("deep-cut band 3-5 caps at the well-known threshold", () => {
+  it("less-seen band 3-5 caps at the 8,000-vote boundary", () => {
     expect(voteBandForObscurity(3, 5)).toEqual({ gte: 50, lte: 8_000 });
   });
 

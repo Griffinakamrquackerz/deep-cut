@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   byGemScore,
+  byRecommendationFit,
+  byRecommendationPreference,
   CULT_RATING_EXCEPTIONS,
   gemRank,
   passesRecommendationRating,
@@ -48,5 +50,28 @@ describe("recommendation rating policy", () => {
     expect(gemRank(dud)).toBe(1);
     expect(gemRank(unrated)).toBe(0);
     expect(byGemScore([dud, gem, unrated, gem], (m) => m)).toEqual([gem, gem, dud, unrated]);
+  });
+
+  it("uses the obscurity goal as a soft tie-break after gem quality", () => {
+    const lessSeen = {
+      vote_count: 5_000,
+      popularity: 5,
+      year: 1980,
+      imdb_votes: 9_000,
+      ratings: { imdb: 8, tmdb: 8, rt: null },
+    };
+    const deepCut = { ...lessSeen, vote_count: 300 };
+    const pool = [deepCut, lessSeen];
+
+    expect(byRecommendationFit(pool, (m) => m, 3)).toEqual([lessSeen, deepCut]);
+    expect(byRecommendationFit(pool, (m) => m, 5)).toEqual([deepCut, lessSeen]);
+  });
+
+  it("reorders within each recommendation batch without crossing batch order", () => {
+    const newerShallow = { id: "a", batch: 2, status: "active", obscurity: 3, gem: 4 };
+    const newerDeep = { id: "b", batch: 2, status: "active", obscurity: 5, gem: 4 };
+    const olderDeep = { id: "c", batch: 1, status: "active", obscurity: 5, gem: 5 };
+    expect(byRecommendationPreference([newerShallow, newerDeep, olderDeep], 5))
+      .toEqual([newerDeep, newerShallow, olderDeep]);
   });
 });

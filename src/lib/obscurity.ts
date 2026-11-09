@@ -1,8 +1,10 @@
-// Obscurity score 1–5 from TMDB vote_count buckets.
-// 1 = everyone's seen it, 5 = deep cut.
+// Obscurity score 1–5 from TMDB vote_count bands, with fame caps applied below.
+// 1 = blockbuster, 3 = less-seen, 4 = niche, 5 = deep cut.
 // Calibrated to TMDB's actual scale (its most-voted films sit ~30-40k votes —
 // Inception ~37k, Shawshank ~30k — nothing like IMDb's 2M+):
-//   >20k mega-blockbuster · >8k big hit · >2.5k well known · >800 niche · ≤800 deep cut
+//   >20k blockbuster · >8k popular · >2.5k less-seen · >800 niche · ≤800 deep cut
+
+export const MIN_LESS_SEEN_OBSCURITY = 3;
 
 export function obscurityFromVoteCount(voteCount: number): 1 | 2 | 3 | 4 | 5 {
   if (voteCount > 20_000) return 1;

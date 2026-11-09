@@ -2,7 +2,7 @@
 // pool; zero backend by design (see the build ticket). The scoring is the
 // ticket's algorithm verbatim: deterministic, explainable, feels smart.
 
-import { effectiveObscurity } from "./obscurity";
+import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "./obscurity";
 
 export type Mood = "laugh" | "scared" | "feel";
 
@@ -12,7 +12,7 @@ export interface SettleAnswers {
   brain: 0 | 1 | 2; // Q2 — None < Some < Puzzle
   wantsShort: boolean; // Q3
   wantsNew: boolean; // Q4
-  obscurity: 0 | 2 | 4; // Q5 — crowd-pleaser / a little obscure / deep cut
+  obscurity: 2 | 3 | 4; // Q5 — increasingly hidden-gem-focused
 }
 
 export interface SettleFilm {
@@ -72,9 +72,9 @@ export const SETTLE_QUESTIONS = [
     key: "obscurity",
     prompt: "How far off the map?",
     options: [
-      { label: "Crowd-pleaser", value: 0 },
-      { label: "A little obscure", value: 2 },
-      { label: "Deep cut", value: 4 },
+      { label: "A little hidden", value: 2 },
+      { label: "A real hidden gem", value: 3 },
+      { label: "As deep as possible", value: 4 },
     ],
   },
 ] as const;
@@ -112,6 +112,10 @@ export const SETTLE_POOL: SettleFilm[] = [
   { title: "Marcel the Shell with Shoes On", year: 2021, min: 90, genres: ["Animation", "Comedy", "Drama"], mood: "feel", brain: 0, obscurity: 2, canonical: false, houseConviction: 4, vibe: "One-inch shell, enormous heart.", whyTrait: "it's gentle enough for no brain and sweet enough to fix the argument", streaming: ["Netflix"] },
 ];
 
+export const SETTLE_DEEP_CUT_POOL = SETTLE_POOL.filter(
+  (film) => film.obscurity >= MIN_LESS_SEEN_OBSCURITY - 1 && film.houseConviction >= 4,
+);
+
 // ── Real-data pool: map a couch to a TMDB query, films back to SettleFilm ──
 
 // TMDB genre ids per mood (union of both players' moods seeds the query).
@@ -140,6 +144,7 @@ export interface PoolCandidate {
   genre_ids: number[];
   vote_count: number;
   popularity: number;
+  imdb_votes?: number | null;
 }
 
 // Settle rides the app-wide honest scorer (fame caps obscurity; new films
@@ -148,6 +153,7 @@ function obscurityFromCandidate(c: {
   vote_count: number;
   popularity?: number | null;
   year?: number | null;
+  imdb_votes?: number | null;
 }): 0 | 1 | 2 | 3 | 4 {
   return (effectiveObscurity(c) - 1) as 0 | 1 | 2 | 3 | 4;
 }
@@ -249,7 +255,7 @@ export function scoreFilm(film: SettleFilm, p1: SettleAnswers, p2: SettleAnswers
 export function rankVerdicts(
   p1: SettleAnswers,
   p2: SettleAnswers,
-  pool: SettleFilm[] = SETTLE_POOL,
+  pool: SettleFilm[] = SETTLE_DEEP_CUT_POOL,
 ): Verdict[] {
   const seen = new Set<string>();
   return pool
@@ -271,12 +277,12 @@ export function rankVerdicts(
 /** Genre ids to seed a TMDB query from both players' moods + obscurity dial. */
 export function poolQueryFor(p1: SettleAnswers, p2: SettleAnswers) {
   const genreIds = Array.from(new Set([...MOOD_GENRES[p1.mood], ...MOOD_GENRES[p2.mood]]));
-  const target = (p1.obscurity + p2.obscurity) / 2; // 0..4
+  const target = (p1.obscurity + p2.obscurity) / 2; // Settle's 2..4 maps to shared 3..5
   return {
     genreIds,
-    // widen a touch around the averaged dial so there's always a pool
-    obscurityMin: Math.max(1, Math.round(target) - 1) as number,
-    obscurityMax: Math.min(5, Math.round(target) + 2) as number,
+    // The target ranks candidates; only the global floor limits eligibility.
+    obscurityMin: MIN_LESS_SEEN_OBSCURITY,
+    obscurityMax: 5,
     eitherShort: p1.wantsShort || p2.wantsShort,
   };
 }

@@ -20,8 +20,8 @@ const state = vi.hoisted(() => ({
 vi.mock("next/server", () => ({ after: (task: () => void) => task() }));
 vi.mock("@/lib/recommendation-quality", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/recommendation-quality")>();
-  return { ...actual, byGemScore: (...args: Parameters<typeof actual.byGemScore>) =>
-    state.ranked ? actual.byGemScore(...args) : [...args[0]] };
+  return { ...actual, byRecommendationFit: (...args: Parameters<typeof actual.byRecommendationFit>) =>
+    state.ranked ? actual.byRecommendationFit(...args) : [...args[0]] };
 });
 vi.mock("@/lib/ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/ai")>();
@@ -194,4 +194,3 @@ it.skipIf(process.env.DEEP_CUT_DEAL_PREVIEW !== "1")("compares real deals with f
     }
   }
 }, 300_000);
-

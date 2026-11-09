@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { discoverSettleCandidates, resolveKeywordIds } from "@/lib/tmdb";
-import { effectiveObscurity } from "@/lib/obscurity";
+import { cacheMovie, discoverSettleCandidates, resolveKeywordIds } from "@/lib/tmdb";
+import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "@/lib/obscurity";
+import { MIN_RECOMMENDATION_RATING, passesRecommendationRating } from "@/lib/recommendation-quality";
 import { currentUser } from "@/lib/supabase/server";
 import { regionForRequest, serviceAvailableIn } from "@/lib/region";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -44,14 +45,15 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   const {
     genreIds,
-    obscurityMin,
-    obscurityMax,
     eitherShort,
     avoidGenreIds,
     maxReleaseDate,
     minRating,
     pageStart = 1,
   } = parsed.data;
+  const effectiveMin = MIN_LESS_SEEN_OBSCURITY;
+  const effectiveMax = 5;
+  const effectiveRating = Math.max(MIN_RECOMMENDATION_RATING, minRating ?? MIN_RECOMMENDATION_RATING);
 
   // Resolve the signed-in user's services → TMDB provider ids when they asked
   // for "only on my platforms". Signed out / no services → filter ignored.
@@ -82,16 +84,15 @@ export async function POST(request: Request) {
     // Deep-cut requests select like the Roll channel: loved-but-quiet
     // (vote_average.desc). popularity.desc would surface exactly the buzzy
     // films the honest-band filter rejects — sort and filter must agree.
-    const deep = obscurityMin >= 3;
     const common = {
-      obscurityMin,
-      obscurityMax,
+      obscurityMin: effectiveMin,
+      obscurityMax: effectiveMax,
       maxRuntime: eitherShort ? 99 : undefined,
       withoutGenreIds: avoidGenreIds,
       releasedBefore: maxReleaseDate,
-      minRating: minRating ?? (deep ? 6 : undefined),
+      minRating: effectiveRating,
       minRuntime: 75,
-      sortBy: (deep ? "vote_average.desc" : "popularity.desc") as "vote_average.desc" | "popularity.desc",
+      sortBy: "vote_average.desc" as const,
       watchProviderIds,
       region,
     };
@@ -114,18 +115,39 @@ export async function POST(request: Request) {
     let classicShown = 0;
     const candidates = pages.flat().filter((c) => {
       if (seen.has(c.id) || !c.poster_path) return false;
-      // Honest band: fame-capped obscurity must fit what the couch asked for —
-      // a buzzy new release can't sneak into a deep-cut standoff on low votes.
-      const eo = effectiveObscurity(c);
-      if (eo < obscurityMin || eo > obscurityMax) return false;
-      if (c.year != null && c.year < 1970) {
-        if (classicShown >= 3) return false;
-        classicShown++;
-      }
       seen.add(c.id);
       return true;
     });
-    return NextResponse.json({ candidates });
+    const enriched = await Promise.all(
+      candidates.slice(0, 40).map(async (candidate) => ({
+        candidate,
+        movie: await cacheMovie(candidate.id),
+      })),
+    );
+    const qualified = enriched.filter(({ candidate, movie }) => {
+      if (!movie || !passesRecommendationRating({
+        id: candidate.id,
+        year: candidate.year,
+        ratings: movie.ratings,
+      })) return false;
+      // Include IMDb reach in the fame cap; TMDB alone misses some widely-seen
+      // streaming releases with relatively few TMDB votes.
+      const obscurity = effectiveObscurity({
+        ...candidate,
+        imdb_votes: movie.imdb_votes,
+      });
+      if (obscurity < effectiveMin || obscurity > effectiveMax) return false;
+      if (!candidate.genre_ids.some((genreId) => genreIds.includes(genreId))) return false;
+      if (candidate.year != null && candidate.year < 1970) {
+        if (classicShown >= 3) return false;
+        classicShown++;
+      }
+      return true;
+    }).map(({ candidate, movie }) => ({
+      ...candidate,
+      imdb_votes: movie?.imdb_votes ?? null,
+    }));
+    return NextResponse.json({ candidates: qualified });
   } catch {
     return NextResponse.json({ error: "discover_failed" }, { status: 502 });
   }
