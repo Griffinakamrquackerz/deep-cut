@@ -897,9 +897,9 @@ export default function LateShow() {
   return (
     <section className="mx-auto flex max-w-md flex-col gap-5 px-4 pb-16 pt-6 sm:max-w-lg md:max-w-2xl">
       <header>
-        <p className="eyebrow">Monthly showcase</p>
-        <h1 className="glow-amber neon-flicker font-display text-5xl text-amber">
-          DEEP CUT THEATRE
+        <p className="slate"><b>Monthly showcase</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl">
+          Deep Cut <em>Theatre</em>
         </h1>
         <p className="mt-1 text-sm text-dim">
           Award-winning indie films you&apos;ve never seen. New bill every month. Pick a

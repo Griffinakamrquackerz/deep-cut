@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Ballot from "@/components/Ballot";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
+import SiteShell, { PageHero } from "@/components/site/SiteShell";
 
 // The greenlight ballot.
 //
@@ -18,39 +18,45 @@ export const metadata: Metadata = {
 
 export default function VotePage() {
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-24 pt-8">
-      <div className="flex flex-col gap-8">
-        <header className="text-center">
-          <MarqueeBulbs />
-          <p className="eyebrow mt-3">Greenlight</p>
-          <h1 className="glow-amber mt-1 font-display text-5xl leading-[0.92] text-amber">
-            THE BALLOT
-          </h1>
-          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-cream/90">
-            Every pitch here has been read and every director&apos;s previous work
-            has been watched. What&apos;s left is the part we don&apos;t decide:{" "}
-            <span className="text-amber">which one gets made first</span>.
-          </p>
-        </header>
+    <SiteShell>
+      <PageHero
+        reel="Greenlight"
+        slate="The slate, and where the vote stands"
+        title={
+          <>
+            The <em>ballot.</em>
+          </>
+        }
+        lede={
+          <>
+            Every pitch here has been read and every director&apos;s previous work has been watched.
+            What&apos;s left is the part we don&apos;t decide: <strong>which one gets made first</strong>.
+          </>
+        }
+      />
 
-        <Ballot />
+      <section className="lp-section lp-section--tight">
+        <div className="lp-wrap">
+          <div className="lp-col lp-stack">
+            <div className="lp-panel">
+              <Ballot />
+            </div>
 
-        <section className="text-center">
-          <Link
-            href="/fund"
-            className="font-mono text-[0.65rem] uppercase tracking-[0.15em] text-amber"
-          >
-            How the votes and the money work →
-          </Link>
-          <p className="mt-3 font-mono text-[0.6rem] leading-relaxed text-dim">
-            Making one yourself?{" "}
-            <Link href="/submit" className="text-ticket underline underline-offset-4">
-              Send us your film
-            </Link>{" "}
-            — no agent, no fee.
-          </p>
-        </section>
-      </div>
-    </main>
+            <div style={{ textAlign: "center" }}>
+              <Link href="/fund" className="lp-link">
+                How the votes and the money work
+              </Link>
+              <p className="lp-note" style={{ marginTop: "1rem" }}>
+                Making one yourself?{" "}
+                <Link href="/submit" className="lp-link">
+                  Send us your film
+                </Link>{" "}
+                — no agent, no fee.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </SiteShell>
   );
 }

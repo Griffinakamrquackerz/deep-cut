@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Doorway from "@/components/site/Doorway";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { optOut, validUnsubscribe, type EmailKind } from "@/lib/email-prefs";
 
@@ -31,36 +32,37 @@ export default async function UnsubscribePage({
   if (ok) await optOut(supabaseAdmin(), u!, kind);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 text-center">
-      <p className="eyebrow">Deep Cut</p>
-      {ok ? (
-        <>
-          <h1 className="glow-amber mt-2 font-display text-4xl text-amber">
-            YOU&apos;RE OFF THE LIST
-          </h1>
-          <p className="mt-3 text-sm text-dim">
-            No more {KINDS[kind]}. Anything you actually asked for — a sign-in link, a
-            receipt — still comes through.
-          </p>
-          <p className="mt-1 font-mono text-[0.65rem] text-dim">
-            Changed your mind? Settings has the switch.
-          </p>
-        </>
-      ) : (
-        <>
-          <h1 className="mt-2 font-display text-4xl text-cream">THAT LINK DIDN&apos;T WORK</h1>
-          <p className="mt-3 text-sm text-dim">
-            It may have been cut in half by your mail app. You can turn the same thing off in
-            Settings.
-          </p>
-        </>
-      )}
-      <Link
-        href="/settings"
-        className="mt-6 rounded border border-line px-4 py-2.5 font-mono text-[0.65rem] uppercase tracking-widest text-cream"
-      >
-        Open settings
-      </Link>
-    </main>
+    <Doorway
+      reel="Deep Cut"
+      slate="The mailing list"
+      title={
+        ok ? (
+          <>
+            You&apos;re <em>off the list.</em>
+          </>
+        ) : (
+          <>That link didn&apos;t work.</>
+        )
+      }
+      lede={
+        ok ? (
+          <>
+            No more {KINDS[kind]}. Anything you actually asked for — a sign-in link, a receipt — still
+            comes through.
+          </>
+        ) : (
+          <>It may have been cut in half by your mail app. You can turn the same thing off in Settings.</>
+        )
+      }
+    >
+      <div style={{ textAlign: "center" }}>
+        {ok && (
+          <p className="mb-4 font-mono text-[0.65rem] text-dim">Changed your mind? Settings has the switch.</p>
+        )}
+        <Link href="/settings" className="lp-btn lp-btn--ghost">
+          Open settings
+        </Link>
+      </div>
+    </Doorway>
   );
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Instrument_Serif } from "next/font/google";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FeaturedReel from "@/components/FeaturedReel";
 import WaitlistForm from "@/components/WaitlistForm";
@@ -9,6 +8,9 @@ import FounderNote from "@/components/FounderNote";
 import BallotDemo from "@/components/BallotDemo";
 import ProjectorHero from "@/components/landing/ProjectorHero";
 import LandingFX from "@/components/landing/LandingFX";
+import SiteNav from "@/components/site/SiteNav";
+import SiteCredits from "@/components/site/SiteCredits";
+import { Slate } from "@/components/site/SiteShell";
 import DealDemo from "@/components/landing/DealDemo";
 import { goalCents, pointCap, sharePct } from "@/lib/fund";
 import { CHANNELS } from "@/lib/shorts";
@@ -38,26 +40,7 @@ import "@/components/landing/landing.css";
 // earn POINTS, points are VOTES, a backer gets a CREDIT. Nobody invests and
 // nothing is a stake. Keep it that way in any copy added here.
 
-// The one face the rest of the app doesn't carry: title-card italics. Loaded
-// from this module so only the front door pays for it.
-const serif = Instrument_Serif({
-  weight: "400",
-  style: ["normal", "italic"],
-  subsets: ["latin"],
-  variable: "--font-serif-title",
-  display: "swap",
-});
-
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString("en-US")}`;
-
-function Slate({ reel, children }: { reel: string; children: React.ReactNode }) {
-  return (
-    <p className="lp-slate">
-      <b>{reel}</b>
-      <span>{children}</span>
-    </p>
-  );
-}
 
 export default function Landing({ posters, open = false }: { posters: string[]; open?: boolean | null }) {
   // Only a confirmed-open door gets a signup button. Unknown reads as closed:
@@ -82,34 +65,15 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
   ];
 
   return (
-    <main className={`lp ${serif.variable}`}>
+    <div className="lp">
       <LandingFX />
       <a href="#feature" className="lp-skip">
         Skip to what Deep Cut is
       </a>
 
-      <nav aria-label="Main navigation" className="lp-nav">
-        <div className="lp-wrap lp-nav-in">
-          <Link href="/" className="lp-logo">
-            DEEP CUT<span className="lp-ticket">.</span>
-          </Link>
-          <div className="lp-nav-links">
-            <a href="#deal">The Deal</a>
-            <a href="#greenlight">The Greenlight</a>
-            <a href="#how">How a film gets made</a>
-            <a href="#filmmakers">Filmmakers</a>
-          </div>
-          <div className="lp-nav-right">
-            <Link href="/login" className="lp-nav-signin">
-              Sign in
-            </Link>
-            <a href={joinHref} className="lp-btn lp-btn--ticket lp-nav-cta">
-              {joinLabel}
-            </a>
-          </div>
-        </div>
-      </nav>
+      <SiteNav cta={{ href: joinHref, label: joinLabel }} />
 
+      <main>
       {/* ══════════ REEL ONE — the projection ══════════ */}
       <header className="lp-hero">
         <ProjectorHero
@@ -729,34 +693,9 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
         </div>
       </section>
 
-      {/* ══════════ End credits ══════════ */}
-      <footer className="lp-credits">
-        <div className="lp-wrap">
-          <p className="lp-billing">
-            <small>Deep Cut presents</small> <b>a picture house for people who love movies</b>{" "}
-            <small>programmed by</small> <b>the house</b> <small>greenlit by</small> <b>the members</b>{" "}
-            <small>founded by</small> <b>Griffin Howes</b> <small>running time</small> <b>all night</b>
-          </p>
-          <p className="lp-credits-logo">
-            DEEP CUT<span className="lp-ticket">.</span>
-          </p>
-          <p className="lp-mono" style={{ marginTop: "0.6rem", color: "var(--color-dim)" }}>
-            For the films you haven&apos;t met yet.
-          </p>
-          <nav aria-label="Footer" className="lp-credits-nav">
-            <Link href="/tv">The Theatre</Link>
-            <Link href="/fund">The Fund</Link>
-            <Link href="/vote">The Ballot</Link>
-            <Link href="/submit">Submit a film</Link>
-            <Link href="/login">Sign in</Link>
-            <Link href="/terms">Terms</Link>
-            <Link href="/privacy">Privacy</Link>
-          </nav>
-          <p className="lp-credits-legal">
-            Metadata &amp; streaming data: TMDB (JustWatch). Not endorsed or certified by TMDB.
-          </p>
-        </div>
-      </footer>
-    </main>
+      </main>
+
+      <SiteCredits />
+    </div>
   );
 }

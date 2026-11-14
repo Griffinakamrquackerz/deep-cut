@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import HotTakesWall from "@/components/HotTakesWall";
 import Inbox from "@/components/Inbox";
 import AdSlot from "@/components/AdSlot";
@@ -161,18 +160,27 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
   return (
     <section className="flex flex-col gap-4">
       <header>
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">Community</p>
-        <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
-          {view === "feed"
-            ? house
-              ? "WHAT THE HOUSE IS WATCHING"
-              : "WHAT FRIENDS ARE WATCHING"
-            : view === "takes"
-              ? "THE HOT TAKES WALL"
-              : view === "inbox"
-                ? "YOUR PIGEONHOLE"
-                : "FIND YOUR PEOPLE"}
+        <p className="slate">
+          <b>Community</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl leading-[0.95]">
+          {view === "feed" ? (
+            <>
+              What {house ? "the house is" : "friends are"} <em>watching</em>
+            </>
+          ) : view === "takes" ? (
+            <>
+              The <em>hot takes</em> wall
+            </>
+          ) : view === "inbox" ? (
+            <>
+              Your <em>pigeonhole</em>
+            </>
+          ) : (
+            <>
+              Find your <em>people</em>
+            </>
+          )}
         </h1>
         {view === "takes" && (
           <p className="mt-1 font-mono text-[0.65rem] text-dim">

@@ -85,11 +85,13 @@ export default function TabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 bg-surface/95 backdrop-blur"
+      // Held to the app's column: on a desk the bar is the bottom of the strip
+      // of film the whole app sits in, not a band across an empty room.
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md bg-surface/95 backdrop-blur sm:max-w-lg md:max-w-2xl"
     >
       {/* Sprocket holes along the top — the bar is a strip of film. */}
       <div className="film-strip" aria-hidden />
-      <div className="mx-auto flex w-full max-w-md items-end pb-[env(safe-area-inset-bottom)] sm:max-w-lg md:max-w-2xl">
+      <div className="flex w-full items-end pb-[env(safe-area-inset-bottom)]">
         <div className="flex flex-1 items-end justify-around">
           {LEFT_TABS.map((t) => (
             <SideTab

@@ -8,7 +8,6 @@ import ServiceBadges from "./ServiceBadges";
 import RatingsBadges from "./RatingsBadges";
 import ReactionSheet, { type ReactionPayload } from "./ReactionSheet";
 import FilmLeader from "./FilmLeader";
-import MarqueeBulbs from "./MarqueeBulbs";
 import DealReels from "./DealReels";
 import HouseDark from "./HouseDark";
 import AdSlot from "./AdSlot";
@@ -267,10 +266,11 @@ export default function TonightScreen({
     <section className="flex flex-col gap-4">
       <Confetti trigger={confetti} />
       <header className="program-header">
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">Tonight</p>
-        <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
-          MOVIES YOU HAVEN&apos;T SEEN YET
+        <p className="slate">
+          <b>Tonight</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl leading-[0.95]">
+          Movies you <em>haven&apos;t seen</em> yet
         </h1>
       </header>
 
@@ -524,7 +524,7 @@ export default function TonightScreen({
                   />
                   <button
                     onClick={() => tapReason(rec)}
-                    className="mt-1.5 text-left text-sm italic text-amber"
+                    className="mt-1.5 text-left text-base leading-snug italic text-amber"
                   >
                     {rec.reason}
                   </button>

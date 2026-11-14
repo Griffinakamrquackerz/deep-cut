@@ -30,8 +30,8 @@ export default function AdminDashboard({
   return (
     <section className="flex flex-col gap-4 px-4 py-8">
       <header>
-        <p className="eyebrow">Admin console</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">THE PROJECTION BOOTH</h1>
+        <p className="slate"><b>Admin console</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">The projection <em>booth</em></h1>
         <p className="mt-1 font-mono text-[0.65rem] text-dim">
           Signed in as {adminEmail} · {stats.members.total} member
           {stats.members.total === 1 ? "" : "s"}

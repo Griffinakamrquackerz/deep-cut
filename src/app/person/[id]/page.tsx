@@ -66,7 +66,7 @@ export default async function PersonPage({
         )}
         <div className="min-w-0">
           {person.knownFor && <p className="eyebrow">{person.knownFor}</p>}
-          <h1 className="font-display text-4xl leading-tight text-cream">{person.name}</h1>
+          <h1 className="title-card rack-in text-4xl leading-tight">{person.name}</h1>
           {born && <p className="mt-1 font-mono text-[0.65rem] text-dim">{born}</p>}
           <p className="mt-1 font-mono text-[0.65rem] text-dim">{person.films.length} films</p>
         </div>

@@ -128,7 +128,7 @@ export default async function MoviePage({
           />
         </div>
         <div className="min-w-0">
-          <h1 className="font-display text-3xl leading-tight text-cream">{movie.title}</h1>
+          <h1 className="title-card rack-in text-3xl leading-tight">{movie.title}</h1>
           <p className="mt-1 font-mono text-xs text-dim">
             {movie.year ?? "—"}
             {movie.runtime ? ` · ${movie.runtime} min` : ""}

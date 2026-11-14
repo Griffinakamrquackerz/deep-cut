@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Bebas_Neue, IBM_Plex_Mono, Karla } from "next/font/google";
+import { Bebas_Neue, IBM_Plex_Mono, Instrument_Serif, Karla } from "next/font/google";
 import PwaSetup from "@/components/PwaSetup";
 import JsonLd from "@/components/JsonLd";
 import { siteUrl } from "@/lib/site";
@@ -14,17 +14,25 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 const karla = Karla({ subsets: ["latin"], variable: "--font-karla" });
+// Title-card italics. Only ever set in italic, so only the italic is shipped.
+const instrument = Instrument_Serif({
+  weight: "400",
+  style: "italic",
+  subsets: ["latin"],
+  variable: "--font-instrument",
+  display: "swap",
+});
 
 const SITE_URL = siteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Deep Cut — an independent streaming house",
+    default: "Deep Cut — find the films you've never seen. Fund the ones that don't exist yet.",
     template: "%s · Deep Cut",
   },
   description:
-    "Watch independent shorts, discover films matched to your taste, and help fund the next feature.",
+    "Two things on one ticket: a recommendation engine that deals you movies you haven't seen yet, and an indie streaming house where members vote on which original film gets made next.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
@@ -34,15 +42,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Deep Cut",
-    title: "Deep Cut — an independent streaming house",
+    title: "Deep Cut — find the films you've never seen. Fund the ones that don't exist yet.",
     description:
-      "Watch independent shorts, discover films matched to your taste, and help fund the next feature.",
+      "A recommendation engine for people who've seen the top row, and an indie streaming house where members vote on which original film gets made next. Built by a filmmaker.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deep Cut — an independent streaming house",
-    description: "Independent shorts, hidden gems, and a film fund powered by members.",
+    title: "Deep Cut — find the films you've never seen. Fund the ones that don't exist yet.",
+    description: "Movies you haven't seen yet, award-winning shorts, and a film fund its members vote on.",
   },
   // How AdSense confirms we own thedeepcut.xyz.
   //
@@ -65,7 +73,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${bebas.variable} ${plexMono.variable} ${karla.variable}`}>
+    <html lang="en" className={`${bebas.variable} ${plexMono.variable} ${karla.variable} ${instrument.variable}`}>
       <body className="min-h-dvh text-cream">
         {/*
           The ad loader. Mounted in the body on purpose: beforeInteractive would
@@ -97,7 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alternateName: "The Deep Cut",
             url: SITE_URL,
             description:
-              "Independent shorts, personalized movie recommendations, and a member-supported film fund.",
+              "A movie recommendation engine and an independent streaming house whose members vote on which original film gets made next.",
           }}
         />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}

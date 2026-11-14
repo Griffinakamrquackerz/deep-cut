@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Poster from "@/components/Poster";
 import FollowButton from "@/components/FollowButton";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import Avatar from "@/components/Avatar";
 import SignatureShrine from "@/components/SignatureShrine";
 import ShowMore from "@/components/ShowMore";
@@ -80,8 +79,9 @@ export default function ProfileView(data: ProfileViewData) {
   return (
     <>
       <header>
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">Member card</p>
+        <p className="slate mb-3">
+          <b>Member card</b>
+        </p>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar url={person.avatar_url} name={name} size="lg" />
@@ -186,7 +186,7 @@ export default function ProfileView(data: ProfileViewData) {
                     {m.title}
                   </Link>{" "}
                   <span className="font-mono text-xs text-dim">{m.year ?? ""}</span>
-                  {w.note && <p className="mt-1 text-xs italic text-cream/80">“{w.note}”</p>}
+                  {w.note && <p className="mt-1 text-sm italic text-cream/80">“{w.note}”</p>}
                 </div>
               );
             })}

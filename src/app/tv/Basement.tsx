@@ -81,9 +81,9 @@ export default function Basement({ onSit }: { onSit: () => void }) {
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <p className="eyebrow">Monthly showcase</p>
-        <h1 className="glow-amber neon-flicker font-display text-5xl text-amber">
-          DEEP CUT THEATRE
+        <p className="slate"><b>Monthly showcase</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl">
+          Deep Cut <em>Theatre</em>
         </h1>
         <p className="mt-1 text-sm text-dim">
           Award-winning indie films you've never seen. Take the recliner and

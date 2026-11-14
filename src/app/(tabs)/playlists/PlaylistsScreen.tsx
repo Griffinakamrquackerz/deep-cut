@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { playlistProgress } from "@/lib/slug";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import Confetti from "@/components/Confetti";
 import { sfxPop } from "@/lib/sfx";
 
@@ -106,8 +105,8 @@ export default function PlaylistsScreen({
     return (
       <section className="flex flex-col gap-4">
         <Confetti trigger={1} />
-        <p className="eyebrow">Mixtape sealed</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">SEND IT</h1>
+        <p className="slate"><b>Mixtape sealed</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">Send <em>it</em></h1>
         <div className="ticket-edge rounded bg-surface p-4">
           <p className="break-all font-mono text-xs text-amber">{shareLink}</p>
         </div>
@@ -137,8 +136,8 @@ export default function PlaylistsScreen({
     const count = picks.size;
     return (
       <section className="flex flex-col gap-4">
-        <p className="eyebrow">New mixtape</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">MAKE A PLAYLIST</h1>
+        <p className="slate"><b>New mixtape</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">Make a <em>playlist</em></h1>
         <input
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 80))}
@@ -235,9 +234,10 @@ export default function PlaylistsScreen({
     <section className="flex flex-col gap-5">
       <header className="flex items-center justify-between">
         <div>
-          <MarqueeBulbs />
-          <p className="eyebrow mt-2">Playlists</p>
-          <h1 className="glow-amber font-display text-4xl text-amber">MOVIE MIXTAPES</h1>
+          <p className="slate">
+            <b>Playlists</b>
+          </p>
+          <h1 className="title-card rack-in mt-2.5 text-4xl">Movie <em>mixtapes</em></h1>
         </div>
         <button
           onClick={() => setCreating(true)}

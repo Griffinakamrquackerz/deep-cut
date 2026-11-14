@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
+import Doorway from "@/components/site/Doorway";
 
 type Mode = "signin" | "signup" | "magic" | "forgot";
 
@@ -147,25 +147,30 @@ export default function LoginPage() {
   const needsPassword = mode === "signin" || mode === "signup";
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
+    <Doorway
+      split
+      reel="Admit one"
+      slate={mode === "signup" ? "Take a seat" : "Welcome back"}
+      title={
+        <>
+          Deep <em>Cut.</em>
+        </>
+      }
+      lede={
+        <>
+          <span className="lp-serif" style={{ fontSize: "1.5em", lineHeight: 1.15, color: "var(--color-cream)" }}>
+            Movies you haven&apos;t seen yet.
+          </span>
+          <br />
+          And a say in the ones that don&apos;t exist yet.
+        </>
+      }
+    >
       {/* Red velvet curtains part on entrance */}
       <div className="curtain curtain-l" aria-hidden />
       <div className="curtain curtain-r" aria-hidden />
-      <MarqueeBulbs count={16} />
-      <div className="relative text-center">
-        {/* projector cone behind the marquee */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-56 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-          style={{ background: "radial-gradient(closest-side, rgba(255,180,84,0.22), transparent)" }}
-        />
-        <p className="eyebrow mb-2">Admit One</p>
-        <h1 className="glow-amber font-display text-7xl tracking-wide text-amber">DEEP CUT</h1>
-        <div className="film-strip mx-auto mt-3 w-40" />
-        <p className="mt-3 font-mono text-xs text-dim">Movies you haven&apos;t seen yet.</p>
-      </div>
 
-      <div className="flex w-full max-w-xs flex-col gap-3">
+      <div className="lp-doorway-card flex w-full flex-col gap-3">
         {(mode === "signin" || mode === "signup") && (
           <div className="flex gap-1 rounded border border-line bg-surface p-1">
             <button
@@ -285,11 +290,11 @@ export default function LoginPage() {
           )}
         </div>
       </div>
-      <p className="mt-6 text-center font-mono text-[0.6rem] text-dim/80">
+      <p className="mt-5 text-center font-mono text-[0.6rem] text-dim/80">
         By taking a seat you agree to the{" "}
         <a href="/terms" className="underline">Terms</a> &{" "}
         <a href="/privacy" className="underline">Privacy Policy</a>
       </p>
-    </main>
+    </Doorway>
   );
 }

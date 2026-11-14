@@ -98,11 +98,9 @@ export default function PlaylistDetail({
     <section className="flex flex-col gap-4 px-4 py-8">
       <Confetti trigger={confetti} />
       <header>
-        <p className="eyebrow">
-          A mixtape from {ownerName}
-          {recipientName ? ` · for ${recipientName}` : ""}
-        </p>
-        <h1 className="glow-amber font-display text-4xl text-amber">{name.toUpperCase()}</h1>
+        <p className="slate"><b>A mixtape from {ownerName}
+          {recipientName ? ` · for ${recipientName}` : ""}</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">{name.toUpperCase()}</h1>
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface">
           <div className="h-full rounded-full bg-avail" style={{ width: `${pct}%` }} />
         </div>
@@ -192,7 +190,7 @@ export default function PlaylistDetail({
                   {item.note && !(item.id in noteDraft) ? (
                     <button
                       onClick={() => setNoteDraft((d) => ({ ...d, [item.id]: item.note ?? "" }))}
-                      className="text-left text-xs italic text-dim"
+                      className="text-left text-sm italic text-dim"
                     >
                       “{item.note}”
                     </button>

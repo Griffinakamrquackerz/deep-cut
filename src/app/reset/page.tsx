@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import Doorway from "@/components/site/Doorway";
 
 // Landing page for password-recovery links (and for setting a first password).
 export default function ResetPasswordPage() {
@@ -33,18 +34,22 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6">
-      <div className="text-center">
-        <p className="eyebrow mb-2">Deep Cut</p>
-        <h1 className="font-display text-4xl text-cream">SET A NEW PASSWORD</h1>
-      </div>
+    <Doorway
+      reel="The door"
+      slate="Lost your ticket"
+      title={
+        <>
+          A new <em>password.</em>
+        </>
+      }
+    >
 
       {ready === "checking" && (
-        <p className="animate-pulse font-mono text-xs text-dim">checking your link…</p>
+        <p className="animate-pulse text-center font-mono text-xs text-dim">checking your link…</p>
       )}
 
       {ready === "no-session" && (
-        <div className="ticket-edge max-w-xs rounded p-4 text-center text-sm text-cream">
+        <div className="ticket-edge rounded p-4 text-center text-sm text-cream">
           This reset link is expired or already used.{" "}
           <a href="/login" className="text-amber underline">
             Request a fresh one
@@ -54,7 +59,7 @@ export default function ResetPasswordPage() {
       )}
 
       {ready === "ok" && (
-        <form onSubmit={save} className="flex w-full max-w-xs flex-col gap-3">
+        <form onSubmit={save} className="lp-doorway-card flex w-full flex-col gap-3">
           <label className="eyebrow" htmlFor="pw">
             New password
           </label>
@@ -92,6 +97,6 @@ export default function ResetPasswordPage() {
           {error && <p className="text-xs text-ticket">{error}</p>}
         </form>
       )}
-    </main>
+    </Doorway>
   );
 }

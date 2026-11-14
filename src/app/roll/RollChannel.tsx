@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import AdSlot from "@/components/AdSlot";
 import { sfxClick, sfxPop } from "@/lib/sfx";
 import { VIBES, type Vibe } from "@/lib/vibes";
@@ -138,9 +137,10 @@ export default function RollChannel({
     return (
       <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
         <header className="text-center">
-          <MarqueeBulbs />
-          <p className="eyebrow mt-2">Lean back</p>
-          <h1 className="glow-amber neon-flicker font-display text-5xl text-amber">JUST ROLL IT</h1>
+          <p className="slate slate--center">
+            <b>Lean back</b>
+          </p>
+          <h1 className="title-card rack-in mt-2.5 text-5xl">Just <em>roll</em> it</h1>
           <p className="mt-1 font-mono text-[0.65rem] text-dim">
             Pick a channel. We roll deep-cut trailers until one grabs you. No decisions.
           </p>

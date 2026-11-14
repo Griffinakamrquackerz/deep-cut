@@ -10,10 +10,16 @@
   --color-amber: #ffb454;
   --color-ticket: #e4573d;
   --color-avail: #8fbf7f;
+  /* The dark of the house (darker than bg — what the frame sits in) and lamp
+     light as it lands on a wall (what a projected title is made of). */
+  --color-ink: #0c0908;
+  --color-light: #fff1d6;
 
   --font-display: var(--font-bebas), "Impact", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
   --font-body: var(--font-karla), ui-sans-serif, sans-serif;
+  /* Title-card italics — the one soft voice next to Bebas and Plex Mono. */
+  --font-serif: var(--font-instrument), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
 }
 
 html {
@@ -168,6 +174,173 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-dim);
+}
+
+/* ══════════ THE HOUSE STYLE ══════════
+   One vocabulary for every screen, lifted from the front door:
+
+     .slate        how a page announces itself — clapper stripes, reel, scene
+     .title-card   a headline as projected light; <em> for the word in amber
+     .serif-it     title-card italics, for the line that isn't shouted
+     .rack-in      the entrance — soft, sharp, a hair past, and back
+
+   Sizes stay with the element (text-4xl and friends); these only decide what
+   the type is made of. */
+.slate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.slate::before {
+  content: "";
+  flex: none;
+  width: 2.6rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  background: repeating-linear-gradient(-55deg, var(--color-cream) 0 6px, #14100e 6px 12px);
+  opacity: 0.9;
+}
+.slate b {
+  font-weight: 500;
+  color: var(--color-ticket);
+}
+.slate--center { justify-content: center; }
+
+.title-card {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0.012em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--color-light);
+  /* A tight core, a wide bloom, and the lens's colour fringe. */
+  text-shadow:
+    0 0 1px rgba(255, 241, 214, 0.85),
+    0 0 18px rgba(255, 214, 150, 0.3),
+    0 0 56px rgba(255, 180, 84, 0.16),
+    -1px 0 0 rgba(255, 86, 60, 0.13),
+    1px 0 0 rgba(90, 200, 255, 0.09);
+}
+.title-card em {
+  font-style: normal;
+  color: var(--color-amber);
+  text-shadow:
+    0 0 1px rgba(255, 200, 120, 0.85),
+    0 0 20px rgba(255, 180, 84, 0.5),
+    0 0 60px rgba(255, 150, 60, 0.28);
+}
+.serif-it {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.title-card .serif-it {
+  font-size: 0.9em;
+  line-height: 1;
+  color: var(--color-amber);
+  text-shadow: 0 0 22px rgba(255, 180, 84, 0.35);
+}
+/* Italics are the title-card voice everywhere: a reason on a rec card, a note
+   on a mixtape, a line somebody said. Mono italics stay mono (they're data).
+   font-size-adjust evens out the serif's smaller x-height against Karla. */
+.italic:not(.font-mono) {
+  font-family: var(--font-serif);
+  font-size-adjust: 0.5;
+  letter-spacing: 0;
+}
+.rack-in {
+  animation: rack-in 0.85s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.09s);
+}
+@keyframes rack-in {
+  0% { opacity: 0; filter: blur(14px); transform: scale(1.03); }
+  50% { opacity: 1; filter: blur(0); transform: scale(1); }
+  66% { filter: blur(2px); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+
+/* ── Surfaces and controls ─────────────────────────────────────────────
+   Every card and field in the app is written inline as border-line +
+   bg-surface, and every primary action as a ticket-red or amber button. So
+   the lift is applied to the combination rather than to eighty call sites:
+   a lit top edge and a little depth on the surface, a glow under the button. */
+.border-line.bg-surface {
+  background-image: linear-gradient(180deg, rgba(255, 241, 214, 0.035), transparent 46%);
+  box-shadow: inset 0 1px 0 rgba(255, 241, 214, 0.04), 0 14px 26px -22px rgba(0, 0, 0, 0.95);
+}
+:is(input, textarea, select).border-line {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+:is(input, textarea, select).border-line:focus {
+  outline: none;
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 3px rgba(255, 180, 84, 0.16);
+}
+:is(button, a).bg-ticket {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 26px -14px rgba(228, 87, 61, 0.85);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+:is(button, a).bg-amber {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 12px 26px -14px rgba(255, 180, 84, 0.7);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+:is(button, a):is(.bg-ticket, .bg-amber):hover:not(:disabled) { filter: brightness(1.08); }
+:is(button, a):is(.bg-ticket, .bg-amber):active:not(:disabled) { transform: translateY(1px); }
+::selection {
+  background: var(--color-amber);
+  color: var(--color-bg);
+}
+html {
+  scrollbar-color: var(--color-line) transparent;
+}
+
+/* ── The frame ─────────────────────────────────────────────────────────
+   The app is a phone-width column. On anything wider it used to float in a
+   void; now the column is a strip of film — perforations down both edges,
+   the dark of the house either side. The front door opts out (landing.css)
+   and runs its own, wider strip. */
+@media (min-width: 768px) {
+  html { background: var(--color-ink); }
+  body {
+    background:
+      radial-gradient(60% 50% at 50% -10%, rgba(255, 200, 130, 0.07), transparent 70%),
+      var(--color-ink);
+  }
+  .app-frame {
+    background:
+      radial-gradient(120% 40rem at 50% -6rem, rgba(255, 180, 84, 0.1), transparent 60%),
+      var(--color-bg);
+    box-shadow: 0 0 0 1px rgba(243, 233, 215, 0.05), 0 0 140px 30px rgba(0, 0, 0, 0.7);
+  }
+  .app-frame::before,
+  .app-frame::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    pointer-events: none;
+    background-color: #120e0c;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='38'%3E%3Crect x='8' y='9' width='14' height='20' rx='3' fill='%230c0908' stroke='%233b2e27'/%3E%3C/svg%3E");
+    background-size: 30px 38px;
+  }
+  .app-frame::before { right: 100%; border-left: 1px solid rgba(243, 233, 215, 0.05); }
+  .app-frame::after { left: 100%; border-right: 1px solid rgba(243, 233, 215, 0.05); }
+  .app-frame:has(.lp) {
+    background: none;
+    box-shadow: none;
+  }
+  .app-frame:has(.lp)::before,
+  .app-frame:has(.lp)::after { display: none; }
 }
 
 /* House-picks reel (FeaturedReel) — the front door's own styles live in
@@ -654,7 +827,8 @@ body {
   .blink,
   .curtain,
   .confetti-bit,
-  .projector-intro {
+  .projector-intro,
+  .rack-in {
     animation: none !important;
   }
   .confetti-layer,

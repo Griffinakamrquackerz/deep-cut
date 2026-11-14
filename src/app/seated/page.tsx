@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
+import Doorway from "@/components/site/Doorway";
 
 // Where Stripe drops somebody after they've paid to skip the line.
 //
@@ -20,23 +20,26 @@ export const metadata: Metadata = {
 
 export default function SeatedPage() {
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12 text-center">
-      <MarqueeBulbs />
-      <p className="eyebrow mt-3">Box office</p>
-      <h1 className="glow-amber mt-1 font-display text-5xl leading-[0.92] text-amber">
-        YOU&apos;RE IN
-      </h1>
-
-      <p className="mt-4 text-base leading-relaxed text-cream">
-        Payment went through and your seat is held. Your ticket link is on its
-        way by email — usually within a minute.
-      </p>
-
-      <div className="mt-6 rounded-lg border border-line bg-surface p-4 text-left">
+    <Doorway
+      reel="Box office"
+      slate="Paid in full"
+      title={
+        <>
+          You&apos;re <em>in.</em>
+        </>
+      }
+      lede={
+        <>
+          Payment went through and your seat is held. Your ticket link is on its way by email —
+          usually within a minute.
+        </>
+      }
+    >
+      <div className="lp-doorway-card">
         <p className="eyebrow text-ticket">While you wait</p>
-        <ul className="mt-2 flex flex-col gap-2 text-[0.85rem] leading-relaxed text-cream/90">
-          <li className="flex gap-2">
-            <span aria-hidden className="text-amber">
+        <ul className="mt-3 flex flex-col gap-3 text-[0.9rem] leading-relaxed text-cream/90">
+          <li className="flex gap-3">
+            <span aria-hidden className="font-display text-2xl leading-none text-amber">
               1
             </span>
             <span>
@@ -45,8 +48,8 @@ export default function SeatedPage() {
               exactly what spam filters are suspicious of.
             </span>
           </li>
-          <li className="flex gap-2">
-            <span aria-hidden className="text-amber">
+          <li className="flex gap-3">
+            <span aria-hidden className="font-display text-2xl leading-none text-amber">
               2
             </span>
             <span>
@@ -54,8 +57,8 @@ export default function SeatedPage() {
               there&apos;s no password to make up.
             </span>
           </li>
-          <li className="flex gap-2">
-            <span aria-hidden className="text-amber">
+          <li className="flex gap-3">
+            <span aria-hidden className="font-display text-2xl leading-none text-amber">
               3
             </span>
             <span>
@@ -66,7 +69,7 @@ export default function SeatedPage() {
         </ul>
       </div>
 
-      <p className="mt-4 font-mono text-[0.65rem] leading-relaxed text-dim">
+      <p className="mt-5 text-center font-mono text-[0.65rem] leading-relaxed text-dim">
         Nothing after ten minutes? Email{" "}
         <a className="text-amber" href="mailto:tickets@thedeepcut.xyz">
           tickets@thedeepcut.xyz
@@ -74,12 +77,11 @@ export default function SeatedPage() {
         and we&apos;ll seat you by hand. You will not have to pay twice.
       </p>
 
-      <Link
-        href="/fund"
-        className="mt-6 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-amber"
-      >
-        What your support is financing →
-      </Link>
-    </main>
+      <p className="mt-5 text-center">
+        <Link href="/fund" className="lp-link">
+          What your support is financing
+        </Link>
+      </p>
+    </Doorway>
   );
 }

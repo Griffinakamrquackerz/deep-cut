@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import { REGIONS, servicesForRegion } from "@/lib/region";
 import { PROFILE_THEMES } from "@/lib/themes";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
 import Avatar from "@/components/Avatar";
 import NotificationsToggle from "@/components/NotificationsToggle";
@@ -224,9 +223,10 @@ export default function SettingsScreen({
   return (
     <section className="flex flex-col gap-4">
       <header>
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">Projection booth</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">SETTINGS</h1>
+        <p className="slate">
+          <b>Projection booth</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">SETTINGS</h1>
       </header>
 
       <BalconySeats

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import Poster from "@/components/Poster";
 import RatingsBadges from "@/components/RatingsBadges";
 import { sfxClick, sfxPop } from "@/lib/sfx";
@@ -302,9 +301,10 @@ export default function BlendGame() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-5 py-8">
       <header className="text-center">
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">The splice</p>
-        <h1 className="glow-amber neon-flicker font-display text-5xl text-amber">THIS MEETS THAT</h1>
+        <p className="slate slate--center">
+          <b>The splice</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl">This <em>meets</em> that</h1>
         <p className="mt-1 font-mono text-[0.65rem] text-dim">
           Combine two or three. See what crawls out.
         </p>
@@ -524,7 +524,7 @@ export default function BlendGame() {
                 {example.child.title} ({example.child.year})
               </span>
             </span>
-            <span className="mt-1 block font-body text-xs italic text-dim">
+            <span className="mt-1 block text-sm italic text-dim">
               “{example.line}”
             </span>
             <span className="mt-2 block font-mono text-[0.6rem] uppercase tracking-widest text-amber">

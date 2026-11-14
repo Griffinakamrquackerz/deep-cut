@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import MarqueeBulbs from "@/components/MarqueeBulbs";
 import FilmLeader from "@/components/FilmLeader";
 import RatingsBadges from "@/components/RatingsBadges";
 import VerdictMedia from "./VerdictMedia";
@@ -139,7 +138,7 @@ function Quiz({ player, onDone }: { player: string; onDone: (sheet: Sheet) => vo
         <p className="eyebrow">{player} · question {qi + 1} of 5</p>
         <ProgressBulbs at={qi} />
       </header>
-      <h1 className="text-center font-display text-4xl leading-tight text-cream">
+      <h1 className="title-card rack-in text-center text-4xl leading-tight">
         {q.prompt.toUpperCase()}
       </h1>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-3">
@@ -308,9 +307,10 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
     return (
       <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
         <header className="text-center">
-          <MarqueeBulbs />
-          <p className="eyebrow mt-3">Deep Cut presents</p>
-          <h1 className="neon-flicker font-display text-6xl leading-[0.9] text-amber">SETTLE IT</h1>
+          <p className="slate slate--center">
+            <b>Deep Cut presents</b>
+          </p>
+          <h1 className="title-card rack-in mt-2.5 text-6xl leading-[0.9]">Settle <em>it</em></h1>
           <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-dim">
             Two of you, one phone, one movie. Nobody compromises out loud.
           </p>
@@ -419,8 +419,8 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
       <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-5 py-10 text-center">
         <div className="film-strip w-full" aria-hidden />
         <div>
-          <p className="eyebrow">Intermission</p>
-          <h1 className="glow-amber font-display text-5xl leading-[0.95] text-amber">PASS THE PHONE</h1>
+          <p className="slate slate--center"><b>Intermission</b></p>
+          <h1 className="title-card rack-in mt-2.5 text-5xl leading-[0.95]">Pass the <em>phone</em></h1>
           <p className="mt-3 text-sm text-dim">
             {name1}, your testimony is sealed. 🤐
             <br />
@@ -524,9 +524,10 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
     return (
       <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
         <header className="text-center">
-          <MarqueeBulbs />
-          <p className="eyebrow mt-2">The docket · best of 3</p>
-          <h1 className="glow-amber font-display text-4xl text-amber">
+          <p className="slate slate--center">
+            <b>The docket · best of 3</b>
+          </p>
+          <h1 className="title-card rack-in mt-2.5 text-4xl">
             EXHIBIT {["A", "B", "C"][exhibitIdx]}
           </h1>
           <p className="mt-1 font-mono text-[0.65rem] text-dim">
@@ -572,9 +573,10 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
   return (
     <main className="flex min-h-dvh flex-col gap-5 px-5 py-10">
       <header className="text-center">
-        <MarqueeBulbs />
-        <p className="eyebrow mt-2">The house rules</p>
-        <h1 className="glow-amber font-display text-4xl text-amber">
+        <p className="slate slate--center">
+          <b>The house rules</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">
           {isRuling ? "THE RULING" : "THE VERDICT"}
         </h1>
         {isRuling && (

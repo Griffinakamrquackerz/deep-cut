@@ -159,7 +159,7 @@ export default function OnboardingFlow() {
       <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6">
         <p className="eyebrow">Admit One · Taste Profile №001</p>
         <div className="ticket-edge w-full max-w-sm rounded bg-surface p-6">
-          <h1 className="font-display text-4xl tracking-wide text-amber">YOUR TASTE</h1>
+          <h1 className="title-card rack-in text-4xl">Your <em>taste</em></h1>
           <ul className="mt-4 flex flex-col gap-4">
             {threads.map((t) => (
               <li key={t.title}>
@@ -205,8 +205,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 2 of 4</p>
-          <h1 className="font-display text-4xl text-cream">WHERE DO YOU WATCH?</h1>
+          <p className="slate"><b>Step 2 of 4</b></p>
+          <h1 className="title-card rack-in mt-2.5 text-4xl">Where do you <em>watch?</em></h1>
           <p className="mt-1 text-sm text-dim">
             We&apos;ll badge every rec that&apos;s watchable tonight.
           </p>
@@ -259,8 +259,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 3 of 4</p>
-          <h1 className="font-display text-4xl text-cream">YOUR SIGNATURE FILM</h1>
+          <p className="slate"><b>Step 3 of 4</b></p>
+          <h1 className="title-card rack-in mt-2.5 text-4xl">Your <em>signature</em> film</h1>
           <p className="mt-1 text-sm text-dim">
             Choose your favorite film so we can customize your profile — it
             fronts your page as a stills collage.
@@ -358,8 +358,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="eyebrow mb-1">Step 4 of 4</p>
-          <h1 className="font-display text-4xl text-cream">PICK YOUR MARQUEE NAME</h1>
+          <p className="slate"><b>Step 4 of 4</b></p>
+          <h1 className="title-card rack-in mt-2.5 text-4xl">Pick your <em>marquee</em> name</h1>
           <p className="mt-1 text-sm text-dim">
             Your handle goes on your taste card and the community marquee — it&apos;s how
             friends find you.
@@ -416,8 +416,8 @@ export default function OnboardingFlow() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-4 py-8">
       <div>
-        <p className="eyebrow mb-1">Step 1 of 4</p>
-        <h1 className="font-display text-4xl text-cream">PICK FILMS YOU LOVE</h1>
+        <p className="slate"><b>Step 1 of 4</b></p>
+        <h1 className="title-card rack-in mt-2.5 text-4xl">Pick films you <em>love</em></h1>
         <p className="mt-1 text-sm text-dim">
           Any genre, any era. At least 8 — the more the sharper. Deep cuts and
           guilty pleasures teach us more than classics do.
