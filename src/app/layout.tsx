@@ -106,7 +106,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="reel-grain" aria-hidden />
         <div className="reel-vignette" aria-hidden />
         <div className="cue-mark" aria-hidden />
-        <div className="relative z-10 mx-auto min-h-dvh w-full max-w-md sm:max-w-lg md:max-w-2xl">
+        {/* The app is a phone-width column. `app-frame` is the hook the front
+            door uses to take the whole wall instead — see landing.css. */}
+        <div className="app-frame relative z-10 mx-auto min-h-dvh w-full max-w-md sm:max-w-lg md:max-w-2xl">
           {children}
         </div>
       </body>
