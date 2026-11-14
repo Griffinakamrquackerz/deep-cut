@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { mergeFeed, type FeedItem, type FeedActor, type FeedMovie } from "@/lib/feed";
 import { getBlockedIds } from "@/lib/safety";
 import { getVisibilityMap } from "@/lib/playlist-visibility";
+import { tonightFor, tonightHouse } from "@/lib/tonight";
 
 type Row = Record<string, unknown>;
 
@@ -26,6 +27,9 @@ function toMovie(m: unknown): FeedMovie | null {
     year: (x.year as number | null) ?? null,
     poster_path: (x.poster_path as string | null) ?? null,
     genres: (x.genres as string[]) ?? [],
+    tmdb: x.tmdb_rating != null ? Number(x.tmdb_rating) : null,
+    imdb: x.imdb_rating != null ? Number(x.imdb_rating) : null,
+    rt: x.rt_rating != null ? Number(x.rt_rating) : null,
   };
 }
 
@@ -34,34 +38,51 @@ export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  try {
   const db = supabaseAdmin();
   const { data: followRows } = await db
     .from("follows")
     .select("followee_id")
     .eq("follower_id", user.id);
   const followees = (followRows ?? []).map((r) => r.followee_id);
-  // Your own watches and mixtapes belong on the marquee too — otherwise a
-  // new user who follows nobody stares at an empty room.
   const blocked = await getBlockedIds(user.id);
-  const actorIds = [user.id, ...followees.filter((id) => !blocked.has(id))];
+  const following = followees.filter((id) => !blocked.has(id));
+  const actorIds = [user.id, ...following];
 
-  const [watches, playlists] = await Promise.all([
-    db
-      .from("watch_logs")
-      .select(
-        "id, reaction, why, note, watched_at, users(id, handle, display_name, avatar_url), movies(id, title, year, poster_path, genres)",
-      )
-      .in("user_id", actorIds)
-      .order("watched_at", { ascending: false })
-      .limit(30),
-    db
-      .from("playlists")
-      .select(
-        "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name, avatar_url), playlist_items(id)",
-      )
-      .in("owner_id", actorIds)
-      .order("created_at", { ascending: false })
-      .limit(20),
+  /**
+   * Day one, you follow nobody, and a feed of people-you-follow is an empty
+   * room that reads as a dead app. Below a handful of follows the Lobby shows
+   * the whole house instead.
+   *
+   * Nothing here is a new disclosure: watches and live plans already appear on
+   * public profiles, and private mixtapes are filtered out further down the
+   * same way they are for people you do follow.
+   */
+  const house = following.length < 3;
+
+  // Same query either way; the house version simply doesn't narrow to a set
+  // of people. Built stepwise because a filter can't be conditionally skipped
+  // mid-chain.
+  let watchQ = db
+    .from("watch_logs")
+    .select(
+      "id, reaction, why, note, watched_at, users(id, handle, display_name, avatar_url), movies(id, title, year, poster_path, genres, tmdb_rating, imdb_rating, rt_rating)",
+    );
+  if (!house) watchQ = watchQ.in("user_id", actorIds);
+
+  let playlistQ = db
+    .from("playlists")
+    .select(
+      "id, name, share_slug, created_at, users!playlists_owner_id_fkey(id, handle, display_name, avatar_url), playlist_items(id)",
+    );
+  if (!house) playlistQ = playlistQ.in("owner_id", actorIds);
+
+  const [watches, playlists, plans] = await Promise.all([
+    watchQ.order("watched_at", { ascending: false }).limit(30),
+    playlistQ.order("created_at", { ascending: false }).limit(20),
+    // Live plans only — these drop anything that has gone stale, so a plan
+    // from last week can't sit at the top of the Lobby forever.
+    (house ? tonightHouse(db) : tonightFor(db, actorIds)).catch(() => []),
   ]);
 
   const items: FeedItem[] = [];
@@ -69,6 +90,8 @@ export async function GET() {
   for (const w of (watches.data ?? []) as Row[]) {
     const movie = toMovie(w.movies);
     if (!movie) continue;
+    // The follow list was filtered for blocks already; the house wasn't.
+    if (blocked.has(String((w.users as Row | null)?.id ?? ""))) continue;
     items.push({
       kind: "watch",
       id: String(w.id),
@@ -86,6 +109,7 @@ export async function GET() {
   const vis = await getVisibilityMap(db, plRows.map((p) => String(p.id)));
   for (const p of plRows) {
     if (vis.get(String(p.id)) === false) continue;
+    if (blocked.has(String((p.users as Row | null)?.id ?? ""))) continue;
     items.push({
       kind: "playlist",
       id: String(p.id),
@@ -97,5 +121,41 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({ feed: mergeFeed(items), following: followees });
+  // "Watching tonight" needs the film and the person attached, and the plan
+  // row carries only ids — one lookup each rather than a join, because the
+  // table is keyed by user and can't be joined to two others at once here.
+  if (plans.length) {
+    const [{ data: planMovies }, { data: planUsers }] = await Promise.all([
+      db
+        .from("movies")
+        .select("id, title, year, poster_path, genres, tmdb_rating, imdb_rating, rt_rating")
+        .in("id", [...new Set(plans.map((p) => p.movieId))]),
+      db
+        .from("users")
+        .select("id, handle, display_name, avatar_url")
+        .in("id", [...new Set(plans.map((p) => p.userId))]),
+    ]);
+    const movieById = new Map(((planMovies ?? []) as Row[]).map((m) => [Number(m.id), m]));
+    const userById = new Map(((planUsers ?? []) as Row[]).map((u) => [String(u.id), u]));
+    for (const p of plans) {
+      const movie = toMovie(movieById.get(p.movieId));
+      const who = userById.get(p.userId);
+      if (!movie || !who || blocked.has(p.userId)) continue;
+      items.push({
+        kind: "tonight",
+        id: `tonight-${p.userId}`,
+        at: p.setAt,
+        actor: toActor(who),
+        movie,
+        note: p.note,
+      });
+    }
+  }
+
+  return NextResponse.json({ feed: mergeFeed(items), following: followees, house });
+  } catch (err) {
+    // Never 500 the Lobby — an empty feed renders the friendly "quiet in here".
+    console.error("feed route failed", err);
+    return NextResponse.json({ feed: [], following: [], house: false });
+  }
 }

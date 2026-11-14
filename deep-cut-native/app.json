@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "Deep Cut",
+    "slug": "deep-cut-native",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "deepcut",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#171210",
+    "updates": {
+      "url": "https://u.expo.dev/877ea98a-dfc9-44ba-8402-6c76add87515"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "bundleIdentifier": "xyz.thedeepcut.app",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "associatedDomains": [
+        "applinks:thedeepcut.xyz"
+      ]
+    },
+    "android": {
+      "package": "xyz.thedeepcut.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#171210",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#171210",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#ffb454"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Deep Cut uses your photos so you can set a headshot on your member card.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "deepcut69",
+    "extra": {
+      "apiBaseUrl": "https://thedeepcut.xyz",
+      "supabaseUrl": "https://ebwztvkxwhjncqumzxxv.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVid3p0dmt4d2hqbmNxdW16eHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMDMxMjIsImV4cCI6MjA5OTc3OTEyMn0.SXL8GjRvsHf8SG_jZBk10sUDlBGbr8if6KKh2E7ORec",
+      "eas": {
+        "projectId": "877ea98a-dfc9-44ba-8402-6c76add87515"
+      }
+    }
+  }
+}

@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getVisibilityMap } from "@/lib/playlist-visibility";
 import { PlaylistCreateInput } from "@/lib/schemas";
 import { makeShareSlug } from "@/lib/slug";
 import { cacheMovies } from "@/lib/tmdb";
 import { track } from "@/lib/analytics";
 
-/** Playlists I sent + playlists sent to me. */
+/** Playlists I sent + playlists sent to me, plus the create pool (my
+ *  watchlist + loved films) so the native mixtapes screen loads in one call.
+ *  Mirrors what the web (tabs)/playlists/page.tsx server component assembles. */
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const db = supabaseAdmin();
-  const [sent, received] = await Promise.all([
+  const [sent, received, watchlist, loved] = await Promise.all([
     db
       .from("playlists")
       .select("id, name, recipient_name, share_slug, created_at, playlist_items(crossed_off)")
@@ -23,8 +26,33 @@ export async function GET() {
       .select("id, name, share_slug, created_at, playlist_items(crossed_off), users!playlists_owner_id_fkey(handle, display_name)")
       .eq("recipient_user_id", user.id)
       .order("created_at", { ascending: false }),
+    db
+      .from("recommendations")
+      .select("movies(id, title, year)")
+      .eq("user_id", user.id)
+      .eq("status", "watchlisted"),
+    db.from("loved_movies").select("movies(id, title, year)").eq("user_id", user.id),
   ]);
-  return NextResponse.json({ sent: sent.data ?? [], received: received.data ?? [] });
+
+  // Enrich sent tapes with visibility (public/private), matching the web page.
+  const sentRows = sent.data ?? [];
+  const vis = await getVisibilityMap(db, sentRows.map((p) => p.id as string));
+  const sentWithVis = sentRows.map((p) => ({ ...p, is_public: vis.get(p.id as string) ?? true }));
+
+  // Dedupe the create pool across watchlist + loved.
+  const dedupe = new Map<number, { id: number; title: string; year: number | null }>();
+  for (const rows of [watchlist.data ?? [], loved.data ?? []]) {
+    for (const r of rows) {
+      const m = r.movies as unknown as { id: number; title: string; year: number | null } | null;
+      if (m && !dedupe.has(m.id)) dedupe.set(m.id, m);
+    }
+  }
+
+  return NextResponse.json({
+    sent: sentWithVis,
+    received: received.data ?? [],
+    pickPool: [...dedupe.values()],
+  });
 }
 
 export async function POST(request: Request) {

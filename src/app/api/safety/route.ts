@@ -11,7 +11,19 @@ const Input = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("report"),
-    subjectType: z.enum(["user", "watch_note", "playlist", "avatar", "other"]),
+    subjectType: z.enum([
+      "user",
+      "watch_note",
+      "playlist",
+      "avatar",
+      "hot_take",
+      "take_comment",
+      // Member-published links on a film page. The backend already accepted
+      // reports for notes, playlists and takes; this content type was the one
+      // with no way to report it and no way to remove it.
+      "external_read",
+      "other",
+    ]),
     subjectId: z.string().min(1).max(120),
     reason: z.string().min(1).max(500),
   }),

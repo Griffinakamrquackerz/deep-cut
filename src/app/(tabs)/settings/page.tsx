@@ -5,6 +5,7 @@ import SettingsScreen from "@/components/SettingsScreen";
 import type { Service } from "@/lib/services";
 import { resolveStyle } from "@/lib/profile-style";
 import { getPremium, premiumConfigured } from "@/lib/premium";
+import { lifetimeConfigured } from "@/lib/stripe";
 import { isAdminEmail } from "@/lib/admin";
 
 export default async function SettingsPage() {
@@ -50,6 +51,7 @@ export default async function SettingsPage() {
       premiumUntil={premiumState.premiumUntil}
       hasStripeCustomer={!!premiumState.stripeCustomerId}
       premiumAvailable={premiumConfigured()}
+      lifetimeAvailable={lifetimeConfigured()}
       isAdmin={isAdminEmail(user.email)}
     />
   );

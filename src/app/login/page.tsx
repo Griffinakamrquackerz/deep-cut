@@ -1,9 +1,21 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 
 type Mode = "signin" | "signup" | "magic" | "forgot";
+
+/**
+ * Where to land once signed in. Read from the URL at call time rather than via
+ * useSearchParams, which would force this whole page behind a Suspense
+ * boundary just to read one string. Only same-origin paths are honored — a
+ * `next` that isn't a bare "/path" is an open-redirect waiting to happen.
+ */
+function nextPath(): string {
+  if (typeof window === "undefined") return "/";
+  const raw = new URLSearchParams(window.location.search).get("next") ?? "";
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+}
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
@@ -12,6 +24,29 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Land on the form the link asked for. The landing page's "Take a seat"
+  // sends people here to CREATE an account, and dropping them on a sign-in
+  // form they have no credentials for is the fastest way to lose somebody who
+  // had already decided to join. Read after mount, same reason as below.
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("mode");
+    if (m === "signup" || m === "magic" || m === "forgot") setMode(m);
+  }, []);
+
+  // /auth/confirm sends people back here with a reason when their link didn't
+  // take. Read after mount rather than during render — the server has no
+  // window, and seeding state from it would mismatch on hydration.
+  useEffect(() => {
+    const e = new URLSearchParams(window.location.search).get("e");
+    if (e === "expired") {
+      setMode("magic");
+      setError("That ticket had already been used, or it expired. Enter your email for a fresh one.");
+    } else if (e === "badlink") {
+      setMode("magic");
+      setError("That link came through broken — mail apps sometimes clip them. Send yourself a new one.");
+    }
+  }, []);
 
   // Hidden until Google OAuth is actually configured in Supabase.
   const googleEnabled = process.env.NEXT_PUBLIC_ENABLE_GOOGLE === "1";
@@ -51,18 +86,28 @@ export default function LoginPage() {
               : friendly(error),
           );
         } else {
-          window.location.href = "/";
+          window.location.href = nextPath();
           return;
         }
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath())}`,
+          },
         });
-        if (error) setError(friendly(error));
+        if (error) {
+          // Velvet rope: public signups are switched off in Supabase — point
+          // people at the waitlist instead of showing a raw auth error.
+          setError(
+            /not allowed|disabled|signups/i.test(error.message)
+              ? "The house is invite-only right now. Join the waitlist on the front page — we seat a new row every day. 🎟"
+              : friendly(error),
+          );
+        }
         else if (data.session) {
-          window.location.href = "/";
+          window.location.href = nextPath();
           return;
         } else {
           setNotice("Almost in — check your email once to confirm your account. After that it's password sign-in forever.");
@@ -70,7 +115,9 @@ export default function LoginPage() {
       } else if (mode === "magic") {
         const { error } = await supabase.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath())}`,
+          },
         });
         if (error) setError(friendly(error));
         else setNotice("Magic link sent — check your email and open it on this device.");
@@ -90,7 +137,9 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath())}`,
+      },
     });
     if (error) setError(`Google sign-in isn't available yet — use email. (${error.message})`);
   }
@@ -113,7 +162,7 @@ export default function LoginPage() {
         <p className="eyebrow mb-2">Admit One</p>
         <h1 className="glow-amber font-display text-7xl tracking-wide text-amber">DEEP CUT</h1>
         <div className="film-strip mx-auto mt-3 w-40" />
-        <p className="mt-3 font-mono text-xs text-dim">Movies you haven&apos;t met yet.</p>
+        <p className="mt-3 font-mono text-xs text-dim">Movies you haven&apos;t seen yet.</p>
       </div>
 
       <div className="flex w-full max-w-xs flex-col gap-3">
@@ -138,6 +187,15 @@ export default function LoginPage() {
               Create account
             </button>
           </div>
+        )}
+        {mode === "signup" && (
+          <p className="text-center font-mono text-[0.6rem] uppercase tracking-widest text-dim">
+            Invite-only — got a ticket email? Use its link. Otherwise{" "}
+            <a href="/" className="text-amber underline">
+              join the waitlist
+            </a>
+            .
+          </p>
         )}
 
         {(mode === "magic" || mode === "forgot") && (

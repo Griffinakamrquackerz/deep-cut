@@ -38,7 +38,15 @@ export async function setBlocked(
 }
 
 export interface Report {
-  subjectType: "user" | "watch_note" | "playlist" | "avatar" | "other";
+  subjectType:
+    | "user"
+    | "watch_note"
+    | "playlist"
+    | "avatar"
+    | "hot_take"
+    | "take_comment"
+    | "external_read"
+    | "other";
   subjectId: string;
   reason: string;
 }

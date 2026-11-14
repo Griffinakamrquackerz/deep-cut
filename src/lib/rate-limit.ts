@@ -17,6 +17,9 @@ export const DAILY_LIMITS = {
   hot_take: envInt("DAILY_HOT_TAKES", 15),
   take_comment: envInt("DAILY_TAKE_COMMENTS", 60),
   taste_signal: envInt("DAILY_TASTE_SIGNALS", 200),
+  // Sending a film goes to one named person's inbox, so it is exactly the
+  // shape of thing that needs a cap: uncapped, it's a way to fill one.
+  film_send: envInt("DAILY_FILM_SENDS", 40),
 };
 
 /** Free-tier (General Admission) deal cap. */

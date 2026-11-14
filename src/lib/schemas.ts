@@ -21,7 +21,7 @@ export const WatchLogInput = z.object({
 });
 
 export const RecBatchInput = z.object({
-  obscurityMin: z.number().int().min(1).max(5).default(2), // house default: skip the top 40
+  obscurityMin: z.number().int().min(1).max(5).default(3), // practical floor: less-seen films only
   obscurityMax: z.number().int().min(1).max(5).default(5),
   myServicesOnly: z.boolean().default(false),
   vibe: z.enum(VIBE_KEYS).nullish(),
@@ -48,7 +48,29 @@ export const FollowInput = z.object({ userId: z.string().uuid() });
 export const ExternalReadInput = z.object({
   movieId: z.number().int().positive(),
   title: z.string().min(1).max(160),
-  url: z.string().url().max(500),
+  // z.string().url() alone accepts ANY scheme — javascript:, data:, file: —
+  // and these links are published to every viewer of a film page and opened
+  // with Linking.openURL in the app. A member-supplied javascript: URL is not
+  // a link, it's a payload. Only the two schemes a "further reading" link can
+  // legitimately use.
+  url: z
+    .string()
+    .url()
+    .max(500)
+    // The try/catch is load-bearing, not defensive habit. Zod still runs a
+    // refinement after an earlier check has failed, so on input like "not a
+    // url" the bare `new URL(u)` threw straight out of safeParse — turning
+    // what should be a 400 into a 500. A test caught it.
+    .refine(
+      (u) => {
+        try {
+          return /^https?:$/.test(new URL(u).protocol);
+        } catch {
+          return false;
+        }
+      },
+      { message: "Links must start with http:// or https://" },
+    ),
 });
 
 export const LovedInput = z.object({ movieId: z.number().int().positive() });
@@ -81,3 +103,17 @@ export const RecCandidatesOutput = z.object({
   recs: z.array(RecCandidate).min(1).max(16),
 });
 export type RecCandidates = z.infer<typeof RecCandidatesOutput>;
+
+// ── This Meets That — the splice ────────────────────────────────────
+// One offspring film, plus the line explaining which parent gave what.
+export const BlendPick = z.object({
+  title: z.string().min(1),
+  year: z.number().int().min(1888).max(2030),
+  /** "The Lion King's succession myth, Titanic's doomed romance." */
+  reason: z.string().min(1).max(240),
+});
+
+export const BlendPicksOutput = z.object({
+  picks: z.array(BlendPick).min(1).max(10),
+});
+export type BlendPicks = z.infer<typeof BlendPicksOutput>;

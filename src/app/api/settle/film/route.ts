@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { getMovieDetails, getMovieTrailer, getWatchProviders } from "@/lib/tmdb";
 import { getOmdbRatings } from "@/lib/omdb";
 import { SERVICE_LABELS, type Service } from "@/lib/services";
+import { DEFAULT_REGION, regionFromRequest } from "@/lib/region";
 
-// Public: enrich a single shown verdict film with real runtime, US streaming,
+// Public: enrich a single shown verdict film with real runtime, streaming in
+// the caller's own region,
 // its best YouTube trailer, and ratings (IMDb/RT via OMDb, TMDB baseline).
 export async function GET(request: Request) {
+  // Public route, so there is no member to ask — the client passes ?region=
+  // when it knows one, and the edge's geo header covers the rest.
+  const region = regionFromRequest(request) ?? DEFAULT_REGION;
   const id = Number(new URL(request.url).searchParams.get("id"));
   if (!Number.isInteger(id) || id <= 0) {
     return NextResponse.json({ error: "bad_id" }, { status: 400 });
@@ -13,7 +18,7 @@ export async function GET(request: Request) {
   try {
     const [details, services, trailer] = await Promise.all([
       getMovieDetails(id).catch(() => null),
-      getWatchProviders(id).catch(() => [] as Service[]),
+      getWatchProviders(id, region).catch(() => [] as Service[]),
       getMovieTrailer(id).catch(() => null),
     ]);
     // IMDb + Rotten Tomatoes need the imdb_id from details (OMDb key optional).

@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { cacheMovie, getMovieTrailer } from "@/lib/tmdb";
+import { cacheMovie, getMovieCredits, getMovieTrailer } from "@/lib/tmdb";
 import { SERVICES, type Service } from "@/lib/services";
 import Poster from "@/components/Poster";
 import ServiceBadges from "@/components/ServiceBadges";
 import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
+import ShareFilm from "@/components/ShareFilm";
 import AdSlot from "@/components/AdSlot";
+import ExternalReads from "@/components/ExternalReads";
 import { isPremium } from "@/lib/premium";
 import TrailerPlayer from "@/components/TrailerPlayer";
 import JsonLd from "@/components/JsonLd";
@@ -63,10 +66,13 @@ export default async function MoviePage({
 
   const user = await currentUser();
   const db = supabaseAdmin();
-  const [reads, mine, trailer] = await Promise.all([
+  const [reads, mine, trailer, credits] = await Promise.all([
     db
+      // user_id so the page can tell whose link it is. It is NOT sent to the
+      // client — it becomes a `mine` boolean below, because the page has no
+      // business publishing member ids next to their links.
       .from("external_reads")
-      .select("id, title, url")
+      .select("id, title, url, user_id")
       .eq("movie_id", tmdbId)
       .order("created_at", { ascending: false })
       .limit(10),
@@ -74,6 +80,7 @@ export default async function MoviePage({
       ? db.from("user_services").select("service").eq("user_id", user.id)
       : Promise.resolve({ data: [] }),
     getMovieTrailer(tmdbId).catch(() => null), // best-effort — page works without one
+    getMovieCredits(tmdbId).catch(() => ({ cast: [], crew: [] })),
   ]);
 
   const available = SERVICES.filter((s) => movie.providers[s]);
@@ -143,29 +150,84 @@ export default async function MoviePage({
 
       <p className="text-sm leading-relaxed text-cream/90">{movie.overview}</p>
 
-      {user && <MovieActions movieId={movie.id} title={movie.title} />}
-
-      <div>
-        <p className="eyebrow mb-2">External reads</p>
-        {(reads.data ?? []).length === 0 ? (
-          <p className="text-sm text-dim">No articles linked yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {(reads.data ?? []).map((r) => (
-              <li key={r.id}>
-                <a
-                  href={r.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-amber underline"
-                >
-                  {r.title} ↗
-                </a>
+      {credits.crew.length > 0 && (
+        <div>
+          <p className="eyebrow mb-2">Crew</p>
+          <ul className="flex flex-col gap-1">
+            {credits.crew.map((c) => (
+              <li key={`${c.id}-${c.job}`} className="text-sm text-cream">
+                <span className="font-mono text-[0.6rem] uppercase tracking-wider text-dim">{c.job}</span>{" "}
+                {c.name}
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
+
+      {credits.cast.length > 0 && (
+        <div>
+          <p className="eyebrow mb-2">Cast</p>
+          <ul className="flex gap-3 overflow-x-auto pb-1">
+            {credits.cast.map((c) => (
+              <li key={c.id} className="w-20 shrink-0">
+                <Link href={`/person/${c.id}`} className="block">
+                  {c.profilePath ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`https://image.tmdb.org/t/p/w185${c.profilePath}`}
+                      alt={c.name}
+                      className="h-28 w-20 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-28 w-20 items-center justify-center rounded border border-line bg-surface font-display text-3xl text-dim">
+                      {c.name.charAt(0)}
+                    </div>
+                  )}
+                  <p className="mt-1 font-mono text-[0.65rem] font-bold leading-tight text-cream">
+                    {c.name}
+                  </p>
+                  {c.character && (
+                    <p className="font-mono text-[0.55rem] leading-tight text-dim">{c.character}</p>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {credits.crew.length > 0 && (
+        <div>
+          <p className="eyebrow mb-2">Crew</p>
+          <ul className="flex flex-col gap-1">
+            {credits.crew.map((c) => (
+              <li key={`${c.id}-${c.job}`} className="font-mono text-[0.7rem] text-dim">
+                {c.job} —{" "}
+                <Link href={`/person/${c.id}`} className="text-amber underline">
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {user && <MovieActions movieId={movie.id} title={movie.title} />}
+
+      {/* Passing it on. The share sheet works signed out too — the page is
+          public, so a link to it is a real thing to send somebody. */}
+      <ShareFilm movieId={movie.id} title={movie.title} signedIn={!!user} />
+
+      <ExternalReads
+        signedIn={!!user}
+        reads={(reads.data ?? []).map((r) => ({
+          id: r.id as string,
+          title: r.title as string,
+          url: r.url as string,
+          // Resolved here so no member id crosses to the client.
+          mine: !!user && r.user_id === user.id,
+        }))}
+      />
 
       {/* The wall, scoped to this film — takes are content, visible to all */}
       <div>

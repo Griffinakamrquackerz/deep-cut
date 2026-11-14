@@ -128,7 +128,7 @@ export async function GET() {
             }}
           >
             <span>{lovedCount ?? 0} FILMS LOVED</span>
-            <span>MOVIES YOU HAVEN&apos;T MET YET</span>
+            <span>MOVIES YOU HAVEN&apos;T SEEN YET</span>
           </div>
         </div>
       </div>
