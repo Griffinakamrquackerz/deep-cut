@@ -10,8 +10,7 @@ import { fundProgress, myStanding, sharePct } from "@/lib/fund";
 // and a number nobody can check is just a claim.
 //
 // Totals only — never who gave what. How much somebody supports a thing is
-// their business, and a public per-person ledger would also turn the point cap
-// into a leaderboard, which is the opposite of what it's for.
+// their business, and a public per-person ledger would turn it into a leaderboard.
 
 export const dynamic = "force-dynamic";
 

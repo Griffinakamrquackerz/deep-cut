@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import {
   getSubscription,
   verifyWebhookSignature,
-  LIFETIME_UNTIL,
   type StripeSubscription,
 } from "@/lib/stripe";
 import { setPremium } from "@/lib/premium";
@@ -40,6 +39,15 @@ function untilFrom(sub: StripeSubscription): string | null {
   return null; // canceled, unpaid, incomplete_expired → lapse immediately
 }
 
+async function updateSubscriptionPremium(userId: string, sub: StripeSubscription): Promise<void> {
+  const { data, error } = await supabaseAdmin().rpc("set_subscription_premium", {
+    p_user_id: userId,
+    p_until: untilFrom(sub),
+    p_customer_id: sub.customer,
+  });
+  if (error || data !== true) throw new Error(`subscription premium update failed: ${error?.message ?? "user not found"}`);
+}
+
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) return NextResponse.json({ error: "webhook_not_configured" }, { status: 503 });
@@ -56,11 +64,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object as {
         id?: string;
         subscription?: string;
         mode?: string;
+        payment_status?: string;
         amount_total?: number;
         // Stripe's own answer, not ours. If a charge ever settles in something
         // other than the fund's currency, the ledger has to know — see
@@ -68,8 +77,28 @@ export async function POST(request: Request) {
         currency?: string;
         customer_email?: string;
         client_reference_id?: string;
-        metadata?: { user_id?: string; plan?: string; skip_line?: string; email?: string };
+        metadata?: { user_id?: string; plan?: string; skip_line?: string; email?: string; lifetime_reservation_id?: string };
       };
+      if (session.metadata?.plan === "donation") {
+        if (session.payment_status !== "paid") return NextResponse.json({ received: true });
+        const userId = session.metadata.user_id ?? session.client_reference_id;
+        if (!userId || !session.id || !session.amount_total) {
+          console.error("paid donation missing user, session id or amount", session.id);
+          return NextResponse.json({ error: "invalid_donation" }, { status: 500 });
+        }
+        const recorded = await recordContribution(supabaseAdmin(), {
+          userId,
+          grossCents: session.amount_total,
+          kind: "donation",
+          stripeRef: `cs_${session.id}`,
+          currency: session.currency,
+        });
+        if (!recorded) return NextResponse.json({ error: "donation_record_failed" }, { status: 500 });
+        return NextResponse.json({ received: true });
+      }
+      if (event.type === "checkout.session.async_payment_succeeded") {
+        return NextResponse.json({ received: true });
+      }
       // ── Bought their way past the waitlist ──
       //
       // Handled before anything else because this session has no user id at
@@ -155,27 +184,58 @@ export async function POST(request: Request) {
         const sub = await getSubscription(session.subscription);
         const userId = sub.metadata?.user_id;
         if (userId) {
-          await setPremium(userId, untilFrom(sub), sub.customer);
+          await updateSubscriptionPremium(userId, sub);
           await track(userId, "balcony_started", { status: sub.status });
         }
       } else {
         // One-time payment (the $150 lifetime pass) — no subscription object,
         // so read the user id off the session and grant lifetime access.
         const userId = session.metadata?.user_id ?? session.client_reference_id;
+        if (session.metadata?.plan === "lifetime" && (!userId || !session.id)) {
+          console.error("lifetime session missing user or session id", session.id);
+          return NextResponse.json({ error: "invalid_lifetime_payment" }, { status: 500 });
+        }
         if (userId) {
-          await setPremium(userId, LIFETIME_UNTIL, null);
+          if (session.metadata?.plan === "lifetime" && session.payment_status !== "paid") {
+            return NextResponse.json({ received: true });
+          }
+          if (session.metadata?.lifetime_reservation_id) {
+            if (session.amount_total !== 15_000 || session.currency !== "usd") {
+              console.error("invalid lifetime payment", session.id);
+              return NextResponse.json({ error: "invalid_lifetime_payment" }, { status: 500 });
+            }
+            const { data: slot, error } = await supabaseAdmin().from("lifetime_slots")
+              .update({ status: "purchased" })
+              .eq("user_id", userId)
+              .eq("reservation_id", session.metadata.lifetime_reservation_id)
+              .select("user_id").maybeSingle();
+            if (error || !slot) throw new Error("lifetime reservation not found");
+          }
+          const granted = await supabaseAdmin().rpc("grant_lifetime_premium", { p_user_id: userId });
+          if (granted.error || granted.data !== true) throw new Error("lifetime premium update failed");
           await track(userId, "balcony_lifetime", {});
           // A one-time payment has no invoice cycle, so the Fund's share is
           // taken here. Keyed on the session id so a redelivered webhook can't
           // count it twice.
-          await recordContribution(supabaseAdmin(), {
+          const recorded = await recordContribution(supabaseAdmin(), {
             userId,
             grossCents: Number(session.amount_total ?? 0),
             kind: "lifetime",
             stripeRef: `cs_${session.id ?? ""}`,
             currency: session.currency,
           });
+          if (!recorded) throw new Error("lifetime contribution not recorded");
         }
+      }
+    } else if (event.type === "checkout.session.expired") {
+      const session = event.data.object as {
+        metadata?: { plan?: string; user_id?: string; lifetime_reservation_id?: string };
+      };
+      if (session.metadata?.plan === "lifetime" && session.metadata.lifetime_reservation_id) {
+        const { error } = await supabaseAdmin().from("lifetime_slots").update({ status: "expired" })
+          .eq("reservation_id", session.metadata.lifetime_reservation_id)
+          .eq("status", "pending");
+        if (error) throw new Error(`lifetime reservation release failed: ${error.message}`);
       }
     } else if (event.type === "invoice.payment_succeeded") {
       // The Fund grows HERE, not at checkout.
@@ -201,7 +261,7 @@ export async function POST(request: Request) {
 
       // Read both shapes.
       //
-      // This is where every subscription dollar reaches the Fund: the $3.99
+      // This is where every subscription dollar reaches the Fund: the monthly
       // plan and pay-what-you-want support both. Reading only the pre-basil
       // field meant that on a basil endpoint the branch never fired — the bar
       // counted no subscription money at all and every monthly subscriber
@@ -242,7 +302,7 @@ export async function POST(request: Request) {
       const sub = event.data.object as unknown as StripeSubscription;
       const userId = sub.metadata?.user_id;
       if (userId) {
-        await setPremium(userId, untilFrom(sub), sub.customer);
+        await updateSubscriptionPremium(userId, sub);
         await track(userId, "balcony_updated", { status: sub.status });
       }
     }

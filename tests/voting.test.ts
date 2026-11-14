@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { shuffleForViewer } from "../src/lib/voting";
-import { pointsFor, pointCap } from "../src/lib/fund";
+import { pointsFor } from "../src/lib/fund";
 import { countPile, showcaseSlots, type Submission } from "../src/lib/submissions";
 
 // The ballot's two load-bearing rules, tested where they can be tested without
@@ -55,7 +55,7 @@ describe("ballot order", () => {
 });
 
 describe("vote budget", () => {
-  it("is a dollar per vote under the cap", () => {
+  it("is a dollar per vote", () => {
     expect(pointsFor(0)).toBe(0);
     expect(pointsFor(100)).toBe(1);
     expect(pointsFor(4_000)).toBe(40);
@@ -68,10 +68,9 @@ describe("vote budget", () => {
     expect(pointsFor(199)).toBe(1);
   });
 
-  it("stops at the cap however much is given", () => {
-    const cap = pointCap();
-    expect(pointsFor(cap * 100)).toBe(cap);
-    expect(pointsFor(cap * 100 * 50)).toBe(cap);
+  it("continues earning votes above the former cap", () => {
+    expect(pointsFor(100_000)).toBe(1_000);
+    expect(pointsFor(2_500_000)).toBe(25_000);
   });
 
   it("never returns a negative budget", () => {

@@ -100,7 +100,7 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
   `/api/safety` + `SafetyActions.tsx` (blocks filter feed + people); `/terms`, `/privacy`.
 - **Ads:** `AdSlot.tsx` — env-gated AdSense with house-ad fallback; `/ads.txt` route; hidden
   everywhere for premium members.
-- **Premium ("Balcony Seats"):** $4.99/mo after a 90-day trial via Stripe — `src/lib/stripe.ts`
+- **Premium ("Balcony Seats"):** monthly price is set by `STRIPE_PRICE_ID` in Stripe, after a 90-day trial. The optional $150 one-time lifetime offer is limited to 100 purchases, including recorded legacy purchases. Apply migration 0026 before deploying; configure an active one-time USD $150 `STRIPE_PRICE_ID_LIFETIME` and subscribe the webhook to `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, subscription lifecycle and invoice events. Reservations remain occupied until an expiry event is received; reconcile failed/missing events in Stripe before releasing a pending reservation. Buying lifetime does not cancel a subscription. Donations are separate one-time payments and paid support earns one vote per whole USD in the current round.
   (raw REST, no SDK; hand-rolled webhook signature verification), `src/lib/premium.ts`
   (users.premium_until with events fallback pre-0005), routes `/api/stripe/{checkout,webhook,portal}`,
   storefront in Settings. Free = 10 deals/day + ads; premium = 30 deals/day, ad-free. Stripe

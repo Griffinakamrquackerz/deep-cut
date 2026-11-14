@@ -63,7 +63,7 @@ export default function FounderNote() {
             order — is both the truth and the stronger promise. Same sentence as
             the header of /vote, so the front page and the ballot agree. */}
         <p className="text-[1.02rem] leading-relaxed text-cream/90">
-          And supporting the house here does more than unlock the full app.{" "}
+          And supporting the house does more than keep the lights on.{" "}
           <span className="text-amber">It gives you a voice in what gets made.</span> {sharePct()}% of every
           dollar goes directly to financing an independent filmmaker&apos;s next project.
           We read every pitch that comes in and watch every director&apos;s
@@ -72,11 +72,10 @@ export default function FounderNote() {
         </p>
 
         <p className="text-[1.02rem] leading-relaxed text-cream/90">
-          Every subscriber and every donation earns you points toward the next
-          feature film. We cap the points so no studio head can buy the room
-          &mdash; every member gets real weight on the ballot, private
-          test-screening invites, and your name in the credits as the producers
-          who brought it to life.
+          Paid subscription charges and donations earn points toward the current
+          feature film round. Each whole dollar earns a vote, and support also
+          counts toward the fund&apos;s perk tiers, including film credits at
+          qualifying levels.
         </p>
       </div>
 

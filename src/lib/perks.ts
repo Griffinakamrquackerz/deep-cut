@@ -13,11 +13,7 @@
 // so they're scarce. Anything above the top tier is a conversation, not a
 // checkout button — see the note at the bottom of this file.
 //
-// The important structural decision: PERKS KEEP SCALING PAST THE VOTE CAP.
-// Votes are capped so the film isn't chosen by whoever is richest. Recognition
-// isn't, because somebody who funds a tenth of the picture should be thanked
-// like it. The cap is on power, not on gratitude — and saying that out loud is
-// what stops the cap feeling like a punishment for generosity.
+// Perks stack as a member's contributions grow; votes grow with contributions.
 
 export interface Perk {
   /** Cents, inclusive floor. */
@@ -103,7 +99,7 @@ export const PERKS: Perk[] = [
     adds: [
       "Your name in the crawl, not the thanks — a real title card",
       "Virtual set visit, live from the shoot",
-      "Every vote you earned, uncapped up to this point",
+      "Votes continue to grow with your support",
     ],
     line: "A credit, not a thank-you. This is where the ladder stops being merch.",
   },

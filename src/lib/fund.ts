@@ -47,26 +47,9 @@ export function sharePct(): number {
   return Math.min(100, envInt("FUND_SHARE_PCT", 60));
 }
 
-/**
- * Most votes one person can hold in a round.
- *
- * Not a limit on generosity — you can give whatever you like, and it all
- * counts toward the goal and toward your perks. It's a limit on how much of the
- * OUTCOME any one wallet can buy. Without it the film is chosen by whoever is
- * richest, which is the thing this is supposed to be an alternative to.
- *
- * Set at 1,000 to land exactly where the credit tiers begin ($1,000 =
- * Co-Producer). Below that your votes track your money one for one; above it
- * you're buying credits and access, not influence. The two ladders meeting at
- * the same rung is deliberate — it makes the rule legible without a paragraph.
- */
-export function pointCap(): number {
-  return envInt("FUND_POINT_CAP", 1_000);
-}
-
-/** A dollar given is a point earned, then capped. */
+/** Each whole dollar contributed in the current cycle earns one vote. */
 export function pointsFor(grossCents: number): number {
-  return Math.min(Math.floor(Math.max(0, grossCents) / 100), pointCap());
+  return Math.floor(Math.max(0, grossCents) / 100);
 }
 
 /**
@@ -218,10 +201,6 @@ export interface MyStanding {
   /** What this person has given this cycle. */
   givenCents: number;
   points: number;
-  pointCap: number;
-  /** True once they've hit the cap — worth saying so rather than silently
-   *  swallowing further votes they think they're earning. */
-  atCap: boolean;
 }
 
 export async function myStanding(db: SupabaseClient, userId: string): Promise<MyStanding> {
@@ -253,5 +232,5 @@ export async function myStanding(db: SupabaseClient, userId: string): Promise<My
   const given = paid.reduce((sum, r) => sum + (Number(r.gross_cents) || 0), 0);
   const points = pointsFor(given);
 
-  return { cycle, givenCents: given, points, pointCap: pointCap(), atCap: points >= pointCap() };
+  return { cycle, givenCents: given, points };
 }

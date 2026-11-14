@@ -17,12 +17,13 @@ function form(params: Record<string, string>): string {
   return new URLSearchParams(params).toString();
 }
 
-async function stripePost<T>(path: string, params: Record<string, string>): Promise<T> {
+async function stripePost<T>(path: string, params: Record<string, string>, idempotencyKey?: string): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${key()}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
     },
     body: form(params),
   });
@@ -42,7 +43,7 @@ async function stripeGet<T>(path: string): Promise<T> {
 
 const TRIAL_DAYS = 90; // the 3-month free trial
 
-export type BalconyPlan = "monthly" | "lifetime" | "support";
+export type BalconyPlan = "monthly" | "lifetime" | "support" | "donation";
 
 /**
  * Floor for pay-what-you-want support.
@@ -51,6 +52,7 @@ export type BalconyPlan = "monthly" | "lifetime" | "support";
  * of the payment — a 50c contribution would cost the Fund money to accept.
  */
 export const SUPPORT_MIN_CENTS = 100;
+export const SUPPORT_MAX_CENTS = 99_999_999;
 
 /**
  * Floor for buying your way past the waitlist.
@@ -122,7 +124,18 @@ export async function createSkipLineSession(opts: {
 export const LIFETIME_UNTIL = "2099-12-31T00:00:00.000Z";
 
 export function lifetimeConfigured(): boolean {
-  return !!process.env.STRIPE_PRICE_ID_LIFETIME;
+  return !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID_LIFETIME);
+}
+
+export async function validateLifetimePrice(): Promise<void> {
+  const priceId = process.env.STRIPE_PRICE_ID_LIFETIME;
+  if (!priceId) throw new Error("STRIPE_PRICE_ID_LIFETIME not set");
+  const price = await stripeGet<{ active: boolean; currency: string; unit_amount: number | null; type: string }>(
+    `/prices/${encodeURIComponent(priceId)}`,
+  );
+  if (!price.active || price.currency !== "usd" || price.unit_amount !== 15_000 || price.type !== "one_time") {
+    throw new Error("Lifetime Stripe price must be an active one-time USD $150 price");
+  }
 }
 
 export async function createCheckoutSession(opts: {
@@ -138,6 +151,7 @@ export async function createCheckoutSession(opts: {
    * fixed ladder of tiers would be a pricing page wearing a donation's clothes.
    */
   amountCents?: number;
+  lifetimeReservation?: { id: string; expiresAt: number };
 }): Promise<{ url: string }> {
   const plan = opts.plan ?? "monthly";
   const common = {
@@ -156,20 +170,38 @@ export async function createCheckoutSession(opts: {
   if (plan === "lifetime") {
     const priceId = process.env.STRIPE_PRICE_ID_LIFETIME;
     if (!priceId) throw new Error("STRIPE_PRICE_ID_LIFETIME not set");
+    if (!opts.lifetimeReservation) throw new Error("Lifetime reservation required");
+    const { allow_promotion_codes: _unused, ...lifetimeCommon } = common;
     return stripePost<{ url: string }>("/checkout/sessions", {
-      ...common,
+      ...lifetimeCommon,
       mode: "payment",
       "line_items[0][price]": priceId,
+      "payment_method_types[0]": "card",
+      expires_at: String(opts.lifetimeReservation.expiresAt),
+      "metadata[lifetime_reservation_id]": opts.lifetimeReservation.id,
       "payment_intent_data[metadata][user_id]": opts.userId,
-    });
+    }, `lifetime-${opts.lifetimeReservation.id}`);
   }
 
-  if (plan === "support") {
+  if (plan === "support" || plan === "donation") {
     // A floor, not a suggestion: below a dollar the card fee eats the whole
     // contribution and the Fund gets less than nothing.
     const cents = Math.floor(opts.amountCents ?? 0);
-    if (!Number.isFinite(cents) || cents < SUPPORT_MIN_CENTS) {
-      throw new Error(`support amount must be at least ${SUPPORT_MIN_CENTS} cents`);
+    if (!Number.isFinite(cents) || cents < SUPPORT_MIN_CENTS || cents > SUPPORT_MAX_CENTS) {
+      throw new Error("support amount is outside the allowed range");
+    }
+    if (plan === "donation") {
+      return stripePost<{ url: string }>("/checkout/sessions", {
+        ...common,
+        mode: "payment",
+        "line_items[0][price_data][currency]": CHECKOUT_CURRENCY,
+        "line_items[0][price_data][unit_amount]": String(cents),
+        "line_items[0][price_data][product_data][name]": "Deep Cut — one-time fund support",
+        "payment_intent_data[metadata][user_id]": opts.userId,
+        "payment_intent_data[metadata][plan]": "donation",
+        success_url: `${opts.appUrl}/fund?support=complete`,
+        cancel_url: `${opts.appUrl}/fund?support=cancelled`,
+      });
     }
     return stripePost<{ url: string }>("/checkout/sessions", {
       ...common,

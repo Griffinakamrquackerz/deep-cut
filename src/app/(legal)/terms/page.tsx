@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <>
       <h1>TERMS OF USE</h1>
-      <p className="font-mono text-xs text-dim">Last updated: July 2026</p>
+      <p className="font-mono text-xs text-dim">Last updated: November 2026</p>
 
       <p>
         Welcome to Deep Cut (&quot;the house&quot;). By creating an account or using the app you
@@ -16,8 +16,7 @@ export default function TermsPage() {
       <h2>1. What Deep Cut is</h2>
       <p>
         Deep Cut recommends films, builds a written profile of your taste, and lets you share
-        lists and activity with other members. It&apos;s a discovery tool — we don&apos;t host,
-        stream, or sell films.
+        lists and activity with other members. It also offers a theatre of licensed films.
       </p>
 
       <h2>2. Your account</h2>
@@ -51,12 +50,18 @@ export default function TermsPage() {
         best-effort and may be wrong — check before you rent.
       </p>
 
-            <h2>5. The Indie Film Fund, Points &amp; Credits</h2>
+      <h2>5. Membership and the Indie Film Fund</h2>
       <p>
-        Contributions, donations, or subscription fees directed to the Deep Cut Indie Film Fund
-        support independent filmmaking grants, productions, and community curation.
-        Patron points, voting ballots, test screening access, and film credits are community
-        patronage perks granted at the discretion of the house.
+        The free tier is available without payment. A paid subscription is optional, as are
+        separate one-time donations. Paid subscription charges and donations count toward
+        the current film round: each whole dollar of the combined total earns one vote, with
+        no vote cap. Contributions also count toward the published, cumulative perk tiers.
+        A larger contribution carries more voting influence.
+      </p>
+      <p>
+        When available, the $150 lifetime offer is a one-time payment for lifetime premium
+        access, limited to the first 100 lifetime purchases. Buying it does not cancel an
+        existing subscription; manage or cancel that separately.
       </p>
       <p>
         Points, votes, and credits do not represent equity, stock, partnership shares, profit

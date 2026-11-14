@@ -221,7 +221,7 @@ export default function Ballot() {
         ) : data.me && budget === 0 ? (
           <>
             <p className="mt-2 text-sm leading-relaxed text-cream">
-              You don&apos;t hold any votes yet. A dollar into the fund earns one,
+              You don&apos;t hold any votes yet. A dollar of paid support earns one,
               and you can read every pitch here whether you vote or not.
             </p>
             <Link

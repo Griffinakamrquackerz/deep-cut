@@ -12,7 +12,8 @@ import SiteNav from "@/components/site/SiteNav";
 import SiteCredits from "@/components/site/SiteCredits";
 import { Slate } from "@/components/site/SiteShell";
 import DealDemo from "@/components/landing/DealDemo";
-import { goalCents, pointCap, sharePct } from "@/lib/fund";
+import { goalCents, sharePct } from "@/lib/fund";
+import { lifetimeConfigured } from "@/lib/stripe";
 import { CHANNELS } from "@/lib/shorts";
 import "@/components/landing/landing.css";
 import RatingBand from "@/components/house/RatingBand";
@@ -51,7 +52,6 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
   const joinLabel = doorOpen ? "Take your seat" : "Get in line";
   const share = sharePct();
   const goal = usd(goalCents());
-  const cap = pointCap().toLocaleString("en-US");
   const channels = CHANNELS.length;
 
   const ticker = [
@@ -295,8 +295,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                         <dd>a dollar in is a vote</dd>
                       </div>
                       <div>
-                        <dt>{cap}</dt>
-                        <dd>votes is the most one member holds</dd>
+                        <dt>More</dt>
+                        <dd>support earns more votes</dd>
                       </div>
                     </dl>
                     {/* The perk people actually want, shown rather than listed. */}
@@ -367,6 +367,12 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               No studio, no algorithm, no room you can&apos;t get into. Your membership goes in one end and a
               feature comes out the other. Five frames, start to premiere.
             </p>
+            {lifetimeConfigured() && (
+              <p className="lp-lede" data-reveal="rise">
+                The first 100 lifetime purchases get full app access for a one-time $150 payment.{" "}
+                <Link href="/settings" className="lp-link">See the lifetime offer</Link>
+              </p>
+            )}
 
             <div className="lp-strip">
               <ol className="lp-frames">
@@ -415,9 +421,9 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <FundBar />
               </div>
               <p className="lp-smallprint">
-                <strong>The honest small print.</strong> Supporting the house gets you a vote, a credit and the
-                perks. It isn&apos;t an investment, carries no financial return, and no vote has a cash value.
-                Votes are capped at {cap} a person so nobody buys the room.{" "}
+                <strong>The honest small print.</strong> Paid support earns votes and counts toward perk
+                tiers; credits start at $25. It isn&apos;t an investment, carries no financial return, and
+                no vote has a cash value.{" "}
                 <Link href="/fund" className="lp-link" style={{ whiteSpace: "nowrap" }}>
                   Read the whole thing
                 </Link>
@@ -446,11 +452,10 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   </span>
                 </li>
                 <li>
-                  <b>{cap}</b>
+                  <b>More</b>
                   <span>
-                    <strong>The cap.</strong> Nobody holds more than {cap}. Past that you&apos;re earning
-                    credits and access, not influence &mdash; the richest person in the room doesn&apos;t pick
-                    the movie.
+                    <strong>More support, more votes.</strong> Paid subscriptions and optional donations
+                    add to your total for the current round, with no vote cap.
                   </span>
                 </li>
                 <li>
@@ -626,24 +631,22 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               <details open>
                 <summary>Is it free?</summary>
                 <p>
-                  Yes. It&apos;s free to use once you&apos;re in. A platform like this costs money to run, so if
-                  you feel like chipping in, you can &mdash; supporting the house unlocks the full app and earns
-                  you votes on the next film.
+                  Yes. It&apos;s free to use once you&apos;re in. You can optionally subscribe for the full app,
+                  donate to support the fund, or do both. Paid support earns votes on the current film round.
                 </p>
               </details>
               <details>
                 <summary>Am I investing in a movie?</summary>
                 <p>
-                  No. Supporting the house buys you a vote, a credit and the perks. It isn&apos;t an investment,
-                  carries no financial return, and no vote has a cash value.
+                  No. Paid support earns votes and counts toward perk tiers; credits start at $25. It
+                  isn&apos;t an investment, carries no financial return, and no vote has a cash value.
                 </p>
               </details>
               <details>
-                <summary>What stops the richest person picking the film?</summary>
+                <summary>Can I earn more votes?</summary>
                 <p>
-                  The cap. Votes top out at {cap} per person. Give as much as you like &mdash; it all counts
-                  toward the goal and toward your perks &mdash; but past the cap you&apos;re buying credits and
-                  access, not influence.
+                  Yes. Paid subscription charges and optional donations both count toward your current-round
+                  total. Every whole dollar earns a vote, so larger contributions carry more influence.
                 </p>
               </details>
               <details>

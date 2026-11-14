@@ -21,7 +21,7 @@ interface Fund {
   percent?: number;
   funded?: boolean;
   backers?: number;
-  mine?: { points: number; pointCap: number; atCap: boolean } | null;
+  mine?: { points: number } | null;
 }
 
 const money = (cents: number) =>
@@ -114,9 +114,7 @@ export default function FundBar({ compact = false }: { compact?: boolean }) {
             <span className="text-amber">
               {fund.mine.points} vote{fund.mine.points === 1 ? "" : "s"}
             </span>
-            {fund.mine.atCap
-              ? " — the maximum any one member can hold."
-              : ` toward the next Deep Cut Original (max ${fund.mine.pointCap}).`}
+            {" "}toward the current film round.
           </p>
         )}
         <Link

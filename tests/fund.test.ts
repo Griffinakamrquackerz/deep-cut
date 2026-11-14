@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fundCurrency, fundCutCents, goalCents, pointCap, pointsFor, sharePct } from "@/lib/fund";
+import { fundCurrency, fundCutCents, goalCents, pointsFor, sharePct } from "@/lib/fund";
 import { CHECKOUT_CURRENCY } from "@/lib/stripe";
 
 const ENV = { ...process.env };
 beforeEach(() => {
   delete process.env.FUND_SHARE_PCT;
-  delete process.env.FUND_POINT_CAP;
   delete process.env.FUND_GOAL_CENTS;
 });
 afterEach(() => {
@@ -51,14 +50,10 @@ describe("points", () => {
     expect(pointsFor(99)).toBe(0);
   });
 
-  it("caps, so the richest wallet can't buy the outcome", () => {
-    // The cap is the whole reason this isn't just an auction.
-    expect(pointsFor(100_000_00)).toBe(pointCap());
-  });
-
-  it("respects a configured cap", () => {
+  it("does not cap votes even if a legacy cap remains configured", () => {
     process.env.FUND_POINT_CAP = "10";
-    expect(pointsFor(50_00)).toBe(10);
+    expect(pointsFor(50_00)).toBe(50);
+    expect(pointsFor(100_000_00)).toBe(100_000);
   });
 
   it("gives nothing for nothing", () => {
@@ -71,7 +66,6 @@ describe("defaults", () => {
   it("falls back to sane numbers when nothing is configured", () => {
     expect(goalCents()).toBe(25_000_000); // $250,000
     expect(sharePct()).toBe(60);
-    expect(pointCap()).toBe(1_000);
   });
 
   it("ignores junk env values rather than producing a zero goal", () => {
@@ -87,13 +81,9 @@ describe("scaled for a feature, not a short", () => {
     expect(goalCents()).toBe(25_000_000);
   });
 
-  it("caps votes exactly where the credit tiers begin", () => {
-    // $1,000 buys a Co-Producer credit and the last vote that counts. Below
-    // that, votes track money one for one; above it you're buying credits and
-    // access, not influence. The two ladders meeting makes the rule legible.
-    expect(pointCap()).toBe(1_000);
+  it("keeps earning votes at higher credit tiers", () => {
     expect(pointsFor(100_000)).toBe(1_000);
-    expect(pointsFor(2_500_000)).toBe(1_000);
+    expect(pointsFor(2_500_000)).toBe(25_000);
   });
 });
 

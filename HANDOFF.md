@@ -103,7 +103,7 @@ Set in Vercel (Production). Grouped by system. **Bold = required to boot.**
 - **`TMDB_API_KEY`** — required. `OMDB_API_KEY` — optional (IMDb/RT ratings; falls back to TMDB rating).
 
 **Payments (Stripe)** — see [§9](#9-payments-stripe)
-- `STRIPE_SECRET_KEY` (`sk_live_…`), `STRIPE_PRICE_ID` (monthly $3.99), `STRIPE_PRICE_ID_LIFETIME` ($150 one-time), `STRIPE_WEBHOOK_SECRET` (`whsec_…`). `BALCONY_PRICE_USD` optional display value.
+- `STRIPE_SECRET_KEY` (`sk_live_…`), `STRIPE_PRICE_ID` (monthly price; verify in Stripe), `STRIPE_PRICE_ID_LIFETIME` ($150 one-time), `STRIPE_WEBHOOK_SECRET` (`whsec_…`). `BALCONY_PRICE_USD` optional admin estimate.
 
 **Email (Resend)**
 - `RESEND_API_KEY` — used by the app directly for waitlist confirmation email. `EMAIL_FROM` (default `Deep Cut <tickets@thedeepcut.xyz>`).
@@ -158,7 +158,7 @@ Supabase Postgres, RLS on. Migrations in `supabase/migrations/`:
 
 ## 9. Payments (Stripe)
 
-- **Model:** freemium. App is free; **Balcony Seats** premium = **$3.99/mo with a 90-day trial** (`TRIAL_DAYS=90` in `src/lib/stripe.ts`) **or** a **$150 one-time lifetime** pass. 30 deals/day + ad-free vs 10/day free.
+- **Model:** freemium. App is free; **Balcony Seats** has a monthly Stripe price with a 90-day trial (`TRIAL_DAYS=90`) or a **$150 one-time lifetime** pass for the first 100 lifetime purchases. 30 deals/day + ad-free vs 10/day free. Optional one-time donations and paid subscription charges both count toward the current-round perk tiers and earn one vote per whole dollar. Apply migration 0026 before deployment; see ONBOARDING for Stripe setup and reservation reconciliation.
 - **Flow:** `api/stripe/checkout` (subscription or one-time by `plan`) → Stripe Checkout → `api/stripe/webhook` sets `premium_until`. Billing portal via `api/stripe/portal`. Premium status read by `isPremium()` (`src/lib/premium.ts`), events-fallback aware.
 - **Lifetime** = `premium_until` set to 2099 (see `LIFETIME_UNTIL`).
 - ⚠️ **Gotcha already fixed, know it exists:** recent Stripe API versions moved `current_period_end` off the subscription root onto `items.data[]`. The webhook reads it defensively (`periodEndSeconds`) — if you touch subscription parsing, preserve that. The webhook **must return 200**; a throw = 500 = Stripe retries = no upgrade.

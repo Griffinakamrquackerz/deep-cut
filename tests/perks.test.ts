@@ -51,9 +51,7 @@ describe("perk tiers", () => {
     }
   });
 
-  it("keeps scaling well past the vote cap", () => {
-    // The design: the vote cap is a ceiling on power, not on recognition, so
-    // tiers above it must still exist and still add things.
+  it("keeps offering higher tiers", () => {
     const above = PERKS.filter((p) => p.minCents > 100_000);
     expect(above.length).toBeGreaterThan(0);
     for (const p of above) expect(p.adds.length).toBeGreaterThan(0);

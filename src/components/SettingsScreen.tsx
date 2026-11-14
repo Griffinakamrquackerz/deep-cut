@@ -599,7 +599,7 @@ function DangerZone() {
 }
 
 
-/** The Balcony Seats storefront: 3 free months, then $4.99/mo. */
+/** The Balcony Seats storefront. */
 function BalconySeats({
   active,
   until,
@@ -632,7 +632,13 @@ function BalconySeats({
       window.location.href = data.url;
       return;
     }
-    setErr(data?.error ? String(data.error).slice(0, 160) : "Something jammed — try again.");
+    setErr(
+      data?.error === "lifetime_sold_out" ? "The first 100 lifetime seats have sold out." :
+      data?.error === "lifetime_already_owned" ? "You already have lifetime access." :
+      data?.error === "lifetime_reservation_pending" ? "Your lifetime checkout is still pending. Please try again after it expires." :
+      data?.error === "lifetime_unavailable" ? "Lifetime checkout is not available right now." :
+      "Couldn't open checkout. Please try again later.",
+    );
     setBusy(null);
   }
 
@@ -667,10 +673,10 @@ function BalconySeats({
             {lifetime
               ? " · yours forever"
               : until
-                ? ` · renews ${new Date(until).toLocaleDateString()}`
+                ? ` · access through ${new Date(until).toLocaleDateString()}`
                 : ""}
           </p>
-          {hasCustomer && !lifetime && (
+          {hasCustomer && (
             <button
               onClick={() => void portal()}
               disabled={!!busy}
@@ -694,27 +700,28 @@ function BalconySeats({
               disabled={!!busy}
               className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
             >
-              {busy === "monthly" ? "Opening the box office…" : "★ 3 months free, then $3.99/mo ★"}
+              {busy === "monthly" ? "Opening the box office…" : "★ 3 months free — see monthly price at checkout ★"}
             </button>
-          )}
-          {lifetimeAvailable && (
-            <>
-              <button
-                onClick={() => void checkout("lifetime")}
-                disabled={!!busy}
-                className="mt-2 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
-              >
-                {busy === "lifetime" ? "Opening the box office…" : "🏛 Buy it once — $150 lifetime"}
-              </button>
-              <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
-                one payment, never think about it again
-              </p>
-            </>
           )}
           {!lifetimeAvailable && (
             <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
               the price of one rental · cancel anytime
             </p>
+          )}
+          {lifetimeAvailable && !lifetime && (
+            <>
+              <button
+                onClick={() => void checkout("lifetime")}
+                disabled={!!busy}
+                className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
+              >
+                {busy === "lifetime" ? "Opening the box office…" : "🏛 $150 once — lifetime access"}
+              </button>
+              <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+                First 100 lifetime purchases · $150 one-time · earns 150 votes in the current round.
+                {hasCustomer ? " Buying lifetime does not cancel an existing subscription; manage it separately." : ""}
+              </p>
+            </>
           )}
         </>
       )}

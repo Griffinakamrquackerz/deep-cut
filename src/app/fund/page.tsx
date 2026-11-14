@@ -3,17 +3,17 @@ import Link from "next/link";
 import FundBar from "@/components/FundBar";
 import BallotDemo from "@/components/BallotDemo";
 import SkipTheLine from "@/components/SkipTheLine";
+import FundDonation from "@/components/FundDonation";
 import SiteShell, { PageHero, Slate } from "@/components/site/SiteShell";
 import { PERKS, perkLine } from "@/lib/perks";
-import { goalCents, pointCap, sharePct } from "@/lib/fund";
+import { goalCents, sharePct } from "@/lib/fund";
 import CreditRoll from "@/components/house/CreditRoll";
 
 // The Indie Film Fund, explained end to end.
 //
 // This page exists because the fund is the most interesting thing Deep Cut
 // does and the least self-explanatory. It has to answer, in order: where does
-// my money go, what do I get, how does the vote actually work, and what stops
-// one rich person deciding everything. Somebody who reads it should be able to
+// my money go, what do I get, and how does the vote actually work? Somebody who reads it should be able to
 // explain the whole thing to a friend afterwards.
 //
 // Public and unauthenticated on purpose — it's the pitch.
@@ -30,7 +30,6 @@ const money = (cents: number) =>
     : `$${(cents / 100).toFixed(2)}`;
 
 export default function FundPage() {
-  const cap = pointCap();
   const goal = goalCents();
   const share = sharePct();
 
@@ -70,7 +69,7 @@ export default function FundPage() {
                 {
                   big: "$1+",
                   t: "You support",
-                  d: `Any amount from $1. ${share}% goes straight into the fund. The other ${100 - share}% keeps the lights on, licenses the shorts in the Theatre, and covers post and delivery on the film we make.`,
+                  d: `Optional donations start at $1. Paid subscriptions count too. ${share}% goes into the fund; the other ${100 - share}% keeps the lights on, licenses shorts, and covers post and delivery.`,
                 },
                 {
                   big: money(goal),
@@ -113,15 +112,12 @@ export default function FundPage() {
                 across three. Splitting them says which one you&apos;d take if your first choice loses.
               </p>
               <p>
-                Votes are capped at <strong>{cap.toLocaleString("en-US")} per person</strong>, which is
-                exactly where the producing credits start — a dollar is a vote, so the cap and the
-                Co-Producer tier are the same rung. Under it your votes track your money one for one. Over
-                it you&apos;re buying credits and access, <strong>not influence</strong>.
+                Paid subscription charges and optional donations both count toward your current-round
+                total. Every whole dollar earns one vote, with <strong>no vote cap</strong>.
               </p>
               <p>
-                Give as much as you like: it all counts toward the goal and it all counts toward your
-                perks. But the fund exists so the richest person in the room doesn&apos;t pick the movie,
-                and that has to include the richest person in <em>this</em> room.
+                More support earns more votes and moves you up the perk tiers. Larger contributions
+                carry more influence on the outcome. Joining and using the free tier costs nothing.
               </p>
               <p className="lp-note">
                 Every ballot is shuffled differently for every viewer, because whatever is printed first
@@ -192,6 +188,7 @@ export default function FundPage() {
                     </li>
                   ))}
                 </ul>
+                <FundDonation />
               </li>
             ))}
           </ul>
@@ -236,11 +233,11 @@ export default function FundPage() {
             {[
               {
                 q: "Am I investing?",
-                a: "No. Supporting the house buys you a vote, a credit and the perks above. It isn't an investment, carries no financial return, and no vote has a cash value. If we ever open a proper equity raise it will be a separate, clearly-labelled thing you'd opt into on purpose.",
+                a: "No. Paid support earns votes and counts toward the perk tiers above; credits start at $25. It isn't an investment, carries no financial return, and no vote has a cash value. If we ever open a proper equity raise it will be a separate, clearly-labelled thing you'd opt into on purpose.",
               },
               {
                 q: "What if the fund never fills?",
-                a: "Then nothing gets commissioned and the fund keeps growing. What you paid for is a membership — the Theatre, the recommendations, the whole house — and the fund is a share we allocate on top. Nothing is held in escrow against a film that might not happen.",
+                a: "Then nothing gets commissioned and the fund keeps growing. Subscriptions pay for membership; donations are optional additional support. The fund is an allocation, not money held in escrow against a film that might not happen.",
               },
               {
                 q: "Who decides which pitches make the ballot?",
