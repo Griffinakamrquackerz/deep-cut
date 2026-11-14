@@ -205,7 +205,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Step 2 of 4</b></p>
+          <p className="slate"><b>Take 2 of 4</b></p>
           <h1 className="title-card rack-in mt-2.5 text-4xl">Where do you <em>watch?</em></h1>
           <p className="mt-1 text-sm text-dim">
             We&apos;ll badge every rec that&apos;s watchable tonight.
@@ -259,7 +259,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Step 3 of 4</b></p>
+          <p className="slate"><b>Take 3 of 4</b></p>
           <h1 className="title-card rack-in mt-2.5 text-4xl">Your <em>signature</em> film</h1>
           <p className="mt-1 text-sm text-dim">
             Choose your favorite film so we can customize your profile — it
@@ -358,7 +358,7 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Step 4 of 4</b></p>
+          <p className="slate"><b>Take 4 of 4</b></p>
           <h1 className="title-card rack-in mt-2.5 text-4xl">Pick your <em>marquee</em> name</h1>
           <p className="mt-1 text-sm text-dim">
             Your handle goes on your taste card and the community marquee — it&apos;s how
@@ -416,7 +416,7 @@ export default function OnboardingFlow() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-4 py-8">
       <div>
-        <p className="slate"><b>Step 1 of 4</b></p>
+        <p className="slate"><b>Take 1 of 4</b></p>
         <h1 className="title-card rack-in mt-2.5 text-4xl">Pick films you <em>love</em></h1>
         <p className="mt-1 text-sm text-dim">
           Any genre, any era. At least 8 — the more the sharper. Deep cuts and

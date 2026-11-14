@@ -4,6 +4,7 @@ import ProjectorIntro from "@/components/ProjectorIntro";
 import MarqueeToaster from "@/components/MarqueeToaster";
 import PushGate from "@/components/PushGate";
 import { currentUser } from "@/lib/supabase/server";
+import ReelEnd from "@/components/house/ReelEnd";
 
 export default async function TabsLayout({ children }: { children: React.ReactNode }) {
   // Signed-out visitors (landing page, shared member cards) get no app
@@ -19,7 +20,10 @@ export default async function TabsLayout({ children }: { children: React.ReactNo
           that asks lives on the Inbox, where the reason for it is on screen. */}
       <PushGate />
       {/* Extra bottom padding clears the raised Tonight reel in the tab bar. */}
-      <main className="px-4 pb-28 pt-4">{children}</main>
+      <main className="px-4 pb-28 pt-4">
+        {children}
+        <ReelEnd />
+      </main>
       <TabBar />
       {/* The tour walks you into Mixtapes, Community, You and Settings, so it
           has to outlive the page it started on. */}

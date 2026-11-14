@@ -20,6 +20,7 @@ import { SERVICES, type Service } from "@/lib/services";
 import { VIBES, vibeByKey } from "@/lib/vibes";
 import { gemLabel } from "@/lib/gem";
 import { byRecommendationPreference } from "@/lib/recommendation-quality";
+import RatingBand from "@/components/house/RatingBand";
 
 interface RecRow {
   id: string;
@@ -463,6 +464,15 @@ export default function TonightScreen({
           )}
         </HouseDark>
       ) : (
+        <>
+        {/* What's about to be shown, and to whom. */}
+        <RatingBand
+          compact
+          what="deal"
+          audience="your taste only"
+          label="Deep cuts"
+          fine="May contain subtitles, slow burns and feelings. Dealt by the house."
+        />
         <ul className="flex flex-col gap-4">
           {visible.map((rec, idx) => {
             const m = rec.movies;
@@ -522,11 +532,11 @@ export default function TonightScreen({
                     className="mt-1"
                     ratings={{ tmdb: m.tmdb_rating, imdb: m.imdb_rating, rt: m.rt_rating }}
                   />
-                  <button
-                    onClick={() => tapReason(rec)}
-                    className="mt-1.5 text-left text-base leading-snug italic text-amber"
-                  >
-                    {rec.reason}
+                  {/* The reason, as the card a video-store clerk tapes under
+                      a tape they need you to rent. */}
+                  <button onClick={() => tapReason(rec)} className="shelf-talker">
+                    <span className="shelf-talker-tag">★ Why it&apos;s yours</span>
+                    <span className="shelf-talker-line">{rec.reason}</span>
                   </button>
                   {m.overview && (
                     <p className="mt-1 line-clamp-2 text-xs text-dim">{m.overview}</p>
@@ -560,6 +570,7 @@ export default function TonightScreen({
             );
           })}
         </ul>
+        </>
       )}
 
       {visible.length > 0 && recs.length > visible.length && (

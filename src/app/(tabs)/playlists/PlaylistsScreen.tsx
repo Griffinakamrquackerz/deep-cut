@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { playlistProgress } from "@/lib/slug";
 import Confetti from "@/components/Confetti";
 import { sfxPop } from "@/lib/sfx";
+import { tapeHue } from "@/lib/tape";
 
 interface PlaylistRow {
   id: string;
@@ -22,17 +23,52 @@ interface PoolFilm {
   year: number | null;
 }
 
-function ProgressBar({ items }: { items: Array<{ crossed_off: boolean }> }) {
+// A mixtape, as it sits on the shelf: black shell, paper label, a stripe in
+// whatever colour the label printer had left, and how much of it has been
+// watched shown as tape wound onto the spool.
+function Tape({
+  href,
+  id,
+  name,
+  items,
+  meta,
+  sticker,
+  plain = false,
+}: {
+  href: string;
+  id: string;
+  name: string;
+  items: Array<{ crossed_off: boolean }>;
+  meta: string;
+  sticker?: string;
+  /** A green sticker rather than a red one — a tape somebody gave you. */
+  plain?: boolean;
+}) {
   const { done, total, pct } = playlistProgress(items);
   return (
-    <div className="mt-1.5">
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">
-        <div className="h-full rounded-full bg-avail" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-1 font-mono text-[0.6rem] text-dim">
-        {done}/{total} crossed off
-      </p>
-    </div>
+    <Link href={href} className="vhs" style={{ "--hue": tapeHue(id) } as React.CSSProperties}>
+      <span className="vhs-label">
+        <span className="vhs-title">{name}</span>
+        <span className="vhs-meta">
+          {meta} · {total} film{total === 1 ? "" : "s"}
+        </span>
+      </span>
+      <span className="vhs-side">
+        {sticker ? (
+          <span className={`vhs-sticker ${plain ? "vhs-sticker--plain" : ""}`}>{sticker}</span>
+        ) : (
+          <span>T-{String(total * 20).padStart(3, "0")}</span>
+        )}
+        <span className="flex flex-col items-end gap-1">
+          <span>
+            {done}/{total} crossed off
+          </span>
+          <span className="vhs-spool" aria-hidden>
+            <i style={{ width: `${pct}%` }} />
+          </span>
+        </span>
+      </span>
+    </Link>
   );
 }
 
@@ -254,30 +290,17 @@ export default function PlaylistsScreen({
             No mixtapes yet. Nobody forgets the person who made them a tape.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2.5">
             {sent.map((p) => (
               <li key={p.id}>
-                <Link
+                <Tape
                   href={`/playlists/${p.id}`}
-                  className="block rounded border border-line bg-surface p-3"
-                >
-                  <div className="flex justify-between">
-                    <span className="flex items-center gap-2 font-display text-lg text-cream">
-                      {p.name}
-                      {p.is_public === false && (
-                        <span className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.5rem] uppercase tracking-widest text-dim">
-                          🔒 Private
-                        </span>
-                      )}
-                    </span>
-                    {p.recipient_name && (
-                      <span className="font-mono text-[0.65rem] text-dim">
-                        for {p.recipient_name}
-                      </span>
-                    )}
-                  </div>
-                  <ProgressBar items={p.playlist_items} />
-                </Link>
+                  id={p.id}
+                  name={p.name}
+                  items={p.playlist_items}
+                  meta={p.recipient_name ? `for ${p.recipient_name}` : "from you"}
+                  sticker={p.is_public === false ? "Private" : undefined}
+                />
               </li>
             ))}
           </ul>
@@ -289,16 +312,18 @@ export default function PlaylistsScreen({
         {received.length === 0 ? (
           <p className="text-sm text-dim">Nothing in the mailbox yet.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2.5">
             {received.map((p) => (
               <li key={p.id}>
-                <Link
+                <Tape
                   href={`/p/${p.share_slug}`}
-                  className="block rounded border border-line bg-surface p-3"
-                >
-                  <span className="font-display text-lg text-cream">{p.name}</span>
-                  <ProgressBar items={p.playlist_items} />
-                </Link>
+                  id={p.id}
+                  name={p.name}
+                  items={p.playlist_items}
+                  meta="made for you"
+                  sticker="Be kind · rewind"
+                  plain
+                />
               </li>
             ))}
           </ul>

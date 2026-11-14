@@ -5,6 +5,7 @@ import Poster from "./Poster";
 import { playlistProgress } from "@/lib/slug";
 import Confetti from "./Confetti";
 import { sfxPop } from "@/lib/sfx";
+import { tapeHue } from "@/lib/tape";
 
 const REACTIONS = [
   { value: "loved", label: "♥ loved" },
@@ -97,15 +98,33 @@ export default function PlaylistDetail({
   return (
     <section className="flex flex-col gap-4 px-4 py-8">
       <Confetti trigger={confetti} />
-      <header>
-        <p className="slate"><b>A mixtape from {ownerName}
-          {recipientName ? ` · for ${recipientName}` : ""}</b></p>
-        <h1 className="title-card rack-in mt-2.5 text-4xl">{name.toUpperCase()}</h1>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface">
-          <div className="h-full rounded-full bg-avail" style={{ width: `${pct}%` }} />
+      {/* The tape itself: shell, paper label, and a window onto the spools.
+          Crossing films off winds tape from the left spool to the right, so
+          the progress bar is the thing a progress bar on a cassette always
+          was. */}
+      <header className="tape-face" style={{ "--hue": tapeHue(playlistId ?? name), "--wound": pct / 100 } as React.CSSProperties}>
+        <div className="tape-face-label">
+          <p className="tape-face-top">
+            <span>Deep Cut Video</span>
+            <span>
+              Side A · {total} film{total === 1 ? "" : "s"}
+            </span>
+          </p>
+          <h1 className="tape-face-title rack-in">{name}</h1>
+          <p className="tape-face-from">
+            A mixtape from {ownerName}
+            {recipientName ? ` · for ${recipientName}` : ""}
+          </p>
         </div>
-        <p className="mt-1 font-mono text-[0.65rem] text-dim">
-          {done}/{total} crossed off
+        <div className="tape-face-window" aria-hidden>
+          <i className="tape-spool tape-spool--feed" />
+          <span className="tape-face-count">
+            {done}/{total}
+          </span>
+          <i className="tape-spool tape-spool--take" />
+        </div>
+        <p className="tape-face-foot">
+          {done}/{total} crossed off{done === total && total > 0 ? " · be kind, rewind" : ""}
         </p>
       </header>
 

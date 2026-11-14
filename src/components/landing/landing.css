@@ -2227,3 +2227,13 @@
   color: var(--lp-light);
   text-shadow: 0 0 1px rgba(255, 241, 214, 0.9), 0 0 22px rgba(255, 214, 150, 0.34), 0 0 70px rgba(255, 180, 84, 0.2);
 }
+
+/* The green band, sized for the wall, and the credit roll in the footer. */
+.lp-band {
+  max-width: 52rem;
+  margin: 0 auto clamp(3rem, 7vw, 5.5rem);
+}
+.lp-credits-roll {
+  max-width: 34rem;
+  margin: 0 auto clamp(2rem, 5vw, 3.5rem);
+}

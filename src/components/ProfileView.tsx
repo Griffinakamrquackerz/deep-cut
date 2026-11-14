@@ -9,6 +9,8 @@ import SafetyActions from "@/components/SafetyActions";
 import TonightStatus from "@/components/TonightStatus";
 import type { TasteStats } from "@/lib/rank";
 import type { TonightCard } from "@/lib/tonight";
+import CreditRoll from "@/components/house/CreditRoll";
+import { tapeHue } from "@/lib/tape";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -197,26 +199,60 @@ export default function ProfileView(data: ProfileViewData) {
       {data.playlists.length > 0 && (
         <div>
           <p className="eyebrow mb-2">{data.isMe ? "Mixtapes you sealed" : "Mixtapes they sealed"}</p>
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2.5">
             {data.playlists.map((p) => (
               <li key={p.id}>
                 <Link
                   href={`/p/${p.share_slug}`}
-                  className="flex items-center justify-between rounded border border-line bg-surface p-3"
+                  className="vhs"
+                  style={{ "--hue": tapeHue(p.id) } as React.CSSProperties}
                 >
-                  <span className="flex items-center gap-2 font-display text-lg text-cream">
-                    {p.name}
-                    {data.isMe && !p.isPublic && (
-                      <span className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.5rem] uppercase tracking-widest text-dim">
-                        🔒 Private
-                      </span>
-                    )}
+                  <span className="vhs-label">
+                    <span className="vhs-title">{p.name}</span>
+                    <span className="vhs-meta">sealed by {name}</span>
                   </span>
-                  <span className="font-mono text-[0.65rem] text-dim">{p.itemCount} films ↗</span>
+                  <span className="vhs-side">
+                    {data.isMe && !p.isPublic ? (
+                      <span className="vhs-sticker">Private</span>
+                    ) : (
+                      <span>T-{String(p.itemCount * 20).padStart(3, "0")}</span>
+                    )}
+                    <span>
+                      <b>{p.itemCount}</b> film{p.itemCount === 1 ? "" : "s"} ↗
+                    </span>
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Every picture ends on its credits, and so does every member card:
+          the films they love get top billing, their taste gets the writing
+          credit, and whoever is reading gets thanked. Built from what's
+          already on the card — nothing here is new information. */}
+      {(data.lovedMovies.length > 0 || data.threads.length > 0) && (
+        <div>
+          <p className="eyebrow mb-2">The credits</p>
+          <CreditRoll
+            label={`Credits for ${name}`}
+            credits={[
+              { role: "a picture by", names: [name] },
+              ...(data.lovedMovies.length > 0
+                ? [{ role: "starring", names: data.lovedMovies.slice(0, 6).map((m) => m.title) }]
+                : []),
+              ...(data.signature ? [{ role: "signature film", names: [data.signature.title] }] : []),
+              ...(data.threads.length > 0
+                ? [{ role: "taste by", names: data.threads.map((t) => t.title) }]
+                : []),
+              ...(data.playlists.length > 0
+                ? [{ role: "mixtapes", names: data.playlists.slice(0, 4).map((p) => p.name) }]
+                : []),
+              { role: "special thanks", names: [data.isMe ? "everyone who lent you a tape" : "you, for reading this far"], you: true },
+            ]}
+            tail="No films were harmed in the making of this taste."
+          />
         </div>
       )}
 

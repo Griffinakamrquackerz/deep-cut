@@ -6,6 +6,7 @@ import SkipTheLine from "@/components/SkipTheLine";
 import SiteShell, { PageHero, Slate } from "@/components/site/SiteShell";
 import { PERKS, perkLine } from "@/lib/perks";
 import { goalCents, pointCap, sharePct } from "@/lib/fund";
+import CreditRoll from "@/components/house/CreditRoll";
 
 // The Indie Film Fund, explained end to end.
 //
@@ -159,6 +160,21 @@ export default function FundPage() {
               credit costs roughly what a producing credit costs, because handing out Executive Producer
               for pocket change makes the credit worthless to everybody who has one.
             </p>
+          </div>
+          {/* The ladder, as it will read when the picture ends. Built from the
+              tiers themselves, so a renamed credit renames itself here. */}
+          <div className="lp-col" style={{ marginTop: "clamp(2rem, 4vw, 3rem)" }} data-reveal="rise">
+            <CreditRoll
+              label="How the credits will read"
+              credits={[
+                { role: "a Deep Cut Original", names: ["the film you voted for"] },
+                { role: "financed by", names: ["the members"] },
+                ...[...new Set(PERKS.map((p) => p.credit).filter((c): c is string => !!c))]
+                  .reverse()
+                  .map((credit) => ({ role: credit.toLowerCase(), names: ["your name here"], you: true })),
+              ]}
+              tail="Credits start at $25. Every tier keeps everything below it."
+            />
           </div>
           <ul className="lp-perks" style={{ marginTop: "clamp(2rem, 4vw, 3rem)" }}>
             {PERKS.map((p) => (

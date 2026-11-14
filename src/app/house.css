@@ -1,0 +1,776 @@
+/* ════════════════════════════════════════════════════════════════════════
+   The set-pieces.
+
+   globals.css is the house style — what every screen is made of. This is the
+   furniture that makes it a night at the pictures rather than an app with a
+   dark theme: the green band before the feature, the snipe at intermission,
+   the credits at the end, the tape on the shelf, and what the screen says
+   when the reel goes missing.
+
+   Each one is a real thing from a real booth, drive-in or video store. Keep
+   it that way: if a new piece can't be traced to something that existed, it
+   is decoration, and decoration is what this replaced.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── The green band ────────────────────────────────────────────────────
+   "The following preview has been approved for…" — the card before every
+   trailer. Ours approves things for narrower audiences. */
+.rating-band {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  padding: clamp(1.25rem, 4.5vw, 2.6rem) clamp(1rem, 4vw, 2.5rem);
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgba(255, 255, 255, 0.08), transparent 70%),
+    #1d6a3c;
+  color: #fff;
+  text-align: center;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 30px 60px -30px rgba(0, 0, 0, 0.9), inset 0 0 90px rgba(0, 0, 0, 0.35);
+  animation: band-flicker 5.1s steps(1) infinite;
+}
+@keyframes band-flicker {
+  0%, 100% { filter: brightness(1); }
+  31% { filter: brightness(0.94); }
+  33% { filter: brightness(1.03); }
+  74% { filter: brightness(0.97); }
+  75% { filter: brightness(1); }
+}
+.rating-band-top,
+.rating-band-by {
+  font-size: clamp(0.6rem, 1.5vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.rating-band-top b { font-weight: 700; }
+.rating-band-aud {
+  margin: 0.45em 0;
+  font-size: clamp(1.25rem, 4.6vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.rating-band-box {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+  max-width: 34rem;
+  margin: clamp(1rem, 3vw, 1.75rem) auto 0;
+  border: 3px solid #fff;
+  background: #fff;
+  color: #111;
+  text-align: left;
+}
+.rating-band-code {
+  display: grid;
+  place-items: center;
+  padding: 0.3rem clamp(0.7rem, 2.5vw, 1.3rem);
+  background: #111;
+  color: #fff;
+  font-size: clamp(1.7rem, 5vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1;
+}
+.rating-band-detail {
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.8rem;
+}
+.rating-band-detail b {
+  font-size: clamp(0.72rem, 2vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rating-band-detail span {
+  font-size: clamp(0.6rem, 1.5vw, 0.78rem);
+  line-height: 1.3;
+}
+.rating-band--compact { padding: 1rem 0.9rem 1.1rem; }
+.rating-band--compact .rating-band-aud { font-size: clamp(1.05rem, 5.2vw, 1.5rem); }
+.rating-band--compact .rating-band-box { margin-top: 0.8rem; }
+.rating-band--compact .rating-band-code { font-size: 1.5rem; }
+
+/* ── End credits ───────────────────────────────────────────────────────
+   A crawl, in a window. Role in italics, name in caps, the way it has been
+   since somebody first thought to thank the caterer. */
+.credit-roll {
+  --dur: 30s;
+  position: relative;
+  height: clamp(13rem, 34vh, 17rem);
+  overflow: hidden;
+  border-radius: 6px;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(255, 236, 205, 0.06), transparent 70%), #080605;
+  box-shadow: inset 0 0 0 1px rgba(243, 233, 215, 0.08);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+  text-align: center;
+}
+.credit-roll-crawl {
+  display: grid;
+  gap: 1.5rem;
+  padding: 0 1rem;
+  animation: credit-crawl var(--dur) linear infinite;
+  will-change: transform;
+}
+.credit-roll:hover .credit-roll-crawl,
+.credit-roll:focus-within .credit-roll-crawl { animation-play-state: paused; }
+@keyframes credit-crawl {
+  from { transform: translateY(clamp(13rem, 34vh, 17rem)); }
+  to { transform: translateY(-100%); }
+}
+.credit-role {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-dim);
+}
+.credit-name {
+  margin-top: 0.3rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  line-height: 1.05;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  text-shadow: 0 0 18px rgba(255, 214, 150, 0.28);
+}
+.credit-name.is-you {
+  color: var(--color-amber);
+  text-shadow: 0 0 20px rgba(255, 180, 84, 0.5);
+}
+.credit-name a { color: inherit; }
+.credit-tail {
+  max-width: 26rem;
+  margin: 0.5rem auto 0;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  line-height: 1.8;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.credit-logo {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  letter-spacing: 0.08em;
+  color: var(--color-cream);
+}
+
+/* ── The billing block ─────────────────────────────────────────────────
+   The squeezed type at the foot of a one-sheet: small word for the job, tall
+   word for the person. */
+.billing {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 3.4vw, 1.35rem);
+  line-height: 1.45;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(243, 233, 215, 0.92);
+  text-wrap: balance;
+}
+.billing small {
+  font-family: var(--font-mono);
+  font-size: 0.5em;
+  letter-spacing: 0.08em;
+  color: var(--color-dim);
+}
+.billing a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 180, 84, 0.45);
+  text-underline-offset: 4px;
+}
+.billing a:hover { color: var(--color-amber); }
+
+/* ── The intermission snipe ────────────────────────────────────────────
+   Drive-in intermission reel: a clock counting down to showtime and a
+   suggestion that you visit the concession stand. */
+.snipe {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 1.1rem 1.1rem 1.2rem;
+  background:
+    radial-gradient(circle at 12% 50%, rgba(255, 180, 84, 0.22), transparent 42%),
+    repeating-conic-gradient(from 0deg at 12% 50%, rgba(255, 255, 255, 0.035) 0deg 6deg, transparent 6deg 12deg),
+    #3a1620;
+  border: 1px solid rgba(255, 180, 84, 0.35);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.45), 0 20px 40px -26px rgba(0, 0, 0, 0.9);
+}
+.snipe-clock {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 5.2rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--color-light);
+  background: conic-gradient(var(--color-amber) var(--left, 75%), rgba(12, 9, 8, 0.75) 0);
+  box-shadow: 0 0 22px rgba(255, 180, 84, 0.4);
+}
+.snipe-clock::before {
+  content: "";
+  position: absolute;
+  inset: 0.55rem;
+  border-radius: 50%;
+  background: #2a0f17;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.25);
+}
+.snipe-clock b {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 0.9;
+  color: var(--color-light);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.snipe-clock b small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.4rem;
+  letter-spacing: 0.14em;
+  color: var(--color-amber);
+}
+.snipe-kicker {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--color-amber);
+}
+.snipe-title {
+  margin-top: 0.25rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 6vw, 2.1rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  text-shadow: 2px 2px 0 #7a1c2c, 0 0 20px rgba(255, 214, 150, 0.25);
+}
+.snipe-line {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(243, 233, 215, 0.85);
+}
+.snipe-cta {
+  display: inline-block;
+  margin-top: 0.7rem;
+  border-radius: 3px;
+  background: var(--color-amber);
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-bg) !important;
+}
+
+/* ── The shelf talker ──────────────────────────────────────────────────
+   The index card a video-store clerk tapes under a tape they need you to
+   rent. Every recommendation's reason is one. */
+.shelf-talker {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.55rem 0.7rem 0.6rem;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, rgba(60, 40, 25, 0.08) 21px 22px),
+    linear-gradient(175deg, #f6ecd9, #e9d9bb);
+  color: #2a1c15;
+  text-align: left;
+  box-shadow: 0 10px 18px -10px rgba(0, 0, 0, 0.9);
+  rotate: -0.8deg;
+  transition: rotate 0.2s ease, transform 0.2s ease;
+}
+.shelf-talker:hover { rotate: 0deg; transform: translateY(-1px); }
+.shelf-talker::before {
+  /* the tape */
+  content: "";
+  position: absolute;
+  top: -0.45rem;
+  right: 1.1rem;
+  width: 2.6rem;
+  height: 0.95rem;
+  rotate: 4deg;
+  background: rgba(255, 214, 150, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.shelf-talker-tag {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a8371d;
+}
+.shelf-talker-line {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.12rem;
+  line-height: 1.22;
+}
+li:nth-child(even) > div > .shelf-talker { rotate: 0.7deg; }
+li:nth-child(even) > div > .shelf-talker:hover { rotate: 0deg; }
+
+/* ── The tape ──────────────────────────────────────────────────────────
+   A mixtape is a VHS spine on a shelf: black shell, paper label, a stripe in
+   whatever colour the label printer had left. --hue is set per tape. */
+.vhs {
+  --hue: 28;
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.9rem minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 0.7rem;
+  min-height: 4.4rem;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.5)),
+    #14100e;
+  border: 1px solid #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 12px 20px -14px rgba(0, 0, 0, 0.95);
+  transition: transform 0.18s ease;
+}
+.vhs:hover { transform: translateX(4px); }
+/* the grip ridges moulded into the end of the shell */
+.vhs::before {
+  content: "";
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0 2px, transparent 2px 5px);
+}
+.vhs-label {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.4rem 0.7rem 0.45rem 1.5rem;
+  border-radius: 2px;
+  background: linear-gradient(175deg, #f6ecd9, #e7d6b6);
+  color: #2a1c15;
+}
+.vhs-label::before {
+  /* the printed stripes down the label's edge */
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1rem;
+  border-radius: 2px 0 0 2px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--hue) 78% 52%) 0 34%,
+    hsl(calc(var(--hue) + 38) 80% 60%) 34% 67%,
+    hsl(calc(var(--hue) + 300) 55% 42%) 67%
+  );
+}
+.vhs-title {
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vhs-meta {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.vhs-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.vhs-side b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--color-cream);
+}
+.vhs-sticker {
+  rotate: -5deg;
+  border-radius: 2px;
+  background: var(--color-ticket);
+  padding: 0.15rem 0.35rem;
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+  color: var(--color-cream);
+  white-space: nowrap;
+}
+.vhs-sticker--plain { background: #2f5c46; }
+/* tape left on the spool */
+.vhs-spool {
+  width: 4.2rem;
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.vhs-spool i {
+  display: block;
+  height: 100%;
+  background: var(--color-avail);
+}
+
+/* The same tape, face up, on its own page. --wound is 0–1: how much of it
+   has been watched, and so how much has crossed from the feed spool to the
+   take-up. */
+.tape-face {
+  --hue: 28;
+  --wound: 0;
+  border-radius: 10px;
+  padding: 0.7rem 0.7rem 0.6rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 14%, transparent 86%, rgba(0, 0, 0, 0.55)),
+    #14100e;
+  border: 1px solid #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 40px -24px rgba(0, 0, 0, 0.95);
+}
+.tape-face-label {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem 0.9rem;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(60, 40, 25, 0.07) 25px 26px),
+    linear-gradient(175deg, #f6ecd9, #e7d6b6);
+  color: #2a1c15;
+}
+.tape-face-label::after {
+  /* the printed stripes along the foot of the label */
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 0.5rem;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--hue) 78% 52%) 0 34%,
+    hsl(calc(var(--hue) + 38) 80% 60%) 34% 67%,
+    hsl(calc(var(--hue) + 300) 55% 42%) 67%
+  );
+}
+.tape-face-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.tape-face-title {
+  margin-top: 0.5rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.tape-face-from {
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.tape-face-window {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4.6rem;
+  margin: 0.6rem auto 0;
+  max-width: 17rem;
+  padding: 0 0.6rem;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #060504, #171210);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 0 18px rgba(0, 0, 0, 0.9);
+}
+.tape-spool {
+  /* tape wound on: a brown disc whose size is the tape, round a white hub */
+  --r: 0.5;
+  display: block;
+  width: calc(1.5rem + var(--r) * 2.3rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #f3e9d7 0 0.34rem, #1a1412 0.36rem 0.62rem, transparent 0.64rem),
+    repeating-radial-gradient(circle, #4a3324 0 1.5px, #2f2018 1.5px 3px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8);
+  animation: reel-spin 9s linear infinite;
+}
+.tape-spool--feed { --r: calc(1 - var(--wound)); }
+.tape-spool--take { --r: var(--wound); }
+.tape-face-count {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  color: var(--color-amber);
+}
+.tape-face-foot {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+
+/* ── End of reel ───────────────────────────────────────────────────────
+   Tail leader at the foot of every screen in the app. Be kind. */
+.reel-end {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 2.5rem;
+  padding: 1.25rem 0 0.5rem;
+  border-top: 1px dashed var(--color-line);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.reel-end:hover { color: var(--color-amber); }
+.reel-end-marks {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+.reel-end-marks i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0.6;
+}
+.reel-end-marks i:nth-child(3) {
+  width: 0.9rem;
+  height: 0.9rem;
+  opacity: 1;
+  background: radial-gradient(circle at 40% 38%, var(--color-light), rgba(255, 180, 84, 0.6) 45%, transparent 68%);
+  border: 0;
+}
+.reel-end b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.15rem;
+  letter-spacing: 0.14em;
+  color: var(--color-cream);
+}
+
+/* ── The splice between screens ────────────────────────────────────────
+   Changing tabs is a cut: the frame line slips through the gate and a
+   couple of frames flash by. A quarter of a second, then it's out of the way. */
+.frame-slip {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* the flash */
+.frame-slip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-light);
+  opacity: 0;
+  animation: frame-flash 0.28s steps(1) both;
+}
+/* the frame line */
+.frame-slip::after {
+  content: "";
+  position: absolute;
+  inset: -30px 0 auto 0;
+  height: 26px;
+  background: #050403;
+  box-shadow: 0 0 0 2px rgba(255, 241, 214, 0.22);
+  animation: frame-line 0.28s linear both;
+}
+@keyframes frame-flash {
+  0% { opacity: 0.16; }
+  30% { opacity: 0; }
+  55% { opacity: 0.07; }
+  70%, 100% { opacity: 0; }
+}
+@keyframes frame-line {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(100vh + 60px)); }
+}
+/* The front door has its own, much longer, opening. */
+.frame-slip:has(+ .lp) { display: none; }
+
+/* The clapper comes down on every slate. */
+.slate::before,
+.lp-slate::before {
+  transform-origin: 0 100%;
+  animation: clap 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) 0.15s both;
+}
+@keyframes clap {
+  from { transform: rotate(-24deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* ── Reel missing / the film broke ─────────────────────────────────────
+   Two cards a projectionist keeps by the booth window. */
+.card-page {
+  position: relative;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  isolation: isolate;
+}
+.card-page-in {
+  width: 100%;
+  max-width: 32rem;
+  /* the whole card weaves in the gate, harder than usual — it's a bad print */
+  animation: card-weave 0.5s steps(1) infinite;
+}
+@keyframes card-weave {
+  0% { transform: translate(0, 0) rotate(-0.4deg); }
+  20% { transform: translate(1px, -2px) rotate(-0.3deg); }
+  40% { transform: translate(-1px, 1px) rotate(-0.5deg); }
+  60% { transform: translate(1px, 2px) rotate(-0.35deg); }
+  80% { transform: translate(-2px, -1px) rotate(-0.45deg); }
+}
+.card-frame {
+  border: 3px double rgba(255, 241, 214, 0.7);
+  padding: clamp(1.75rem, 7vw, 3rem) clamp(1rem, 5vw, 2.5rem);
+  background: radial-gradient(90% 90% at 50% 45%, rgba(255, 236, 205, 0.08), transparent 75%);
+}
+.card-big {
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 17vw, 6.5rem);
+  line-height: 0.86;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  text-shadow: 0 0 1px rgba(255, 241, 214, 0.9), 0 0 24px rgba(255, 214, 150, 0.35), 0 0 70px rgba(255, 180, 84, 0.2);
+}
+.card-sorry {
+  margin-top: 1rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.2rem, 4.6vw, 1.6rem);
+  line-height: 1.2;
+  color: var(--color-cream);
+}
+.card-signed {
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.card-note {
+  margin: 1.5rem auto 0;
+  max-width: 24rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.7;
+  color: var(--color-dim);
+}
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.card-btn {
+  border-radius: 3px;
+  padding: 0.8rem 1.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.card-btn--amber { background: var(--color-amber); color: var(--color-bg); }
+.card-btn--ghost { border: 1px solid rgba(243, 233, 215, 0.3); color: var(--color-cream); }
+/* The burn: nitrate catching in the gate, eating out from the hot spot. */
+.film-burn {
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 58% 42%, #fff8e6 0, #ffd27a 6%, #ff8a2b 13%, #a3300f 21%, rgba(60, 14, 6, 0.9) 30%, transparent 46%),
+    radial-gradient(circle at 30% 70%, #ffe7b0 0, #ff9a3a 5%, #8a2a10 12%, transparent 24%);
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  animation: burn 2.6s cubic-bezier(0.3, 0, 0.2, 1) both, burn-breathe 1.7s ease-in-out 2.6s infinite alternate;
+}
+@keyframes burn {
+  0% { transform: scale(0.05); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: scale(1); opacity: 0.55; }
+}
+@keyframes burn-breathe {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 0.4; transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-band,
+  .card-page-in,
+  .film-burn,
+  .slate::before,
+  .lp-slate::before,
+  .tape-spool { animation: none !important; }
+  .frame-slip { display: none; }
+  .credit-roll {
+    height: auto;
+    max-height: 22rem;
+    overflow-y: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    padding-block: 1.5rem;
+  }
+  .credit-roll-crawl { animation: none !important; }
+  .film-burn { opacity: 0.4; }
+}

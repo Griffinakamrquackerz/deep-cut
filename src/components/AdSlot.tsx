@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import Link from "next/link";
+import Snipe from "@/components/house/Snipe";
 
 // Ad slot in the Letterboxd style. Two modes:
 // - publisher id AND ad-unit id both configured: a real AdSense unit.
@@ -80,17 +80,16 @@ export default function AdSlot({
   if (!CLIENT || !AD_UNIT) {
     const ad = HOUSE_ADS[index % HOUSE_ADS.length];
     return (
-      <div className={`film-card rounded-lg p-4 text-center ${className}`}>
-        <p className="eyebrow">{ad.eyebrow}</p>
-        <p className="glow-amber mt-1 font-display text-2xl text-amber">{ad.title}</p>
-        <p className="mt-1 text-xs text-dim">{ad.line}</p>
-        <Link
-          href={ad.href}
-          className="mt-3 inline-block rounded border border-amber px-4 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-amber"
-        >
-          {ad.cta} →
-        </Link>
-      </div>
+      // The drive-in intermission reel: a clock counting down to showtime and
+      // a suggestion about what to do with the ten minutes.
+      <Snipe
+        className={className}
+        kicker={ad.eyebrow}
+        title={ad.title}
+        line={ad.line}
+        href={ad.href}
+        cta={ad.cta}
+      />
     );
   }
 

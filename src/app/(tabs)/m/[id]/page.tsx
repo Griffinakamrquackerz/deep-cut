@@ -150,23 +150,9 @@ export default async function MoviePage({
 
       <p className="text-sm leading-relaxed text-cream/90">{movie.overview}</p>
 
-      {credits.crew.length > 0 && (
-        <div>
-          <p className="eyebrow mb-2">Crew</p>
-          <ul className="flex flex-col gap-1">
-            {credits.crew.map((c) => (
-              <li key={`${c.id}-${c.job}`} className="text-sm text-cream">
-                <span className="font-mono text-[0.6rem] uppercase tracking-wider text-dim">{c.job}</span>{" "}
-                {c.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {credits.cast.length > 0 && (
         <div>
-          <p className="eyebrow mb-2">Cast</p>
+          <p className="eyebrow mb-2">Starring</p>
           <ul className="flex gap-3 overflow-x-auto pb-1">
             {credits.cast.map((c) => (
               <li key={c.id} className="w-20 shrink-0">
@@ -196,20 +182,19 @@ export default async function MoviePage({
         </div>
       )}
 
+      {/* The billing block — the squeezed type at the foot of a one-sheet,
+          small word for the job, tall word for the person. This page used to
+          list the crew twice (once plain, once linked); it's once now. */}
       {credits.crew.length > 0 && (
-        <div>
-          <p className="eyebrow mb-2">Crew</p>
-          <ul className="flex flex-col gap-1">
-            {credits.crew.map((c) => (
-              <li key={`${c.id}-${c.job}`} className="font-mono text-[0.7rem] text-dim">
-                {c.job} —{" "}
-                <Link href={`/person/${c.id}`} className="text-amber underline">
-                  {c.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <p className="billing border-y border-line py-4 text-center">
+          {credits.crew.map((c, i) => (
+            <span key={`${c.id}-${c.job}`}>
+              {i > 0 ? " " : ""}
+              <small>{c.job.toLowerCase()}</small>{" "}
+              <Link href={`/person/${c.id}`}>{c.name}</Link>
+            </span>
+          ))}
+        </p>
       )}
 
       {user && <MovieActions movieId={movie.id} title={movie.title} />}

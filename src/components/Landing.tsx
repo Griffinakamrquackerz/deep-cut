@@ -15,6 +15,7 @@ import DealDemo from "@/components/landing/DealDemo";
 import { goalCents, pointCap, sharePct } from "@/lib/fund";
 import { CHANNELS } from "@/lib/shorts";
 import "@/components/landing/landing.css";
+import RatingBand from "@/components/house/RatingBand";
 
 // The front door.
 //
@@ -165,6 +166,16 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
         {/* ══════════ REEL TWO — the double feature ══════════ */}
         <section id="feature" aria-labelledby="feature-title" className="lp-section">
           <div className="lp-wrap">
+            {/* The card before every trailer ever cut, approving this one for
+                a narrower audience than usual. */}
+            <div className="lp-band" data-reveal="rise">
+              <RatingBand
+                what="double feature"
+                audience="people who stay through the credits"
+                label="Deep cuts only"
+                fine="Some films may be unknown to your friends. Viewer discretion is the whole point."
+              />
+            </div>
             <div className="lp-double-head">
               <div>
                 <Slate reel="Reel 02">The double feature</Slate>
