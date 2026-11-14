@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s · Deep Cut",
   },
   description:
-    "Independent short films and hidden gems. Watch, discover, and fall in love with movies all over again.",
+    "Watch free independent short films and discover movies matched to your taste.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     siteName: "Deep Cut",
     title: "Deep Cut — movies you haven't met yet",
     description:
-      "Independent short films and hidden gems. Watch, discover, and fall in love with movies all over again.",
+      "Watch free independent short films and discover movies matched to your taste.",
     url: SITE_URL,
   },
   twitter: {

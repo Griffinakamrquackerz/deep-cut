@@ -197,3 +197,20 @@ export const HOUSE_CANON: Record<string, CanonPick[]> = {
     { t: "Free Solo", y: 2018 },
   ],
 };
+
+// A cross-section of the programmer's shelf for the public front door.
+const FEATURED_NOTES: Record<string, string> = {
+  "House": "A schoolgirl visits her aunt's house with friends. The house has other plans.",
+  "After Hours": "One wrong turn sends a word processor through a wildly unpredictable New York night.",
+  "Paris, Texas": "A man emerges from the desert and tries to reconnect with the family he left behind.",
+  "Coherence": "A dinner party unravels when a passing comet turns an ordinary night into a puzzle.",
+  "Phantom of the Paradise": "A betrayed composer haunts a rock palace in this glam-rock fever dream.",
+  "Le Samouraï": "A meticulous hitman finds himself hunted after a job leaves a witness.",
+  "Columbus": "Two strangers connect over architecture and the choices keeping them in place.",
+  "Daisies": "Two young women decide to misbehave in a playful, anarchic revolt against the world around them.",
+};
+
+export const FEATURED_CANON = Object.entries(FEATURED_NOTES).flatMap(([title, note]) => {
+  const pick = Object.values(HOUSE_CANON).flat().find((film) => film.t === title);
+  return pick ? [{ ...pick, note }] : [];
+});

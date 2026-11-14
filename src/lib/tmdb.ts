@@ -95,9 +95,13 @@ function authParams(): { url: (path: string, qs?: Record<string, string>) => str
   };
 }
 
-async function tmdbFetch<T>(path: string, qs: Record<string, string> = {}): Promise<T | null> {
+async function tmdbFetch<T>(
+  path: string,
+  qs: Record<string, string> = {},
+  signal?: AbortSignal,
+): Promise<T | null> {
   const { url, headers } = authParams();
-  const res = await fetch(url(path, qs), { headers, next: { revalidate: 0 } });
+  const res = await fetch(url(path, qs), { headers, signal, next: { revalidate: 0 } });
   if (!res.ok) {
     if (res.status === 404) return null;
     throw new Error(`TMDB ${res.status} on ${path}`);
@@ -118,13 +122,13 @@ interface TmdbSearchResult {
   }>;
 }
 
-export async function searchMovies(query: string) {
+export async function searchMovies(query: string, signal?: AbortSignal) {
   const data = await tmdbFetch<TmdbSearchResult>("/search/movie", {
     query,
     include_adult: "false",
     language: "en-US",
     page: "1",
-  });
+  }, signal);
   return (data?.results ?? []).map((r) => ({
     id: r.id,
     title: r.title,
