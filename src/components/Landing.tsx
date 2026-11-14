@@ -79,7 +79,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
             <span className="text-cream">FAVORITE.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-cream/90">
-            Free short films and movie recommendations matched to your taste.
+            Free short films and taste-matched hidden gems. Member contributions help fund independent features.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3">
             {doorOpen ? (
