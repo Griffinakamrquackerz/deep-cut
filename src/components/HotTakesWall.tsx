@@ -253,7 +253,7 @@ export default function HotTakesWall({
                   type="search"
                   value={query}
                   onChange={(e) => void search(e.target.value)}
-                  placeholder="Which film are we fighting about?"
+                  placeholder="Which film is this about?"
                   className="w-full rounded border border-line bg-bg px-3 py-2 text-sm text-cream placeholder:text-dim/60"
                 />
                 {hits.length > 0 && (
@@ -284,8 +284,8 @@ export default function HotTakesWall({
             onChange={(e) => setBody(e.target.value.slice(0, TAKE_MAX))}
             placeholder={
               film
-                ? `Your most indefensible take on ${film.title}…`
-                : "Pick a film, then light the match…"
+                ? `Your take on ${film.title}…`
+                : "Pick a film first…"
             }
             rows={3}
             className="w-full rounded border border-line bg-bg px-3 py-2 text-sm text-cream placeholder:text-dim/60"
@@ -301,7 +301,7 @@ export default function HotTakesWall({
               disabled={!film || body.trim().length < 2 || posting}
               className="rounded bg-ticket px-4 py-2 font-mono text-xs font-medium uppercase tracking-widest text-cream disabled:opacity-40"
             >
-              {posting ? "Striking match…" : "🔥 Post it"}
+              {posting ? "Posting…" : "🔥 Post it"}
             </button>
           </div>
         </div>
@@ -318,14 +318,16 @@ export default function HotTakesWall({
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        // The wall is cork, and every take is a comment card pinned to it.
+        <div className="cork">
+        <ul>
           {takes.map((t) => {
             const name = t.author.handle
               ? `@${t.author.handle}`
               : (t.author.displayName ?? "someone");
             const scorching = t.fires >= 3;
             return (
-              <li key={t.id} className="film-card relative rounded-lg p-3">
+              <li key={t.id} className="pinned">
                 {scorching && (
                   <span className="verdict-stamp pointer-events-none absolute -right-1 top-2 z-10 rotate-[8deg] text-sm">
                     SCORCHING
@@ -479,7 +481,7 @@ export default function HotTakesWall({
                               onChange={setDraft}
                               onSubmit={() => void sendBanter(t)}
                               maxLength={TAKE_MAX}
-                              placeholder="Talk your talk… @ to tag someone"
+                              placeholder="Reply… @ to tag someone"
                             />
                             <button
                               onClick={() => void sendBanter(t)}
@@ -498,6 +500,7 @@ export default function HotTakesWall({
             );
           })}
         </ul>
+        </div>
       )}
     </div>
   );

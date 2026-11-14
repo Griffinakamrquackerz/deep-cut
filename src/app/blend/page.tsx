@@ -3,7 +3,7 @@ import BlendGame from "./BlendGame";
 
 export const metadata: Metadata = {
   title: "This Meets That — Deep Cut",
-  description: "Combine two or three films. See what crawls out.",
+  description: "Splice two or three films together. See what plays.",
 };
 
 // Public like the other two games — no account needed to play.

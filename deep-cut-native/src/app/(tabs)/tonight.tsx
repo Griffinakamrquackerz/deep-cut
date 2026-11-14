@@ -340,8 +340,10 @@ export default function Tonight() {
           <RatingBand
             what="deal"
             audience="your taste only"
-            label="Deep cuts"
-            fine="For subtitles, long takes and unresolved endings."
+            label="Dealt tonight"
+            fine={`${recs.length} film${recs.length === 1 ? "" : "s"} off your shelf. ${
+              depth === 3 ? "Niche and deeper" : depth === 4 ? "Obscure and deeper" : "Deep cuts only"
+            }.`}
           />
         )}
       </View>

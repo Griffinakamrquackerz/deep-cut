@@ -2,28 +2,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { IconBooth, IconClapper, IconPopcorn, IconTape, IconTicket } from "@/components/house/TabIcons";
 
 const LEFT_TABS = [
-  { href: "/playlists", label: "Mixtapes", glyph: "✉", usher: "mixtapestab" },
-  { href: "/lobby", label: "Community", glyph: "🍿", usher: "communitytab" },
+  { href: "/playlists", label: "Mixtapes", Icon: IconTape, usher: "mixtapestab" },
+  { href: "/lobby", label: "Community", Icon: IconPopcorn, usher: "communitytab" },
 ] as const;
 
 const RIGHT_TABS = [
-  { href: "/you", label: "You", glyph: "🎟", usher: "youtab" },
-  { href: "/settings", label: "Settings", glyph: "🎛", usher: "settingstab" },
+  { href: "/you", label: "You", Icon: IconTicket, usher: "youtab" },
+  { href: "/settings", label: "Settings", Icon: IconBooth, usher: "settingstab" },
 ] as const;
 
 function SideTab({
   href,
   label,
-  glyph,
+  Icon,
   active,
   usher,
   badge = 0,
 }: {
   href: string;
   label: string;
-  glyph: string;
+  Icon: () => React.ReactElement;
   active: boolean;
   usher?: string;
   /** Unread things waiting behind this tab. */
@@ -40,8 +41,8 @@ function SideTab({
       }`}
     >
       <span className="relative">
-        <span aria-hidden className={`block text-base leading-none ${active ? "wiggle" : "grayscale"}`}>
-          {glyph}
+        <span aria-hidden className={`block ${active ? "wiggle" : ""}`}>
+          <Icon />
         </span>
         {badge > 0 && (
           <span
@@ -121,8 +122,8 @@ export default function TabBar() {
               tonightActive ? "reel-spin" : ""
             }`}
           />
-          <span aria-hidden className="text-xl leading-none">
-            🎬
+          <span aria-hidden className="[&>svg]:h-6 [&>svg]:w-6">
+            <IconClapper />
           </span>
           <span className="font-mono text-[0.55rem] font-medium uppercase tracking-[0.15em]">
             Tonight

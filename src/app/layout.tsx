@@ -7,6 +7,7 @@ import { siteUrl } from "@/lib/site";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import "./globals.css";
 import "./house.css";
+import "./platform.css";
 
 const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
 const plexMono = IBM_Plex_Mono({

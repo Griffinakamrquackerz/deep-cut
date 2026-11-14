@@ -55,12 +55,12 @@ const STAMP_SLAM = new Keyframe({
 }).duration(550);
 
 const DELIBERATIONS = [
-  "consulting the ledger…",
-  "flipping a two-headed coin…",
-  "polling the back row…",
-  "checking who paid for snacks…",
-  "overruling your worst instincts…",
-  "cross-referencing the deep cuts…",
+  "reading both sheets…",
+  "comparing the answers…",
+  "striking what neither of you would watch…",
+  "checking what's on tonight…",
+  "drawing up the docket…",
+  "the house is deliberating…",
 ];
 
 function toAnswers(name: string, sheet: Sheet): SettleAnswers {

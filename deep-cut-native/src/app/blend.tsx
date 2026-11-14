@@ -195,7 +195,7 @@ interface BlendPick {
 // without lying — a slow model just stays "something's moving".
 const EXAMPLE_ROTATE_MS = 3000;
 
-const SPLICE_STAGES = ["Reading the DNA…", "Crossing the strands…", "Something's moving…"];
+const SPLICE_STAGES = ["Pulling both prints…", "Finding the cut point…", "Making the splice…"];
 
 /** A waiting slot. The next one to fill breathes amber so it reads as live. */
 function EmptySlot({ live, optional }: { live: boolean; optional: boolean }) {
@@ -310,7 +310,7 @@ export default function Blend() {
     if (!res.ok) {
       setError("The splice didn't take. Try again.");
     } else if (!res.data?.picks?.length) {
-      setError("No offspring survived. Swap one out.");
+      setError("The splice didn't hold. Swap one out.");
     } else {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPicks(res.data.picks);
@@ -340,7 +340,7 @@ export default function Blend() {
             <Text style={styles.close}>✕</Text>
           </Pressable>
         </View>
-        <Text style={styles.lead}>Combine two or three. See what crawls out.</Text>
+        <Text style={styles.lead}>Splice two or three films together. See what plays.</Text>
 
         {/* The bench. Always three slots, filled or waiting — the shape of the
             game is visible before you've done anything, and the next slot to
@@ -498,7 +498,7 @@ export default function Blend() {
         {/* The offspring */}
         {picks && (
           <View style={{ marginTop: 22 }}>
-            <Eyebrow>The offspring</Eyebrow>
+            <Eyebrow>What came out</Eyebrow>
             <View style={{ gap: 12, marginTop: 10 }}>
               {picks.map((p, i) => (
                 <Animated.View

@@ -195,13 +195,15 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
           with no campaign doesn't leave a stray gap between cards. */}
       <HouseCall />
 
-      <div className="flex gap-1.5">
+      {/* The felt letterboard over the concession stand: four rooms off the
+          lobby, in white letters on black. */}
+      <div className="felt" role="group" aria-label="Lobby sections">
         {(
           [
-            { key: "feed", label: "☰ The marquee" },
-            { key: "takes", label: "🔥 Hot takes" },
-            { key: "people", label: "★ People" },
-            { key: "inbox", label: "✉ Inbox" },
+            { key: "feed", label: "Marquee", sub: "who's watching" },
+            { key: "takes", label: "Takes", sub: "the wall" },
+            { key: "people", label: "People", sub: "find them" },
+            { key: "inbox", label: "Inbox", sub: "for you" },
           ] as const
         ).map((t) => (
           <button
@@ -212,15 +214,12 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
               if (t.key === "inbox") setUnread(0);
             }}
             aria-pressed={view === t.key}
-            className={`relative rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider ${
-              view === t.key
-                ? "border-amber bg-surface text-amber glow-amber"
-                : "border-line bg-surface text-dim"
-            }`}
+            className="relative"
           >
             {t.label}
+            <small>{t.sub}</small>
             {t.key === "inbox" && unread > 0 && (
-              <span className="absolute -right-1 -top-1 min-w-[1.1rem] rounded-full bg-ticket px-1 text-center font-mono text-[0.55rem] leading-[1.1rem] text-cream">
+              <span className="absolute right-1 top-1 min-w-[1.1rem] rounded-full bg-ticket px-1 text-center font-mono text-[0.55rem] leading-[1.1rem] text-cream">
                 {unread > 9 ? "9+" : unread}
               </span>
             )}

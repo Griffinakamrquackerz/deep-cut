@@ -176,16 +176,20 @@ export default function FundPage() {
               tail="Credits start at $25. Every tier keeps everything below it."
             />
           </div>
-          <ul className="lp-perks" style={{ marginTop: "clamp(2rem, 4vw, 3rem)" }}>
+          {/* The ladder, as the felt board over the snack bar: what it is,
+              a row of dots, what it costs. Same tiers, same words. */}
+          <ul className="menu-board" style={{ marginTop: "clamp(2rem, 4vw, 3rem)" }}>
             {PERKS.map((p) => (
-              <li key={p.minCents} className="lp-perk" data-reveal="rise">
-                <p className="lp-perk-price">{money(p.minCents)}+</p>
+              <li key={p.minCents} className="menu-row" data-reveal="rise">
                 <div>
-                  <p className="lp-perk-name">{p.name}</p>
-                  {p.credit && <p className="lp-perk-credit">Credited as {p.credit}</p>}
-                  <p className="lp-perk-line">{perkLine(p, goal)}</p>
+                  <p className="menu-line">
+                    <span>{p.name}</span>
+                    <b>{money(p.minCents)}+</b>
+                  </p>
+                  {p.credit && <p className="menu-credit">Credited as {p.credit}</p>}
+                  <p className="menu-note">{perkLine(p, goal)}</p>
                 </div>
-                <ul>
+                <ul className="menu-adds">
                   {p.adds.map((a) => (
                     <li key={a}>
                       <span>{a}</span>

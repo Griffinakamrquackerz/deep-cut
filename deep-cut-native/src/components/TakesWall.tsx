@@ -231,7 +231,7 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Which film is catching strays?"
+                placeholder="Which film is this about?"
                 placeholderTextColor={colors.dim}
                 style={styles.input}
               />
@@ -367,7 +367,7 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
                       value={draft}
                       onChange={setDraft}
                       maxLength={TAKE_MAX}
-                      placeholder="Talk your talk… @ to tag"
+                      placeholder="Reply… @ to tag"
                       style={[styles.input, { paddingVertical: 8 }]}
                     />
                     <Pressable

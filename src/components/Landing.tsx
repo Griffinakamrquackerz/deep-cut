@@ -173,7 +173,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 what="double feature"
                 audience="people who stay through the credits"
                 label="Deep cuts only"
-                fine="For films you haven't heard of yet. No prior viewing required."
+                fine="Feature one: the programming. Feature two: the greenlight."
               />
             </div>
             <div className="lp-double-head">
