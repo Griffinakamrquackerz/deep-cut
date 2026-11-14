@@ -9,7 +9,7 @@ import { haptic } from "@/lib/sfx";
 // The line exists to throttle signups, not to punish anybody, so there's no
 // reason a person who wants in now can't just be let in now. The money isn't a
 // queue-jumping fee dressed up as support either — it goes through the exact
-// same door as every other donation: 60% into the Fund, and it earns the same
+// same door as every other points purchase: 60% into the Fund, and it earns the same
 // votes and the same perks at the same tiers. Somebody who gives $25 to skip
 // the line gets their name in the credits, same as somebody who gives $25 after
 // they're already inside. That's the honest version, and it's also the reason
@@ -83,7 +83,7 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
     >
       <p className="eyebrow text-ticket">Skip the line</p>
       <p className="mt-1.5 text-[0.8rem] leading-relaxed text-cream">
-        Support the house and we&apos;ll seat you tonight. Your ticket email
+        Buy points and we&apos;ll seat you tonight. Your ticket email
         lands within a minute of paying.
       </p>
 
@@ -112,8 +112,8 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
         {tier ? <span className="text-amber">{tier.name}</span> : null}
         {tier?.credit ? ` · credited as ${tier.credit}` : null}
         <br />
-        {Math.floor(cents / 100)} vote{cents >= 200 ? "s" : ""} ·{" "}
-        {premiumMonthsFor(cents)} month of the full app · 60% into the Fund
+        {Math.floor(cents / 100)} points · {Math.floor(cents / 100)} votes ·{" "}
+        {premiumMonthsFor(cents) ? "30 days of premium · " : ""}60% into the Fund
       </p>
 
       <input
@@ -132,7 +132,7 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
         disabled={busy}
         className="mt-2 w-full rounded bg-amber py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-bg disabled:opacity-60"
       >
-        {busy ? "Opening the till…" : `Support ${money(cents)} · get seated`}
+        {busy ? "Opening the till…" : `Buy points for ${money(cents)} · get seated`}
       </button>
 
       {error && (

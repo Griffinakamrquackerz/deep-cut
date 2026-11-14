@@ -43,7 +43,7 @@ async function stripeGet<T>(path: string): Promise<T> {
 
 const TRIAL_DAYS = 90; // the 3-month free trial
 
-export type BalconyPlan = "monthly" | "lifetime" | "support" | "donation";
+export type BalconyPlan = "monthly" | "lifetime" | "support" | "donation" | "points";
 
 /**
  * Floor for pay-what-you-want support.
@@ -101,15 +101,19 @@ export async function createSkipLineSession(opts: {
 
   return stripePost<{ url: string }>("/checkout/sessions", {
     mode: "payment",
+    "managed_payments[enabled]": "false",
     customer_email: email,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": CHECKOUT_CURRENCY,
     "line_items[0][price_data][unit_amount]": String(cents),
     "line_items[0][price_data][product_data][name]":
-      "Deep Cut — Indie Film Fund support (seated tonight)",
+      "Deep Cut — digital voting points (seated tonight)",
+    "line_items[0][price_data][product_data][description]":
+      "Points for the current film ballot, with applicable perk tiers and premium access on qualifying purchases.",
     // The webhook keys off skip_line; email is how it knows who to seat, since
     // there is no user to reference yet.
     "metadata[skip_line]": "1",
+    "metadata[points_purchase]": "1",
     "metadata[email]": email,
     "payment_intent_data[metadata][skip_line]": "1",
     "payment_intent_data[metadata][email]": email,
@@ -183,22 +187,29 @@ export async function createCheckoutSession(opts: {
     }, `lifetime-${opts.lifetimeReservation.id}`);
   }
 
-  if (plan === "support" || plan === "donation") {
+  if (plan === "support" || plan === "donation" || plan === "points") {
     // A floor, not a suggestion: below a dollar the card fee eats the whole
     // contribution and the Fund gets less than nothing.
     const cents = Math.floor(opts.amountCents ?? 0);
     if (!Number.isFinite(cents) || cents < SUPPORT_MIN_CENTS || cents > SUPPORT_MAX_CENTS) {
       throw new Error("support amount is outside the allowed range");
     }
-    if (plan === "donation") {
+    if (plan === "donation" || plan === "points") {
+      const { allow_promotion_codes: _unused, ...paymentCommon } = common;
       return stripePost<{ url: string }>("/checkout/sessions", {
-        ...common,
+        ...(plan === "points" ? paymentCommon : common),
         mode: "payment",
         "line_items[0][price_data][currency]": CHECKOUT_CURRENCY,
         "line_items[0][price_data][unit_amount]": String(cents),
-        "line_items[0][price_data][product_data][name]": "Deep Cut — one-time fund support",
+        "line_items[0][price_data][product_data][name]": plan === "points"
+          ? "Deep Cut — digital voting points" : "Deep Cut — one-time fund support",
+        ...(plan === "points" ? {
+          "managed_payments[enabled]": "false",
+          "line_items[0][price_data][product_data][description]":
+            "Points for the current film ballot, with applicable perk tiers and premium access on qualifying purchases.",
+        } : {}),
         "payment_intent_data[metadata][user_id]": opts.userId,
-        "payment_intent_data[metadata][plan]": "donation",
+        "payment_intent_data[metadata][plan]": plan,
         success_url: `${opts.appUrl}/fund?support=complete`,
         cancel_url: `${opts.appUrl}/fund?support=cancelled`,
       });

@@ -36,14 +36,14 @@ describe("skip the line", () => {
 });
 
 describe("what a one-time contribution unlocks", () => {
-  it("gives one month per donation over $4", () => {
-    expect(premiumMonthsFor(401)).toBe(1);
-    expect(premiumMonthsFor(500)).toBe(1);
+  it("gives one month per points purchase over $5", () => {
+    expect(premiumMonthsFor(501)).toBe(1);
     expect(premiumMonthsFor(2_500)).toBe(1);
     expect(premiumMonthsFor(10_000)).toBe(1);
   });
 
-  it("does not grant a month at $4 or below", () => {
+  it("does not grant a month at $5 or below", () => {
+    expect(premiumMonthsFor(500)).toBe(0);
     expect(premiumMonthsFor(400)).toBe(0);
     expect(premiumMonthsFor(100)).toBe(0);
     expect(premiumMonthsFor(0)).toBe(0);

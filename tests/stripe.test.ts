@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHmac } from "crypto";
-import { createCheckoutSession, validateLifetimePrice, verifyWebhookSignature } from "@/lib/stripe";
+import { createCheckoutSession, createSkipLineSession, validateLifetimePrice, verifyWebhookSignature } from "@/lib/stripe";
 
 const SECRET = "whsec_test_secret";
 const NOW = 1_800_000_000;
@@ -36,7 +36,42 @@ describe("verifyWebhookSignature", () => {
       expect(params.get("mode")).toBe("payment");
       expect(params.get("line_items[0][price_data][unit_amount]")).toBe("2500");
       expect(params.get("metadata[plan]")).toBe("donation");
+      expect(params.has("managed_payments[enabled]")).toBe(false);
       expect(params.get("subscription_data[metadata][user_id]")).toBeNull();
+    });
+
+    it("creates points checkouts without discounts and marks skip-line purchases", async () => {
+      vi.stubEnv("STRIPE_SECRET_KEY", "sk_test");
+      const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ url: "https://checkout.stripe.test" }))));
+      vi.stubGlobal("fetch", fetchMock);
+      await createCheckoutSession({
+        userId: "user-1", email: "member@example.test", appUrl: "https://example.test",
+        plan: "points", amountCents: 501,
+      });
+      await createSkipLineSession({ email: "member@example.test", amountCents: 500, appUrl: "https://example.test" });
+      const points = new URLSearchParams(fetchMock.mock.calls[0][1].body);
+      const skip = new URLSearchParams(fetchMock.mock.calls[1][1].body);
+      expect(points.get("metadata[plan]")).toBe("points");
+      expect(points.get("line_items[0][price_data][unit_amount]")).toBe("501");
+      expect(points.get("line_items[0][price_data][product_data][name]")).toContain("voting points");
+      expect(points.get("line_items[0][price_data][product_data][description]")).toContain("perk tiers");
+      expect(points.get("managed_payments[enabled]")).toBe("false");
+      expect(points.has("allow_promotion_codes")).toBe(false);
+      expect(skip.get("metadata[points_purchase]")).toBe("1");
+      expect(skip.get("managed_payments[enabled]")).toBe("false");
+    });
+
+    it("leaves monthly subscription checkout on the account's Managed Payments setting", async () => {
+      vi.stubEnv("STRIPE_SECRET_KEY", "sk_test");
+      vi.stubEnv("STRIPE_PRICE_ID", "price_test");
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ url: "https://checkout.stripe.test" })));
+      vi.stubGlobal("fetch", fetchMock);
+      await createCheckoutSession({
+        userId: "user-1", email: "member@example.test", appUrl: "https://example.test", plan: "monthly",
+      });
+      const params = new URLSearchParams(fetchMock.mock.calls[0][1].body);
+      expect(params.get("mode")).toBe("subscription");
+      expect(params.has("managed_payments[enabled]")).toBe(false);
     });
 
     it("accepts only the advertised lifetime Stripe price", async () => {
@@ -64,6 +99,7 @@ describe("verifyWebhookSignature", () => {
       expect(params.get("metadata[lifetime_reservation_id]")).toBe("reservation-1");
       expect(params.get("expires_at")).toBe("1900000000");
       expect(params.has("allow_promotion_codes")).toBe(false);
+      expect(params.has("managed_payments[enabled]")).toBe(false);
       expect((options.headers as Record<string, string>)["Idempotency-Key"]).toBe("lifetime-reservation-1");
     });
   });

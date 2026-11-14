@@ -4,7 +4,7 @@ import {
   verifyWebhookSignature,
   type StripeSubscription,
 } from "@/lib/stripe";
-import { recordContribution, recordDonation, premiumMonthsFor } from "@/lib/fund";
+import { recordContribution, recordDonation, recordPointsPurchase, premiumMonthsFor } from "@/lib/fund";
 import { approveEmail } from "@/lib/waitlist";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { track } from "@/lib/analytics";
@@ -76,16 +76,17 @@ export async function POST(request: Request) {
         currency?: string;
         customer_email?: string;
         client_reference_id?: string;
-        metadata?: { user_id?: string; plan?: string; skip_line?: string; email?: string; lifetime_reservation_id?: string };
+        metadata?: { user_id?: string; plan?: string; skip_line?: string; points_purchase?: string; email?: string; lifetime_reservation_id?: string };
       };
-      if (session.metadata?.plan === "donation") {
+      if (session.metadata?.plan === "donation" || session.metadata?.plan === "points") {
         if (session.payment_status !== "paid") return NextResponse.json({ received: true });
         const userId = session.metadata.user_id ?? session.client_reference_id;
         if (!userId || !session.id || !session.amount_total) {
           console.error("paid donation missing user, session id or amount", session.id);
           return NextResponse.json({ error: "invalid_donation" }, { status: 500 });
         }
-        await recordDonation(supabaseAdmin(), {
+        const record = session.metadata.plan === "points" ? recordPointsPurchase : recordDonation;
+        await record(supabaseAdmin(), {
           userId,
           grossCents: session.amount_total,
           stripeRef: `cs_${session.id}`,
@@ -144,7 +145,8 @@ export async function POST(request: Request) {
 
         if (userId) {
           const gross = session.amount_total;
-          await recordDonation(db, {
+          const record = session.metadata?.points_purchase === "1" ? recordPointsPurchase : recordDonation;
+          await record(db, {
             userId,
             grossCents: gross,
             stripeRef: `cs_${session.id}`,
@@ -152,7 +154,7 @@ export async function POST(request: Request) {
           });
           await track(userId, "skip_line_seated", {
             cents: gross,
-            months: premiumMonthsFor(gross),
+            months: session.metadata?.points_purchase === "1" ? premiumMonthsFor(gross) : (gross > 400 ? 1 : 0),
           });
         } else {
           // Seated but unattributable. Logged loudly rather than swallowed:

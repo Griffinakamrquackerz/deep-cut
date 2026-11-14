@@ -69,7 +69,7 @@ export default function FundPage() {
                 {
                   big: "$1+",
                   t: "You support",
-                  d: `Optional donations start at $1. Paid subscriptions count too. ${share}% goes into the fund; the other ${100 - share}% keeps the lights on, licenses shorts, and covers post and delivery.`,
+                  d: `Optional points purchases start at $1. Paid subscriptions count too. ${share}% goes into the fund; the other ${100 - share}% keeps the lights on, licenses shorts, and covers post and delivery.`,
                 },
                 {
                   big: money(goal),
@@ -112,9 +112,9 @@ export default function FundPage() {
                 across three. Splitting them says which one you&apos;d take if your first choice loses.
               </p>
               <p>
-                Paid subscription charges and optional donations both count toward your current-round
+                Paid subscription charges and optional points purchases both count toward your current-round
                 total. Every whole dollar earns one vote, with <strong>no vote cap</strong>.
-                Any one-time donation over $4 also gives you 30 days of premium access.
+                Any one-time points purchase over $5 also gives you 30 days of premium access.
               </p>
               <p>
                 More support earns more votes and moves you up the perk tiers. Larger contributions
@@ -238,7 +238,7 @@ export default function FundPage() {
               },
               {
                 q: "What if the fund never fills?",
-                a: "Then nothing gets commissioned and the fund keeps growing. Subscriptions pay for membership; donations are optional additional support. The fund is an allocation, not money held in escrow against a film that might not happen.",
+                a: "Then nothing gets commissioned and the fund keeps growing. Subscriptions pay for membership; points purchases are optional. The fund is an allocation, not money held in escrow against a film that might not happen.",
               },
               {
                 q: "Who decides which pitches make the ballot?",

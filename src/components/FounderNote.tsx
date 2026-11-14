@@ -72,7 +72,7 @@ export default function FounderNote() {
         </p>
 
         <p className="text-[1.02rem] leading-relaxed text-cream/90">
-          Paid subscription charges and donations earn points toward the current
+          Paid subscription charges and points purchases earn points toward the current
           feature film round. Each whole dollar earns a vote, and support also
           counts toward the fund&apos;s perk tiers, including film credits at
           qualifying levels.

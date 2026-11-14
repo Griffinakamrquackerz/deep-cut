@@ -53,10 +53,10 @@ export default function TermsPage() {
       <h2>5. Membership and the Indie Film Fund</h2>
       <p>
         The free tier is available without payment. A paid subscription is optional, as are
-        separate one-time donations. Paid subscription charges and donations count toward
+        separate one-time points purchases. Paid subscription charges and points purchases count toward
         the current film round: each whole dollar of the combined total earns one vote, with
         no vote cap. Contributions also count toward the published, cumulative perk tiers.
-        A larger contribution carries more voting influence. Each one-time donation over $4
+        A larger contribution carries more voting influence. Each one-time points purchase over $5
         provides 30 days of premium access; this runs alongside any existing subscription or
         lifetime access and does not change subscription billing.
       </p>

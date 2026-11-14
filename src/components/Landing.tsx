@@ -454,7 +454,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <li>
                   <b>More</b>
                   <span>
-                    <strong>More support, more votes.</strong> Paid subscriptions and optional donations
+                    <strong>More support, more votes.</strong> Paid subscriptions and optional points purchases
                     add to your total for the current round, with no vote cap.
                   </span>
                 </li>
@@ -632,8 +632,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <summary>Is it free?</summary>
                 <p>
                   Yes. It&apos;s free to use once you&apos;re in. You can optionally subscribe for the full app,
-                  donate to support the fund, or do both. Paid support earns votes on the current film round.
-                  A one-time donation over $4 also gives you 30 days of premium.
+                  buy voting points, or do both. Paid support earns votes on the current film round.
+                  A one-time points purchase over $5 also gives you 30 days of premium.
                 </p>
               </details>
               <details>
@@ -646,7 +646,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               <details>
                 <summary>Can I earn more votes?</summary>
                 <p>
-                  Yes. Paid subscription charges and optional donations both count toward your current-round
+                  Yes. Paid subscription charges and optional points purchases both count toward your current-round
                   total. Every whole dollar earns a vote, so larger contributions carry more influence.
                 </p>
               </details>

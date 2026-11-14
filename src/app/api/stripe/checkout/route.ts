@@ -23,22 +23,22 @@ export async function POST(request: Request) {
   };
   const plan: BalconyPlan =
     body.plan === "lifetime" ? "lifetime" : body.plan === "support" ? "support" :
-      body.plan === "donation" ? "donation" : "monthly";
+      body.plan === "donation" ? "donation" : body.plan === "points" ? "points" : "monthly";
 
   // Support builds its price inline, so it needs a secret key but no preset
   // Price object — it works on a deployment that never configured STRIPE_PRICE_ID.
   const ready =
     plan === "lifetime"
       ? lifetimeConfigured()
-      : plan === "support" || plan === "donation"
+      : plan === "support" || plan === "donation" || plan === "points"
         ? !!process.env.STRIPE_SECRET_KEY
         : premiumConfigured();
   if (!ready) {
     return NextResponse.json({ error: "premium_not_configured" }, { status: 503 });
   }
 
-  const amountCents = plan === "support" || plan === "donation" ? body.amountCents : undefined;
-  if ((plan === "support" || plan === "donation") &&
+  const amountCents = plan === "support" || plan === "donation" || plan === "points" ? body.amountCents : undefined;
+  if ((plan === "support" || plan === "donation" || plan === "points") &&
       (typeof amountCents !== "number" || !Number.isSafeInteger(amountCents) ||
        amountCents < SUPPORT_MIN_CENTS || amountCents > SUPPORT_MAX_CENTS)) {
     return NextResponse.json(

@@ -52,9 +52,9 @@ export function pointsFor(grossCents: number): number {
   return Math.floor(Math.max(0, grossCents) / 100);
 }
 
-/** A one-time donation over $4 grants 30 days of premium. */
+/** A one-time points purchase over $5 grants 30 days of premium. */
 export function premiumMonthsFor(grossCents: number): number {
-  return grossCents > 400 ? 1 : 0;
+  return grossCents > 500 ? 1 : 0;
 }
 
 /** The Fund's cut of a payment. Rounded down — never over-promise the pot. */
@@ -62,7 +62,7 @@ export function fundCutCents(grossCents: number): number {
   return Math.floor((Math.max(0, grossCents) * sharePct()) / 100);
 }
 
-export type ContributionKind = "subscription" | "lifetime" | "donation" | "adjustment";
+export type ContributionKind = "subscription" | "lifetime" | "donation" | "adjustment" | "points";
 
 /** Record a paid donation and its premium entitlement atomically. */
 export async function recordDonation(
@@ -81,6 +81,25 @@ export async function recordDonation(
     p_currency: input.currency,
   });
   if (error || data !== true) throw new Error(`donation recording failed: ${error?.message ?? "unknown error"}`);
+}
+
+/** Record a paid points purchase and its premium entitlement atomically. */
+export async function recordPointsPurchase(
+  db: SupabaseClient,
+  input: { userId: string; grossCents: number; stripeRef: string; currency: string | undefined },
+): Promise<void> {
+  if (input.currency !== "usd" || fundCurrency() !== "usd") {
+    throw new Error("points purchase currency does not match the USD fund");
+  }
+  const { data, error } = await db.rpc("record_fund_points", {
+    p_user_id: input.userId,
+    p_gross_cents: input.grossCents,
+    p_fund_cents: fundCutCents(input.grossCents),
+    p_cycle: currentCycle(),
+    p_stripe_ref: input.stripeRef,
+    p_currency: input.currency,
+  });
+  if (error || data !== true) throw new Error(`points recording failed: ${error?.message ?? "unknown error"}`);
 }
 
 /**

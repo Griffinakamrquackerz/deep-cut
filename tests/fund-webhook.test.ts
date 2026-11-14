@@ -3,6 +3,8 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   record: vi.fn(),
   donation: vi.fn(),
+  points: vi.fn(),
+  approve: vi.fn(),
   rpc: vi.fn(),
   from: vi.fn(),
   setPremium: vi.fn(),
@@ -16,10 +18,11 @@ vi.mock("@/lib/stripe", () => ({
 vi.mock("@/lib/fund", () => ({
   recordContribution: mocks.record,
   recordDonation: mocks.donation,
+  recordPointsPurchase: mocks.points,
   premiumMonthsFor: vi.fn(),
 }));
 vi.mock("@/lib/supabase/admin", () => ({ supabaseAdmin: () => ({ rpc: mocks.rpc, from: mocks.from }) }));
-vi.mock("@/lib/waitlist", () => ({ approveEmail: vi.fn() }));
+vi.mock("@/lib/waitlist", () => ({ approveEmail: mocks.approve }));
 vi.mock("@/lib/analytics", () => ({ track: mocks.track }));
 
 import { POST } from "@/app/api/stripe/webhook/route";
@@ -29,6 +32,9 @@ describe("donation webhook", () => {
     vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
     mocks.record.mockReset().mockResolvedValue(true);
     mocks.donation.mockReset().mockResolvedValue(undefined);
+    mocks.points.mockReset().mockResolvedValue(undefined);
+    mocks.approve.mockReset().mockResolvedValue({ ok: true, userId: "member-1" });
+    mocks.track.mockReset().mockResolvedValue(undefined);
     mocks.rpc.mockReset();
     mocks.setPremium.mockReset();
   });
@@ -83,12 +89,12 @@ describe("donation webhook", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
-  const deliver = (paymentStatus: string, type = "checkout.session.completed") =>
+  const deliver = (paymentStatus: string, type = "checkout.session.completed", plan = "donation") =>
     POST(new Request("https://example.test/api/stripe/webhook", {
       method: "POST",
       body: JSON.stringify({ type, data: { object: {
         id: "cs_test", amount_total: 2500, currency: "usd", payment_status: paymentStatus,
-        metadata: { plan: "donation", user_id: "member-1" },
+        metadata: { plan, user_id: "member-1" },
       } } }),
     }));
 
@@ -111,5 +117,29 @@ describe("donation webhook", () => {
   it("asks Stripe to retry if the donation cannot be recorded", async () => {
     mocks.donation.mockRejectedValue(new Error("ledger unavailable"));
     expect((await deliver("paid")).status).toBe(500);
+  });
+
+  it("records paid points purchases separately from legacy donations", async () => {
+    expect((await deliver("unpaid", "checkout.session.completed", "points")).status).toBe(200);
+    expect(mocks.points).not.toHaveBeenCalled();
+    expect((await deliver("paid", "checkout.session.async_payment_succeeded", "points")).status).toBe(200);
+    expect(mocks.points).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      userId: "member-1", grossCents: 2500, stripeRef: "cs_cs_test",
+    }));
+    expect(mocks.donation).not.toHaveBeenCalled();
+  });
+
+  it("keeps legacy skip-line sessions on their original terms", async () => {
+    const deliverSkip = (points: boolean) => POST(new Request("https://example.test/api/stripe/webhook", {
+      method: "POST",
+      body: JSON.stringify({ type: "checkout.session.completed", data: { object: {
+        id: "cs_skip", amount_total: 500, currency: "usd", payment_status: "paid",
+        metadata: { skip_line: "1", email: "member@example.test", ...(points ? { points_purchase: "1" } : {}) },
+      } } }),
+    }));
+    expect((await deliverSkip(false)).status).toBe(200);
+    expect(mocks.donation).toHaveBeenCalledTimes(1);
+    expect((await deliverSkip(true)).status).toBe(200);
+    expect(mocks.points).toHaveBeenCalledTimes(1);
   });
 });

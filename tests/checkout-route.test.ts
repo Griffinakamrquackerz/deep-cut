@@ -60,11 +60,13 @@ describe("checkout route", () => {
     }));
   });
 
-  it("rejects fractional and out-of-range donation cents", async () => {
+  it("validates the amount for points purchases", async () => {
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_test");
     for (const amountCents of [99, 100.5, 100_000_000]) {
-      expect((await POST(request({ plan: "donation", amountCents }))).status).toBe(400);
+      expect((await POST(request({ plan: "points", amountCents }))).status).toBe(400);
     }
     expect(mocks.checkout).not.toHaveBeenCalled();
+    expect((await POST(request({ plan: "points", amountCents: 501 }))).status).toBe(200);
+    expect(mocks.checkout).toHaveBeenCalledWith(expect.objectContaining({ plan: "points", amountCents: 501 }));
   });
 });

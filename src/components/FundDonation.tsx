@@ -33,14 +33,14 @@ export default function FundDonation() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "donation", amountCents }),
+        body: JSON.stringify({ plan: "points", amountCents }),
       });
       const data = (await res.json()) as { url?: string };
       if (res.status === 401) {
         setSignIn(true);
-        setError("Sign in before making a donation.");
+        setError("Sign in before buying points.");
       } else if (res.status === 503) {
-        setError("Donations are not available right now.");
+        setError("Points purchases are not available right now.");
       } else if (!res.ok || !data.url) {
         setError("Could not open checkout. Please try again.");
       } else {
@@ -55,11 +55,11 @@ export default function FundDonation() {
 
   return (
     <form onSubmit={donate} className="lp-panel" style={{ marginTop: "2rem" }}>
-      <h3 className="lp-h3">Give a little <em>extra.</em></h3>
+      <h3 className="lp-h3">Buy voting <em>points.</em></h3>
       <p className="lp-prose" style={{ marginTop: "0.75rem" }}>
-        Make an optional one-time donation alongside a subscription or on its own.
+        Buy points once, alongside a subscription or on their own.
         Each whole dollar in your current-round total earns a vote and counts toward the perk tiers.
-        A donation over $4 also gives you 30 days of premium.
+        A points purchase over $5 also gives you 30 days of premium.
       </p>
       {returned && (
         <p role="status" className="lp-note" style={{ marginTop: "0.75rem" }}>
@@ -73,14 +73,14 @@ export default function FundDonation() {
           onChange={(event) => setAmount(event.target.value)} required
           className="rounded border border-line bg-bg px-3 py-2 text-cream" />
         <button type="submit" disabled={busy} className="lp-btn lp-btn--amber">
-          {busy ? "Opening checkout…" : "Donate once"}
+          {busy ? "Opening checkout…" : "Buy points"}
         </button>
       </div>
       {error && <p role="alert" style={{ marginTop: "0.5rem" }}>
         {error} {signIn && <Link href="/login" className="lp-link">Sign in</Link>}
       </p>}
       <p className="lp-note" style={{ marginTop: "0.75rem" }}>
-        One-time payment, not a subscription. Donation premium runs alongside any existing
+        One-time payment, not a subscription. Points-purchase premium runs alongside any existing
         subscription or lifetime access; it does not change your billing.
       </p>
     </form>
