@@ -107,7 +107,7 @@ export default function HotTakesWall({
       return;
     }
     if (res?.status === 429) {
-      toast("15 takes a day — let the nitrate cool off.", { tone: "amber", icon: "🔥" });
+      toast("That's 15 takes today. The wall reopens tomorrow.", { tone: "amber", icon: "🔥" });
       return;
     }
     if (!res?.ok) {
@@ -116,7 +116,7 @@ export default function HotTakesWall({
     }
     sfxChime();
     haptic([15, 20, 15]);
-    toast("Posted. The nitrate is lit.", { tone: "ticket", icon: "🔥" });
+    toast("Posted to the wall.", { tone: "ticket", icon: "🔥" });
     setBody("");
     if (!movieId) setFilm(null);
     setQuery("");

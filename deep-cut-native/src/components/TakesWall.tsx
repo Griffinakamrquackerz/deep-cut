@@ -105,10 +105,10 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
       body: JSON.stringify({ movieId: film.id, body: body.trim() }),
     });
     setPosting(false);
-    if (res.status === 429) return say("15 takes a day — let the nitrate cool off. 🔥");
+    if (res.status === 429) return say("That's 15 takes today. The wall reopens tomorrow.");
     if (!res.ok) return say("The wall rejected that one — try again. ✕");
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    say("Posted. The nitrate is lit. 🔥");
+    say("Posted to the wall.");
     setBody("");
     if (!movieId) setFilm(null);
     setQuery("");
@@ -255,7 +255,7 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
         <TextInput
           value={body}
           onChangeText={(t) => setBody(t.slice(0, TAKE_MAX))}
-          placeholder="250 characters, no mercy…"
+          placeholder="250 characters, pinned to this film…"
           placeholderTextColor={colors.dim}
           multiline
           style={[styles.input, { minHeight: 70, textAlignVertical: "top" }]}

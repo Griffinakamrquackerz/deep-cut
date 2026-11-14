@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s · Deep Cut",
   },
   description:
-    "Two things on one ticket: a recommendation engine that deals you movies you haven't seen yet, and an indie streaming house where members vote on which original film gets made next.",
+    "Two things on one ticket: a repertory house that programs movies you haven't seen yet out of the films you love, and an independent studio where members vote on which original gets made next.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "Deep Cut",
     title: "Deep Cut — find the films you've never seen. Fund the ones that don't exist yet.",
     description:
-      "A recommendation engine for people who've seen the top row, and an indie streaming house where members vote on which original film gets made next. Built by a filmmaker.",
+      "A repertory house for people who've seen the top row, and an independent studio where members vote on which original gets made next. Built by a filmmaker.",
     url: SITE_URL,
   },
   twitter: {
@@ -106,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alternateName: "The Deep Cut",
             url: SITE_URL,
             description:
-              "A movie recommendation engine and an independent streaming house whose members vote on which original film gets made next.",
+              "A repertory film house and an independent studio whose members vote on which original gets made next.",
           }}
         />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}

@@ -184,7 +184,7 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         </h1>
         {view === "takes" && (
           <p className="mt-1 font-mono text-[0.65rem] text-dim">
-            takes so hot the nitrate catches fire · 250 characters, no mercy
+            250 characters, pinned to one film · nitrate stock, handle with care
           </p>
         )}
       </header>

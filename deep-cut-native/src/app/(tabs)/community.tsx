@@ -452,7 +452,9 @@ export default function Community() {
         {view === "feed" && house ? "WHAT THE HOUSE IS WATCHING" : HEADLINE[view]}
       </TitleCard>
       {view === "takes" && (
-        <Text style={styles.takesSub}>takes so hot the nitrate catches fire · 250 characters, no mercy</Text>
+        <Text style={styles.takesSub}>
+          250 characters, pinned to one film · nitrate stock, handle with care
+        </Text>
       )}
 
       {/* The room people are already in, reading what everyone else is up to
