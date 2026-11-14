@@ -61,7 +61,7 @@ export default function TermsPage() {
         lifetime access and does not change subscription billing.
       </p>
       <p>
-        The annual Balcony Seats plan costs $39.99 per year after a 90-day free trial and
+        The annual Balcony Seats plan costs $39.99 per year plus applicable tax after a 90-day free trial and
         renews annually until canceled. Votes are earned when a subscription charge is paid,
         not during the free trial.
       </p>

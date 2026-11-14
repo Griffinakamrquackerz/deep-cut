@@ -700,7 +700,7 @@ function BalconySeats({
                 {busy === "annual" ? "Opening the box office…" : "3 months free, then $39.99/year"}
               </button>
               <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
-                Renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
+                Plus applicable tax; renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
               </p>
             </>
           )}
@@ -733,7 +733,7 @@ function BalconySeats({
           )}
           {annualAvailable && (
             <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
-              Renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
+              Plus applicable tax; renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
             </p>
           )}
           {!lifetimeAvailable && (
