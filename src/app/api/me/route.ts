@@ -5,6 +5,41 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cacheMovie } from "@/lib/tmdb";
 import { THEME_KEYS } from "@/lib/themes";
 import { writeStyleFallback } from "@/lib/profile-style";
+import { isPremium } from "@/lib/premium";
+
+/**
+ * Who am I, and am I a member?
+ *
+ * The app had no way to ask. That was fine until it needed to know whether to
+ * draw an ad: the web app reads premium server-side on every page, but the app
+ * renders from a bundle and has to be told. Without this, a paying member sees
+ * advertising on their phone — the one thing they paid to remove.
+ */
+export async function GET() {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("users")
+    .select("handle, display_name, avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // Fails closed on purpose: if premium can't be read we say false, which
+  // shows an ad to a member for one session. The other way round shows a free
+  // user an ad-free app forever, which is the more expensive mistake.
+  const premium = await isPremium(user.id).catch(() => false);
+
+  return NextResponse.json({
+    id: user.id,
+    email: user.email ?? null,
+    handle: data?.handle ?? null,
+    displayName: data?.display_name ?? null,
+    avatarUrl: data?.avatar_url ?? null,
+    premium,
+  });
+}
 
 const Input = z.object({
   handle: z

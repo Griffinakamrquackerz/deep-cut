@@ -1,12 +1,16 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
+import { REGIONS, servicesForRegion } from "@/lib/region";
 import { PROFILE_THEMES } from "@/lib/themes";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import InstallPrompt from "@/components/InstallPrompt";
 import Avatar from "@/components/Avatar";
 import NotificationsToggle from "@/components/NotificationsToggle";
+import ProgrammeEmailToggle from "@/components/ProgrammeEmailToggle";
+import DeliveryAddress from "@/components/DeliveryAddress";
 import { isMuted, setMuted, sfxChime, sfxPop } from "@/lib/sfx";
 
 interface SignatureMovie {
@@ -28,7 +32,7 @@ async function resizeToJpeg(file: File, px = 384): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
-/** The projection booth — look, handle, services, sound, password, install. */
+/** The projection booth — look, handle, region, services, sound, password, install. */
 export default function SettingsScreen({
   handle,
   services,
@@ -39,6 +43,7 @@ export default function SettingsScreen({
   premiumUntil,
   hasStripeCustomer,
   premiumAvailable,
+  lifetimeAvailable = false,
   isAdmin = false,
 }: {
   handle: string | null;
@@ -50,11 +55,61 @@ export default function SettingsScreen({
   premiumUntil: string | null;
   hasStripeCustomer: boolean;
   premiumAvailable: boolean;
+  lifetimeAvailable?: boolean;
   isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [newHandle, setNewHandle] = useState(handle ?? "");
   const [selected, setSelected] = useState<Set<Service>>(new Set(services));
+
+  // Region. Loaded rather than passed in, so this component stays usable from
+  // anywhere and the geo guess happens server-side where the header lives.
+  const [region, setRegion] = useState<string>("US");
+  const [regionNote, setRegionNote] = useState<string | null>(null);
+  const availableHere = servicesForRegion(region);
+
+  useEffect(() => {
+    let alive = true;
+    void fetch("/api/region")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { region?: string; regionKnown?: boolean } | null) => {
+        if (!alive || !d?.region) return;
+        setRegion(d.region);
+        // Say so when it's a guess. Somebody who has never been asked should
+        // know the app is assuming, not reporting.
+        if (d.regionKnown === false) {
+          setRegionNote(`We've guessed ${d.region} from your connection — set it if that's wrong.`);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function saveRegion(next: string) {
+    const previous = region;
+    setRegion(next);
+    setRegionNote("Saving…");
+    try {
+      const res = await fetch("/api/region", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region: next }),
+      });
+      if (!res.ok) {
+        // Put it back. A picker that shows the new value while the server holds
+        // the old one is worse than one that admits the save failed.
+        setRegion(previous);
+        setRegionNote("Couldn't save that — your region is unchanged.");
+        return;
+      }
+      setRegionNote("Saved. Your next deal uses this catalogue.");
+    } catch {
+      setRegion(previous);
+      setRegionNote("Couldn't reach the house — your region is unchanged.");
+    }
+  }
   const [status, setStatus] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [pwStatus, setPwStatus] = useState<string | null>(null);
@@ -179,6 +234,7 @@ export default function SettingsScreen({
         until={premiumUntil}
         hasCustomer={hasStripeCustomer}
         available={premiumAvailable}
+        lifetimeAvailable={lifetimeAvailable}
       />
 
       {/* ── Your marquee look ─────────────────────────────────────── */}
@@ -315,10 +371,39 @@ export default function SettingsScreen({
         />
       </label>
 
+      {/* Above the services picker on purpose: the region decides which
+          services are worth offering, so reading top to bottom follows the
+          causality rather than fighting it. */}
+      <div>
+        <p className="eyebrow mb-2">Where you watch</p>
+        <select
+          value={region}
+          onChange={(e) => void saveRegion(e.target.value)}
+          aria-label="Where you watch"
+          className="w-full rounded border border-line bg-surface px-3 py-2.5 text-sm text-cream focus:border-amber focus:outline-none"
+        >
+          {REGIONS.map((r) => (
+            <option key={r.code} value={r.code}>
+              {r.label}
+            </option>
+          ))}
+          {/* Somewhere not on the list: keep their real answer selectable
+              rather than silently snapping them to a country they didn't pick. */}
+          {!REGIONS.some((r) => r.code === region) && <option value={region}>{region}</option>}
+        </select>
+        <p className="mt-1.5 font-mono text-[0.6rem] leading-relaxed text-dim">
+          {regionNote ??
+            "Sets which country's streaming catalogue every recommendation is checked against. Get this wrong and the house offers you films you can't actually watch."}
+        </p>
+      </div>
+
       <div>
         <p className="eyebrow mb-2">Streaming services</p>
+        <p className="mb-2 font-mono text-[0.6rem] text-dim">
+          The ones that operate where you are.
+        </p>
         <div className="grid grid-cols-2 gap-2">
-          {SERVICES.map((s) => {
+          {SERVICES.filter((s) => availableHere.includes(s)).map((s) => {
             const on = selected.has(s);
             return (
               <button
@@ -369,7 +454,33 @@ export default function SettingsScreen({
         </button>
       </div>
 
+      <div>
+        <p className="eyebrow mb-2">The Indie Film Fund</p>
+        <Link
+          href="/fund"
+          className="flex w-full items-center justify-between rounded border border-line bg-surface px-3 py-3"
+        >
+          <span className="text-left">
+            <span className="block font-mono text-xs uppercase tracking-wider text-cream">
+              🎬 Where your money goes
+            </span>
+            <span className="font-mono text-[0.6rem] text-dim">
+              the tiers, the votes, and what gets made
+            </span>
+          </span>
+          <span aria-hidden className="font-mono text-[0.65rem] text-amber">
+            →
+          </span>
+        </Link>
+      </div>
+
+      {/* Renders nothing until a physical tier is actually reached — see the
+          component. Placed under the fund block because that is where the
+          money that earned the parcel is explained. */}
+      <DeliveryAddress />
+
       <NotificationsToggle />
+      <ProgrammeEmailToggle />
 
       <button
         onClick={save}
@@ -458,9 +569,11 @@ function DangerZone() {
   return (
     <div className="mt-4 rounded border border-ticket/50 p-4">
       <p className="eyebrow mb-1 text-ticket">Leave the theater</p>
+      {/* Unlike native there's no second confirm dialog — the type-DELETE input
+          below is it — so this line stays specific about what's lost. */}
       <p className="text-xs leading-relaxed text-dim">
-        Deletes your account and everything with it — taste profile, loved films, watch
-        history, mixtapes, follows. This cannot be undone; there is no lost &amp; found.
+        Deletes everything — profile, loved films, watch history, mixtapes, follows.
+        Can&apos;t be undone.
       </p>
       <div className="mt-3 flex gap-2">
         <input
@@ -492,29 +605,51 @@ function BalconySeats({
   until,
   hasCustomer,
   available,
+  lifetimeAvailable = false,
 }: {
   active: boolean;
   until: string | null;
   hasCustomer: boolean;
   available: boolean;
+  lifetimeAvailable?: boolean;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<null | "monthly" | "lifetime" | "portal">(null);
   const [err, setErr] = useState<string | null>(null);
 
-  async function go(path: "/api/stripe/checkout" | "/api/stripe/portal") {
-    setBusy(true);
+  // A far-future expiry is the one-time "lifetime" pass, not a renewing sub.
+  const lifetime = !!until && new Date(until).getFullYear() >= 2099;
+
+  async function checkout(plan: "monthly" | "lifetime") {
+    setBusy(plan);
     setErr(null);
-    const res = await fetch(path, { method: "POST" });
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
     const data = await res.json().catch(() => null);
     if (res.ok && data?.url) {
       window.location.href = data.url;
       return;
     }
     setErr(data?.error ? String(data.error).slice(0, 160) : "Something jammed — try again.");
-    setBusy(false);
+    setBusy(null);
   }
 
-  if (!available && !active) return null; // Stripe not configured yet — hide the storefront
+  async function portal() {
+    setBusy("portal");
+    setErr(null);
+    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const data = await res.json().catch(() => null);
+    if (res.ok && data?.url) {
+      window.location.href = data.url;
+      return;
+    }
+    setErr(data?.error ? String(data.error).slice(0, 160) : "Something jammed — try again.");
+    setBusy(null);
+  }
+
+  if (!available && !lifetimeAvailable && !active) return null; // Stripe not set up — hide storefront
 
   return (
     <div className="film-card rounded-lg p-4">
@@ -524,18 +659,24 @@ function BalconySeats({
       </div>
       {active ? (
         <>
-          <p className="mt-1 font-display text-2xl text-amber">🥂 YOU&apos;RE IN THE BALCONY</p>
+          <p className="mt-1 font-display text-2xl text-amber">
+            {lifetime ? "🏛 LIFETIME BALCONY" : "🥂 YOU'RE IN THE BALCONY"}
+          </p>
           <p className="font-mono text-[0.65rem] text-dim">
             30 deals a day · zero ads
-            {until ? ` · renews ${new Date(until).toLocaleDateString()}` : ""}
+            {lifetime
+              ? " · yours forever"
+              : until
+                ? ` · renews ${new Date(until).toLocaleDateString()}`
+                : ""}
           </p>
-          {hasCustomer && (
+          {hasCustomer && !lifetime && (
             <button
-              onClick={() => void go("/api/stripe/portal")}
-              disabled={busy}
+              onClick={() => void portal()}
+              disabled={!!busy}
               className="mt-3 rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim disabled:opacity-50"
             >
-              {busy ? "Opening…" : "Manage subscription"}
+              {busy === "portal" ? "Opening…" : "Manage subscription"}
             </button>
           )}
         </>
@@ -547,16 +688,34 @@ function BalconySeats({
             <li>🚫 Zero ads, anywhere</li>
             <li>🥂 Member stamp on your card</li>
           </ul>
-          <button
-            onClick={() => void go("/api/stripe/checkout")}
-            disabled={busy}
-            className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
-          >
-            {busy ? "Opening the box office…" : "★ 3 months free, then $4.99/mo ★"}
-          </button>
-          <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
-            the price of one rental · cancel anytime
-          </p>
+          {available && (
+            <button
+              onClick={() => void checkout("monthly")}
+              disabled={!!busy}
+              className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
+            >
+              {busy === "monthly" ? "Opening the box office…" : "★ 3 months free, then $3.99/mo ★"}
+            </button>
+          )}
+          {lifetimeAvailable && (
+            <>
+              <button
+                onClick={() => void checkout("lifetime")}
+                disabled={!!busy}
+                className="mt-2 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
+              >
+                {busy === "lifetime" ? "Opening the box office…" : "🏛 Buy it once — $150 lifetime"}
+              </button>
+              <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+                one payment, never think about it again
+              </p>
+            </>
+          )}
+          {!lifetimeAvailable && (
+            <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+              the price of one rental · cancel anytime
+            </p>
+          )}
         </>
       )}
       {err && <p className="mt-2 font-mono text-xs text-ticket">{err}</p>}

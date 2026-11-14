@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  try {
   const q = new URL(request.url).searchParams.get("q")?.trim() ?? "";
   const db = supabaseAdmin();
 
@@ -63,4 +64,9 @@ export async function GET(request: Request) {
     followers,
     followingIds,
   });
+  } catch (err) {
+    // Never 500 the People tab — empty lists render clean empty states.
+    console.error("people route failed", err);
+    return NextResponse.json({ results: [], following: [], followers: [], followingIds: [] });
+  }
 }

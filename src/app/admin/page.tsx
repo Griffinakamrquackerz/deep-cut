@@ -1,7 +1,9 @@
-import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/admin";
+import { notFound, redirect } from "next/navigation";
+import { isAdminEmail } from "@/lib/admin";
+import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { gatherStats } from "@/lib/admin-stats";
+import { searchConfigured } from "@/lib/video-search";
 import AdminDashboard from "@/components/AdminDashboard";
 import { type AdminUserRow } from "@/components/AdminUsers";
 
@@ -9,8 +11,14 @@ export const dynamic = "force-dynamic";
 
 /** Personal admin console. Gated to the owner (see src/lib/admin.ts). */
 export default async function AdminPage() {
-  const admin = await requireAdmin();
-  if (!admin) notFound(); // non-admins see a plain 404 — the console is invisible
+  const admin = await currentUser();
+  // Signed out is not the same as "not allowed". Both used to 404, which made
+  // the console unreachable from any link opened outside a logged-in browser —
+  // the door alert's own button included. Send them through login and back.
+  if (!admin) redirect("/login?next=/admin");
+  // Signed in and still not an admin: a plain 404 keeps the console invisible
+  // to members, which is the case that gate was actually written for.
+  if (!isAdminEmail(admin.email)) notFound();
 
   const db = supabaseAdmin();
   const [{ data: authList }, { data: profiles }, stats] = await Promise.all([
@@ -42,5 +50,12 @@ export default async function AdminPage() {
       return tb - ta;
     });
 
-  return <AdminDashboard stats={stats} users={users} adminEmail={admin.email ?? ""} />;
+  return (
+    <AdminDashboard
+      stats={stats}
+      users={users}
+      adminEmail={admin.email ?? ""}
+      searchConfigured={searchConfigured()}
+    />
+  );
 }

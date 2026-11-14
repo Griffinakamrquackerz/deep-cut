@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 // The link preview for thedeepcut.xyz — what shows in iMessage, Slack, X, etc.
 // A ticket-stub in the house palette so a shared link reads as the brand, not a
 // bare URL. Next wires this in as og:image / twitter:image for the root route.
-export const alt = "Deep Cut — movies you haven't met yet";
+export const alt = "Deep Cut — movies you haven't seen yet";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -59,7 +59,7 @@ export default function OpengraphImage() {
               DEEP CUT
             </span>
             <span style={{ color: CREAM, fontSize: 46, marginTop: 18 }}>
-              Movies you haven&apos;t met yet.
+              Movies you haven&apos;t seen yet.
             </span>
           </div>
 

@@ -4,7 +4,9 @@ import Link from "next/link";
 import { actorName, type FeedItem } from "@/lib/feed";
 import MarqueeBulbs from "@/components/MarqueeBulbs";
 import HotTakesWall from "@/components/HotTakesWall";
+import Inbox from "@/components/Inbox";
 import AdSlot from "@/components/AdSlot";
+import HouseCall from "@/components/HouseCall";
 import FollowButton from "@/components/FollowButton";
 import InviteButton from "@/components/InviteButton";
 import Poster from "@/components/Poster";
@@ -46,10 +48,14 @@ const feedName = (actor: { id: string; handle: string | null; display_name: stri
   actor.id === myId ? "You" : actorName(actor);
 
 export default function LobbyScreen({ myId, premium = false }: { myId: string; premium?: boolean }) {
-  const [view, setView] = useState<"feed" | "people" | "takes">("feed");
+  const [view, setView] = useState<"feed" | "people" | "takes" | "inbox">("feed");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
+  // The feed widened to the whole house because you follow almost nobody.
+  // Worth saying out loud, or these look like people you know.
+  const [house, setHouse] = useState(false);
 
   // People view state
   const [query, setQuery] = useState("");
@@ -66,8 +72,18 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
       const data = await res.json();
       setFeed(data.feed ?? []);
       setFollowing(data.following ?? []);
+      setHouse(!!data.house);
     }
     setLoading(false);
+  }, []);
+
+  // Just the count, so the ✉ pill can carry a number before you open it. The
+  // rows themselves don't load until you do.
+  useEffect(() => {
+    void fetch("/api/notifications")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setUnread(Number(d?.unread ?? 0)))
+      .catch(() => {});
   }, []);
 
   const loadPeople = useCallback(async () => {
@@ -149,10 +165,14 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         <p className="eyebrow mt-2">Community</p>
         <h1 className="neon-flicker font-display text-5xl leading-[0.95] text-amber">
           {view === "feed"
-            ? "WHAT FRIENDS ARE WATCHING"
+            ? house
+              ? "WHAT THE HOUSE IS WATCHING"
+              : "WHAT FRIENDS ARE WATCHING"
             : view === "takes"
               ? "THE HOT TAKES WALL"
-              : "FIND YOUR PEOPLE"}
+              : view === "inbox"
+                ? "YOUR PIGEONHOLE"
+                : "FIND YOUR PEOPLE"}
         </h1>
         {view === "takes" && (
           <p className="mt-1 font-mono text-[0.65rem] text-dim">
@@ -161,12 +181,19 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         )}
       </header>
 
+      {/* The lobby is where people already are, reading what everyone else is
+          up to — the right room to ask for a script. Above the view tabs so it
+          shows whichever one they're on, and outside the feed list so a night
+          with no campaign doesn't leave a stray gap between cards. */}
+      <HouseCall />
+
       <div className="flex gap-1.5">
         {(
           [
             { key: "feed", label: "☰ The marquee" },
             { key: "takes", label: "🔥 Hot takes" },
             { key: "people", label: "★ People" },
+            { key: "inbox", label: "✉ Inbox" },
           ] as const
         ).map((t) => (
           <button
@@ -174,15 +201,21 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
             onClick={() => {
               sfxClick();
               setView(t.key);
+              if (t.key === "inbox") setUnread(0);
             }}
             aria-pressed={view === t.key}
-            className={`rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider ${
+            className={`relative rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider ${
               view === t.key
                 ? "border-amber bg-surface text-amber glow-amber"
                 : "border-line bg-surface text-dim"
             }`}
           >
             {t.label}
+            {t.key === "inbox" && unread > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-[1.1rem] rounded-full bg-ticket px-1 text-center font-mono text-[0.55rem] leading-[1.1rem] text-cream">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -206,6 +239,8 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
 
       {view === "takes" ? (
         <HotTakesWall />
+      ) : view === "inbox" ? (
+        <Inbox />
       ) : view === "people" ? (
         <>
           <input
@@ -312,6 +347,20 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
+          {house && (
+            <li className="rounded border border-dashed border-line p-3 text-center">
+              <p className="font-mono text-[0.6rem] uppercase tracking-widest text-dim">
+                Showing the whole house
+              </p>
+              <p className="mt-1 text-sm text-dim">
+                Follow a few people in{" "}
+                <button onClick={() => setView("people")} className="text-amber underline">
+                  ★ People
+                </button>{" "}
+                and this becomes your crowd.
+              </p>
+            </li>
+          )}
           {feed.map((item, idx) => {
             const stamp = item.kind === "watch" ? REACTION_STAMP[item.reaction] : null;
             return (
@@ -380,6 +429,58 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
                             className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
                           >
                             + Watchlist
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {item.kind === "tonight" && (
+                  <div
+                    className="deal-in flex items-center gap-3 rounded-lg border border-ticket/40 bg-ticket/5 p-3"
+                    style={{ "--i": idx } as CSSProperties}
+                  >
+                    <Link href={`/m/${item.movie.id}`} className="wiggle w-14 shrink-0">
+                      <Poster
+                        posterPath={item.movie.poster_path}
+                        title={item.movie.title}
+                        year={item.movie.year}
+                        genres={item.movie.genres}
+                      />
+                    </Link>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <p className="font-mono text-[0.6rem] uppercase tracking-widest text-ticket">
+                        🍿 Tonight
+                      </p>
+                      <p className="mt-0.5 text-sm text-cream">
+                        <Link href={profileHref(item.actor)} className="text-amber">
+                          {feedName(item.actor, myId)}
+                        </Link>{" "}
+                        {item.actor.id === myId ? "are" : "is"} watching{" "}
+                        <Link
+                          href={`/m/${item.movie.id}`}
+                          className="font-display text-lg leading-none text-cream"
+                        >
+                          {item.movie.title}
+                        </Link>
+                        {item.movie.year ? <span className="text-dim"> ({item.movie.year})</span> : null}
+                      </p>
+                      {item.note && (
+                        <p className="mt-1 border-l-2 border-ticket/50 pl-2 text-sm italic text-cream/85">
+                          “{item.note}”
+                        </p>
+                      )}
+                      {item.actor.id !== myId && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => {
+                              sfxPop();
+                              void addToWatchlist(item.movie.id);
+                            }}
+                            className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
+                          >
+                            + Watch along
                           </button>
                         </div>
                       )}

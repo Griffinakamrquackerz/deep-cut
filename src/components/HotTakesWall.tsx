@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Avatar from "./Avatar";
+import MentionInput from "./MentionInput";
+import CommentBody from "./CommentBody";
 import { sfxChime, sfxPop, haptic } from "@/lib/sfx";
 import { toast } from "@/lib/toast";
 
@@ -26,6 +28,8 @@ interface Banter {
   createdAt: string;
   author: { id: string; handle: string | null; displayName: string | null; avatarUrl: string | null };
   mine: boolean;
+  /** Handles tagged here that still resolve to somebody — the rest is text. */
+  mentions: string[];
 }
 
 interface FilmHit {
@@ -196,6 +200,31 @@ export default function HotTakesWall({
     await fetch(`/api/takes/comments?id=${c.id}`, { method: "DELETE" }).catch(() => null);
   }
 
+  // UGC safety (App Store 1.2): report objectionable content, block abusers.
+  async function report(subjectType: "hot_take" | "take_comment", subjectId: string) {
+    const reason = window.prompt("Report this — what's the problem? (spam, harassment, hateful, etc.)")?.trim();
+    if (!reason) return;
+    await fetch("/api/safety", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "report", subjectType, subjectId, reason }),
+    }).catch(() => null);
+    toast("Reported — thanks. We review these and act fast.", { tone: "amber", icon: "🚩" });
+  }
+
+  async function blockAuthor(authorId: string) {
+    if (!window.confirm("Block this person? You won't see their takes or banter anymore.")) return;
+    const res = await fetch("/api/safety", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "block", targetId: authorId, blocked: true }),
+    }).catch(() => null);
+    if (res && res.ok) {
+      toast("Blocked. Their takes are gone.", { tone: "amber", icon: "🚫" });
+      void load();
+    }
+  }
+
   async function remove(t: Take) {
     setTakes((prev) => (prev ?? []).filter((x) => x.id !== t.id));
     await fetch(`/api/takes?id=${t.id}`, { method: "DELETE" }).catch(() => null);
@@ -363,14 +392,29 @@ export default function HotTakesWall({
                       >
                         💬 {t.comments > 0 ? t.comments : "banter"}
                       </button>
-                      {t.mine && (
+                      {t.mine ? (
                         <button
                           onClick={() => void remove(t)}
                           className="ml-auto font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
                         >
                           tear down
                         </button>
-                      )}
+                      ) : signedIn ? (
+                        <span className="ml-auto flex items-center gap-2">
+                          <button
+                            onClick={() => void report("hot_take", t.id)}
+                            className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
+                          >
+                            ⚑ report
+                          </button>
+                          <button
+                            onClick={() => void blockAuthor(t.author.id)}
+                            className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
+                          >
+                            block
+                          </button>
+                        </span>
+                      ) : null}
                     </div>
 
                     {/* The banter thread */}
@@ -401,9 +445,11 @@ export default function HotTakesWall({
                                       </Link>{" "}
                                       · {ago(c.createdAt)}
                                     </p>
-                                    <p className="text-sm text-cream">{c.body}</p>
+                                    <p className="text-sm text-cream">
+                                      <CommentBody body={c.body} mentions={c.mentions ?? []} />
+                                    </p>
                                   </div>
-                                  {c.mine && (
+                                  {c.mine ? (
                                     <button
                                       onClick={() => void removeBanter(t, c)}
                                       aria-label="Delete comment"
@@ -411,7 +457,16 @@ export default function HotTakesWall({
                                     >
                                       ✕
                                     </button>
-                                  )}
+                                  ) : signedIn ? (
+                                    <button
+                                      onClick={() => void report("take_comment", c.id)}
+                                      aria-label="Report comment"
+                                      title="Report"
+                                      className="font-mono text-[0.6rem] text-dim"
+                                    >
+                                      ⚑
+                                    </button>
+                                  ) : null}
                                 </li>
                               );
                             })}
@@ -419,14 +474,12 @@ export default function HotTakesWall({
                         )}
                         {signedIn && (
                           <div className="mt-2 flex gap-1.5">
-                            <input
+                            <MentionInput
                               value={draft}
-                              onChange={(e) => setDraft(e.target.value.slice(0, TAKE_MAX))}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") void sendBanter(t);
-                              }}
-                              placeholder="Talk your talk…"
-                              className="min-w-0 flex-1 rounded border border-line bg-bg px-2.5 py-1.5 text-sm text-cream placeholder:text-dim/60"
+                              onChange={setDraft}
+                              onSubmit={() => void sendBanter(t)}
+                              maxLength={TAKE_MAX}
+                              placeholder="Talk your talk… @ to tag someone"
                             />
                             <button
                               onClick={() => void sendBanter(t)}

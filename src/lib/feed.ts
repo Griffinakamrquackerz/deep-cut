@@ -14,6 +14,9 @@ export interface FeedMovie {
   year: number | null;
   poster_path: string | null;
   genres: string[];
+  tmdb: number | null;
+  imdb: number | null;
+  rt: number | null;
 }
 
 export type FeedItem =
@@ -25,6 +28,18 @@ export type FeedItem =
       movie: FeedMovie;
       reaction: string;
       why: string | null;
+      note: string | null;
+    }
+  | {
+      /**
+       * What somebody is putting on tonight. A plan rather than a log: it
+       * appears before the film is watched, and goes stale on its own.
+       */
+      kind: "tonight";
+      id: string;
+      at: string;
+      actor: FeedActor;
+      movie: FeedMovie;
       note: string | null;
     }
   | {

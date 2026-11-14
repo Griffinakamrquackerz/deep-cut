@@ -1,6 +1,6 @@
 # Deep Cut
 
-**Movies you haven't met yet.** A movie recommendation app built around a *taste
+**Movies you haven't seen yet.** A movie recommendation app built around a *taste
 profile*, not genre filters. Users pick 10–20 films they love; Claude articulates
 their taste as plain-English "taste threads"; recs bias toward lesser-known films,
 each with a one-line reason tied to the profile, badged by the user's streaming
@@ -28,7 +28,14 @@ Built per `DEEP-CUT-SPEC` — milestones M1–M6, one commit each.
   all behind `src/lib/tmdb.ts`. Every Claude candidate is validated against TMDB
   (fuzzy title+year); unresolvable candidates are dropped
 - **next/og** — server-rendered taste-card PNG
-- **Vercel** — deploy with **Root Directory = `deep-cut`**
+- **Vercel** — deploy from this repository root.
+
+## Mobile app
+
+The Expo client lives in [`deep-cut-native/`](./deep-cut-native/). It shares this
+Next.js backend and uses the same Supabase project. See its
+[`README.md`](./deep-cut-native/README.md) for setup and
+[`LAUNCH.md`](./deep-cut-native/LAUNCH.md) for TestFlight and store preparation.
 
 ## Setup
 

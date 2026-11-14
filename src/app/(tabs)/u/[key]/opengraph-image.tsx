@@ -140,7 +140,7 @@ export default async function ProfileOgImage({ params }: { params: Promise<{ key
               </span>
             </div>
           ) : (
-            <span style={{ color: CREAM, fontSize: 40 }}>Dealing themselves films they haven&apos;t met yet.</span>
+            <span style={{ color: CREAM, fontSize: 40 }}>Dealing themselves films they haven&apos;t seen yet.</span>
           )}
 
           <div
