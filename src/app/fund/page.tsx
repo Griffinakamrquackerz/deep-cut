@@ -189,10 +189,10 @@ export default function FundPage() {
                     </li>
                   ))}
                 </ul>
-                <FundDonation />
               </li>
             ))}
           </ul>
+          <FundDonation />
         </div>
       </section>
 
