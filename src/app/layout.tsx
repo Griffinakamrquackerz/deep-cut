@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s · Deep Cut",
   },
   description:
-    "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+    "Independent short films and hidden gems. Watch, discover, and fall in love with movies all over again.",
   applicationName: "Deep Cut",
   appleWebApp: {
     capable: true,
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     siteName: "Deep Cut",
     title: "Deep Cut — movies you haven't met yet",
     description:
-      "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+      "Independent short films and hidden gems. Watch, discover, and fall in love with movies all over again.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "Deep Cut — movies you haven't met yet",
-    description: "An AI repertory theater for films you haven't met yet.",
+    description: "Independent short films and hidden gems for movie lovers.",
   },
 };
 
@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alternateName: "The Deep Cut",
             url: SITE_URL,
             description:
-              "An AI repertory theater. Tell it your taste, it deals you a movie you haven't met yet.",
+              "Independent short films and hidden gems for movie lovers.",
           }}
         />
         {/* Projected-film atmosphere — fixed, non-interactive overlays */}

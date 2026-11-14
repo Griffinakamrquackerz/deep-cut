@@ -73,7 +73,7 @@ export default function OpengraphImage() {
             }}
           >
             <span style={{ color: TICKET, fontSize: 28, letterSpacing: 4 }}>
-              AN AI REPERTORY THEATER
+              INDEPENDENT CINEMA · HIDDEN GEMS
             </span>
             <span style={{ color: DIM, fontSize: 26, letterSpacing: 3 }}>thedeepcut.xyz</span>
           </div>

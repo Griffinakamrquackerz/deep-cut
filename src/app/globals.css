@@ -170,6 +170,78 @@ body {
   color: var(--color-dim);
 }
 
+/* The landing page's clickable cinema program. */
+.landing-act {
+  border: 1px solid var(--color-line);
+  background: linear-gradient(120deg, rgba(47, 32, 25, 0.96), rgba(27, 21, 18, 0.98));
+}
+.landing-act[open] {
+  border-color: rgba(255, 180, 84, 0.5);
+}
+.landing-act-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  list-style: none;
+}
+.landing-act-summary::-webkit-details-marker { display: none; }
+.landing-act-summary:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: -2px;
+}
+.landing-act-number {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-ticket);
+}
+.landing-act-kicker, .landing-act-title, .landing-act-teaser { display: block; }
+.landing-act-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+}
+.landing-act-title {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--color-cream);
+}
+.landing-act-teaser {
+  margin-top: 0.45rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-dim);
+}
+.landing-act-toggle {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  color: var(--color-amber);
+}
+.landing-act[open] .landing-act-toggle { transform: rotate(45deg); }
+.landing-act-body {
+  margin: 0 1.25rem 1.25rem 3.3rem;
+  border-top: 1px solid var(--color-line);
+  padding-top: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-cream);
+}
+.landing-text-link {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 /* Marquee-bulb glow for display headings + accents. */
 .glow-amber {
   text-shadow: 0 0 22px rgba(255, 180, 84, 0.4), 0 0 4px rgba(255, 180, 84, 0.55);
