@@ -43,7 +43,7 @@ async function stripeGet<T>(path: string): Promise<T> {
 
 const TRIAL_DAYS = 90; // the 3-month free trial
 
-export type BalconyPlan = "monthly" | "lifetime" | "support" | "donation" | "points";
+export type BalconyPlan = "monthly" | "annual" | "lifetime" | "support" | "donation" | "points";
 
 /**
  * Floor for pay-what-you-want support.
@@ -129,6 +129,24 @@ export const LIFETIME_UNTIL = "2099-12-31T00:00:00.000Z";
 
 export function lifetimeConfigured(): boolean {
   return !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID_LIFETIME);
+}
+
+export function annualConfigured(): boolean {
+  return !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID_ANNUAL);
+}
+
+export async function validateAnnualPrice(): Promise<void> {
+  const priceId = process.env.STRIPE_PRICE_ID_ANNUAL;
+  if (!priceId) throw new Error("STRIPE_PRICE_ID_ANNUAL not set");
+  const price = await stripeGet<{
+    active: boolean; currency: string; unit_amount: number | null; type: string;
+    recurring: { interval: string; interval_count: number } | null;
+  }>(`/prices/${encodeURIComponent(priceId)}`);
+  if (!price.active || price.currency !== "usd" || price.unit_amount !== 3_999 ||
+      price.type !== "recurring" || price.recurring?.interval !== "year" ||
+      price.recurring.interval_count !== 1) {
+    throw new Error("Annual Stripe price must be an active USD $39.99 yearly price");
+  }
 }
 
 export async function validateLifetimePrice(): Promise<void> {
@@ -226,14 +244,15 @@ export async function createCheckoutSession(opts: {
     });
   }
 
-  const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId) throw new Error("STRIPE_PRICE_ID not set");
+  const priceId = plan === "annual" ? process.env.STRIPE_PRICE_ID_ANNUAL : process.env.STRIPE_PRICE_ID;
+  if (!priceId) throw new Error(`${plan === "annual" ? "STRIPE_PRICE_ID_ANNUAL" : "STRIPE_PRICE_ID"} not set`);
   return stripePost<{ url: string }>("/checkout/sessions", {
     ...common,
     mode: "subscription",
     "line_items[0][price]": priceId,
     "subscription_data[trial_period_days]": String(TRIAL_DAYS),
     "subscription_data[metadata][user_id]": opts.userId,
+    "subscription_data[metadata][plan]": plan,
   });
 }
 

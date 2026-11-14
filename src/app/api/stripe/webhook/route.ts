@@ -258,18 +258,20 @@ export async function POST(request: Request) {
       const subId = invoice.subscription ?? invoice.parent?.subscription_details?.subscription;
 
       if (subId && Number(invoice.amount_paid) > 0) {
+        if (!invoice.id) throw new Error("paid subscription invoice missing id");
         const sub = await getSubscription(subId);
         const userId = sub.metadata?.user_id;
         if (userId) {
-          await recordContribution(supabaseAdmin(), {
+          const recorded = await recordContribution(supabaseAdmin(), {
             userId,
             grossCents: Number(invoice.amount_paid),
             // Pay-what-you-want support and the fixed monthly plan are the
             // same thing to the Fund; the plan tag is what tells them apart.
             kind: sub.metadata?.plan === "support" ? "donation" : "subscription",
-            stripeRef: `in_${invoice.id ?? ""}`,
+            stripeRef: `in_${invoice.id}`,
             currency: invoice.currency,
           });
+          if (!recorded) throw new Error("subscription contribution not recorded");
         } else {
           // A subscription invoice with no user id on it. Nothing to credit,
           // so the money is real and the ledger doesn't know — logged loudly

@@ -42,6 +42,7 @@ export default function SettingsScreen({
   premiumUntil,
   hasStripeCustomer,
   premiumAvailable,
+  annualAvailable = false,
   lifetimeAvailable = false,
   isAdmin = false,
 }: {
@@ -54,6 +55,7 @@ export default function SettingsScreen({
   premiumUntil: string | null;
   hasStripeCustomer: boolean;
   premiumAvailable: boolean;
+  annualAvailable?: boolean;
   lifetimeAvailable?: boolean;
   isAdmin?: boolean;
 }) {
@@ -234,6 +236,7 @@ export default function SettingsScreen({
         until={premiumUntil}
         hasCustomer={hasStripeCustomer}
         available={premiumAvailable}
+        annualAvailable={annualAvailable}
         lifetimeAvailable={lifetimeAvailable}
       />
 
@@ -605,21 +608,23 @@ function BalconySeats({
   until,
   hasCustomer,
   available,
+  annualAvailable = false,
   lifetimeAvailable = false,
 }: {
   active: boolean;
   until: string | null;
   hasCustomer: boolean;
   available: boolean;
+  annualAvailable?: boolean;
   lifetimeAvailable?: boolean;
 }) {
-  const [busy, setBusy] = useState<null | "monthly" | "lifetime" | "portal">(null);
+  const [busy, setBusy] = useState<null | "monthly" | "annual" | "lifetime" | "portal">(null);
   const [err, setErr] = useState<string | null>(null);
 
   // A far-future expiry is the one-time "lifetime" pass, not a renewing sub.
   const lifetime = !!until && new Date(until).getFullYear() >= 2099;
 
-  async function checkout(plan: "monthly" | "lifetime") {
+  async function checkout(plan: "monthly" | "annual" | "lifetime") {
     setBusy(plan);
     setErr(null);
     const res = await fetch("/api/stripe/checkout", {
@@ -655,7 +660,7 @@ function BalconySeats({
     setBusy(null);
   }
 
-  if (!available && !lifetimeAvailable && !active) return null; // Stripe not set up — hide storefront
+  if (!available && !annualAvailable && !lifetimeAvailable && !active) return null; // Stripe not set up — hide storefront
 
   return (
     <div className="film-card rounded-lg p-4">
@@ -685,6 +690,20 @@ function BalconySeats({
               {busy === "portal" ? "Opening…" : "Manage subscription"}
             </button>
           )}
+          {annualAvailable && !hasCustomer && !lifetime && (
+            <>
+              <button
+                onClick={() => void checkout("annual")}
+                disabled={!!busy}
+                className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
+              >
+                {busy === "annual" ? "Opening the box office…" : "3 months free, then $39.99/year"}
+              </button>
+              <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+                Renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
+              </p>
+            </>
+          )}
         </>
       ) : (
         <>
@@ -702,6 +721,20 @@ function BalconySeats({
             >
               {busy === "monthly" ? "Opening the box office…" : "★ 3 months free — see monthly price at checkout ★"}
             </button>
+          )}
+          {annualAvailable && (
+            <button
+              onClick={() => void checkout("annual")}
+              disabled={!!busy}
+              className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
+            >
+              {busy === "annual" ? "Opening the box office…" : "3 months free, then $39.99/year"}
+            </button>
+          )}
+          {annualAvailable && (
+            <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
+              Renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
+            </p>
           )}
           {!lifetimeAvailable && (
             <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">

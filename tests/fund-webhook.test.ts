@@ -9,10 +9,11 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   setPremium: vi.fn(),
   track: vi.fn(),
+  subscription: vi.fn(),
 }));
 
 vi.mock("@/lib/stripe", () => ({
-  getSubscription: vi.fn(),
+  getSubscription: mocks.subscription,
   verifyWebhookSignature: () => true,
 }));
 vi.mock("@/lib/fund", () => ({
@@ -35,6 +36,7 @@ describe("donation webhook", () => {
     mocks.points.mockReset().mockResolvedValue(undefined);
     mocks.approve.mockReset().mockResolvedValue({ ok: true, userId: "member-1" });
     mocks.track.mockReset().mockResolvedValue(undefined);
+    mocks.subscription.mockReset().mockResolvedValue({ metadata: { user_id: "member-1", plan: "annual" } });
     mocks.rpc.mockReset();
     mocks.setPremium.mockReset();
   });
@@ -141,5 +143,23 @@ describe("donation webhook", () => {
     expect(mocks.donation).toHaveBeenCalledTimes(1);
     expect((await deliverSkip(true)).status).toBe(200);
     expect(mocks.points).toHaveBeenCalledTimes(1);
+  });
+
+  it("credits each paid annual invoice and retries if the ledger write fails", async () => {
+    const invoice = (amount: number) => POST(new Request("https://example.test/api/stripe/webhook", {
+      method: "POST",
+      body: JSON.stringify({ type: "invoice.payment_succeeded", data: { object: {
+        id: "in_annual", amount_paid: amount, currency: "usd",
+        parent: { subscription_details: { subscription: "sub_annual" } },
+      } } }),
+    }));
+    expect((await invoice(0)).status).toBe(200);
+    expect(mocks.record).not.toHaveBeenCalled();
+    expect((await invoice(3999)).status).toBe(200);
+    expect(mocks.record).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      userId: "member-1", grossCents: 3999, kind: "subscription", stripeRef: "in_in_annual",
+    }));
+    mocks.record.mockResolvedValueOnce(false);
+    expect((await invoice(3999)).status).toBe(500);
   });
 });

@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   checkout: vi.fn(),
   validatePrice: vi.fn(),
+  validateAnnual: vi.fn(),
+  annualReady: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({ currentUser: mocks.user }));
 vi.mock("@/lib/supabase/admin", () => ({ supabaseAdmin: () => ({ rpc: mocks.rpc }) }));
@@ -12,8 +14,10 @@ vi.mock("@/lib/premium", () => ({ premiumConfigured: () => true }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("@/lib/stripe", () => ({
   createCheckoutSession: mocks.checkout,
+  annualConfigured: mocks.annualReady,
   lifetimeConfigured: () => true,
   validateLifetimePrice: mocks.validatePrice,
+  validateAnnualPrice: mocks.validateAnnual,
   SUPPORT_MIN_CENTS: 100,
   SUPPORT_MAX_CENTS: 99_999_999,
 }));
@@ -32,6 +36,8 @@ describe("checkout route", () => {
     mocks.rpc.mockReset();
     mocks.checkout.mockReset().mockResolvedValue({ url: "https://checkout.stripe.test" });
     mocks.validatePrice.mockReset().mockResolvedValue(undefined);
+    mocks.validateAnnual.mockReset().mockResolvedValue(undefined);
+    mocks.annualReady.mockReset().mockReturnValue(true);
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -68,5 +74,17 @@ describe("checkout route", () => {
     expect(mocks.checkout).not.toHaveBeenCalled();
     expect((await POST(request({ plan: "points", amountCents: 501 }))).status).toBe(200);
     expect(mocks.checkout).toHaveBeenCalledWith(expect.objectContaining({ plan: "points", amountCents: 501 }));
+  });
+
+  it("only starts annual checkout when its price is configured and validated", async () => {
+    mocks.annualReady.mockReturnValueOnce(false);
+    expect((await POST(request({ plan: "annual" }))).status).toBe(503);
+    expect(mocks.checkout).not.toHaveBeenCalled();
+    expect((await POST(request({ plan: "annual" }))).status).toBe(200);
+    expect(mocks.validateAnnual).toHaveBeenCalledTimes(1);
+    expect(mocks.checkout).toHaveBeenCalledWith(expect.objectContaining({ plan: "annual" }));
+    mocks.validateAnnual.mockRejectedValueOnce(new Error("invalid price"));
+    expect((await POST(request({ plan: "annual" }))).status).toBe(502);
+    expect(mocks.checkout).toHaveBeenCalledTimes(1);
   });
 });

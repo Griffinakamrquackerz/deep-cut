@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/supabase/server";
 import {
   createCheckoutSession,
+  annualConfigured,
   lifetimeConfigured,
   SUPPORT_MIN_CENTS,
   SUPPORT_MAX_CENTS,
   validateLifetimePrice,
+  validateAnnualPrice,
   type BalconyPlan,
 } from "@/lib/stripe";
 import { premiumConfigured } from "@/lib/premium";
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
     amountCents?: number;
   };
   const plan: BalconyPlan =
-    body.plan === "lifetime" ? "lifetime" : body.plan === "support" ? "support" :
+    body.plan === "lifetime" ? "lifetime" : body.plan === "annual" ? "annual" : body.plan === "support" ? "support" :
       body.plan === "donation" ? "donation" : body.plan === "points" ? "points" : "monthly";
 
   // Support builds its price inline, so it needs a secret key but no preset
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
   const ready =
     plan === "lifetime"
       ? lifetimeConfigured()
+      : plan === "annual" ? annualConfigured()
       : plan === "support" || plan === "donation" || plan === "points"
         ? !!process.env.STRIPE_SECRET_KEY
         : premiumConfigured();
@@ -50,6 +53,7 @@ export async function POST(request: Request) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   try {
     let lifetimeReservation: { id: string; expiresAt: number } | undefined;
+    if (plan === "annual") await validateAnnualPrice();
     if (plan === "lifetime") {
       await validateLifetimePrice();
       const { data, error } = await supabaseAdmin().rpc("reserve_lifetime_slot", { p_user_id: user.id });

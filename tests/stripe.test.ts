@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHmac } from "crypto";
-import { createCheckoutSession, createSkipLineSession, validateLifetimePrice, verifyWebhookSignature } from "@/lib/stripe";
+import { createCheckoutSession, createSkipLineSession, validateAnnualPrice, validateLifetimePrice, verifyWebhookSignature } from "@/lib/stripe";
 
 const SECRET = "whsec_test_secret";
 const NOW = 1_800_000_000;
@@ -72,6 +72,33 @@ describe("verifyWebhookSignature", () => {
       const params = new URLSearchParams(fetchMock.mock.calls[0][1].body);
       expect(params.get("mode")).toBe("subscription");
       expect(params.has("managed_payments[enabled]")).toBe(false);
+    });
+
+    it("validates and creates an annual subscription with the same trial", async () => {
+      vi.stubEnv("STRIPE_SECRET_KEY", "sk_test");
+      vi.stubEnv("STRIPE_PRICE_ID_ANNUAL", "price_annual");
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify({
+          active: true, currency: "usd", unit_amount: 3999, type: "recurring",
+          recurring: { interval: "year", interval_count: 1 },
+        })))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ url: "https://checkout.stripe.test" })))
+        .mockResolvedValueOnce(new Response(JSON.stringify({
+          active: true, currency: "usd", unit_amount: 3999, type: "recurring",
+          recurring: { interval: "month", interval_count: 1 },
+        })));
+      vi.stubGlobal("fetch", fetchMock);
+      await expect(validateAnnualPrice()).resolves.toBeUndefined();
+      await createCheckoutSession({
+        userId: "user-1", email: "member@example.test", appUrl: "https://example.test", plan: "annual",
+      });
+      const params = new URLSearchParams(fetchMock.mock.calls[1][1].body);
+      expect(params.get("line_items[0][price]")).toBe("price_annual");
+      expect(params.get("mode")).toBe("subscription");
+      expect(params.get("subscription_data[trial_period_days]")).toBe("90");
+      expect(params.get("subscription_data[metadata][user_id]")).toBe("user-1");
+      expect(params.get("subscription_data[metadata][plan]")).toBe("annual");
+      await expect(validateAnnualPrice()).rejects.toThrow("USD $39.99 yearly");
     });
 
     it("accepts only the advertised lifetime Stripe price", async () => {
