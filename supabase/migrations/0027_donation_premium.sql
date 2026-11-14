@@ -1,5 +1,6 @@
 -- Donation access is separate from subscription and lifetime entitlements, so
 -- subscription lifecycle events cannot remove time earned by a donation.
+begin;
 create table if not exists public.donation_premium (
   user_id uuid primary key references public.users(id) on delete cascade,
   premium_until timestamptz not null
@@ -39,3 +40,4 @@ end;
 $$;
 revoke all on function public.record_fund_donation(uuid, integer, integer, text, text, text) from public, anon, authenticated;
 grant execute on function public.record_fund_donation(uuid, integer, integer, text, text, text) to service_role;
+commit;

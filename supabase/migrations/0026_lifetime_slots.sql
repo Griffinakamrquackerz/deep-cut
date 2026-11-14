@@ -1,5 +1,34 @@
 -- Reserve a lifetime place before creating Stripe Checkout. Reservations are
 -- released only by Stripe's checkout.session.expired event, not by a timer.
+begin;
+
+-- Older deployments store premium status in events instead of user columns.
+-- Preserve the latest effective status before switching webhook writes.
+alter table public.users add column if not exists premium_until timestamptz;
+alter table public.users add column if not exists stripe_customer_id text;
+revoke select (premium_until, stripe_customer_id), update (premium_until, stripe_customer_id)
+  on public.users from public, anon, authenticated;
+
+do $$
+begin
+  if to_regclass('public.lifetime_slots') is null then
+    with latest as (
+      select distinct on (user_id) user_id, props
+      from public.events
+      where name = 'premium_status' and user_id is not null
+      order by user_id, created_at desc
+    )
+    update public.users as u
+    set premium_until = case when jsonb_typeof(latest.props->'premium_until') = 'string'
+                             then (latest.props->>'premium_until')::timestamptz else null end,
+        stripe_customer_id = case when jsonb_typeof(latest.props->'stripe_customer_id') = 'string'
+                                  then latest.props->>'stripe_customer_id' else null end
+    from latest
+    where u.id = latest.user_id and u.premium_until is null and u.stripe_customer_id is null;
+  end if;
+end;
+$$;
+
 create table if not exists public.lifetime_slots (
   user_id uuid unique references public.users(id) on delete set null,
   reservation_id uuid primary key default gen_random_uuid(),
@@ -93,3 +122,5 @@ end;
 $$;
 revoke all on function public.grant_lifetime_premium(uuid) from public, anon, authenticated;
 grant execute on function public.grant_lifetime_premium(uuid) to service_role;
+
+commit;
