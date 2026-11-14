@@ -114,6 +114,7 @@ export default function FundPage() {
               <p>
                 Paid subscription charges and optional donations both count toward your current-round
                 total. Every whole dollar earns one vote, with <strong>no vote cap</strong>.
+                Any one-time donation over $4 also gives you 30 days of premium access.
               </p>
               <p>
                 More support earns more votes and moves you up the perk tiers. Larger contributions

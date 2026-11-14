@@ -158,7 +158,7 @@ Supabase Postgres, RLS on. Migrations in `supabase/migrations/`:
 
 ## 9. Payments (Stripe)
 
-- **Model:** freemium. App is free; **Balcony Seats** has a monthly Stripe price with a 90-day trial (`TRIAL_DAYS=90`) or a **$150 one-time lifetime** pass for the first 100 lifetime purchases. 30 deals/day + ad-free vs 10/day free. Optional one-time donations and paid subscription charges both count toward the current-round perk tiers and earn one vote per whole dollar. Apply migration 0026 before deployment; see ONBOARDING for Stripe setup and reservation reconciliation.
+- **Model:** freemium. App is free; **Balcony Seats** has a monthly Stripe price with a 90-day trial (`TRIAL_DAYS=90`) or a **$150 one-time lifetime** pass for the first 100 lifetime purchases. 30 deals/day + ad-free vs 10/day free. Optional one-time donations and paid subscription charges both count toward the current-round perk tiers and earn one vote per whole dollar. Each donation over $4 also grants 30 days of premium. Apply migrations 0026 and 0027 before deployment; see ONBOARDING for Stripe setup and reservation reconciliation.
 - **Flow:** `api/stripe/checkout` (subscription or one-time by `plan`) → Stripe Checkout → `api/stripe/webhook` sets `premium_until`. Billing portal via `api/stripe/portal`. Premium status read by `isPremium()` (`src/lib/premium.ts`), events-fallback aware.
 - **Lifetime** = `premium_until` set to 2099 (see `LIFETIME_UNTIL`).
 - ⚠️ **Gotcha already fixed, know it exists:** recent Stripe API versions moved `current_period_end` off the subscription root onto `items.data[]`. The webhook reads it defensively (`periodEndSeconds`) — if you touch subscription parsing, preserve that. The webhook **must return 200**; a throw = 500 = Stripe retries = no upgrade.

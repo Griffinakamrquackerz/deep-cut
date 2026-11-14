@@ -4,8 +4,7 @@ import {
   verifyWebhookSignature,
   type StripeSubscription,
 } from "@/lib/stripe";
-import { setPremium } from "@/lib/premium";
-import { recordContribution, premiumUntilFor, premiumMonthsFor } from "@/lib/fund";
+import { recordContribution, recordDonation, premiumMonthsFor } from "@/lib/fund";
 import { approveEmail } from "@/lib/waitlist";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { track } from "@/lib/analytics";
@@ -86,17 +85,12 @@ export async function POST(request: Request) {
           console.error("paid donation missing user, session id or amount", session.id);
           return NextResponse.json({ error: "invalid_donation" }, { status: 500 });
         }
-        const recorded = await recordContribution(supabaseAdmin(), {
+        await recordDonation(supabaseAdmin(), {
           userId,
           grossCents: session.amount_total,
-          kind: "donation",
           stripeRef: `cs_${session.id}`,
           currency: session.currency,
         });
-        if (!recorded) return NextResponse.json({ error: "donation_record_failed" }, { status: 500 });
-        return NextResponse.json({ received: true });
-      }
-      if (event.type === "checkout.session.async_payment_succeeded") {
         return NextResponse.json({ received: true });
       }
       // ── Bought their way past the waitlist ──
@@ -107,12 +101,17 @@ export async function POST(request: Request) {
       // auth.users creates the public.users row) that the fund ledger needs a
       // foreign key to. Attribute the money second.
       if (session.metadata?.skip_line === "1") {
+        if (session.payment_status !== "paid") return NextResponse.json({ received: true });
+        if (!session.id || !session.amount_total) {
+          console.error("paid skip-line session missing id or amount", session.id);
+          return NextResponse.json({ error: "invalid_donation" }, { status: 500 });
+        }
         const email = (session.metadata?.email ?? session.customer_email ?? "")
           .trim()
           .toLowerCase();
         if (!email) {
           console.error("skip_line session with no email", session.id);
-          return NextResponse.json({ received: true });
+          return NextResponse.json({ error: "skip_line_missing_email" }, { status: 500 });
         }
 
         const seated = await approveEmail(email);
@@ -144,29 +143,13 @@ export async function POST(request: Request) {
         }
 
         if (userId) {
-          const gross = Number(session.amount_total ?? 0);
-          await recordContribution(db, {
+          const gross = session.amount_total;
+          await recordDonation(db, {
             userId,
             grossCents: gross,
-            kind: "donation",
-            stripeRef: `cs_${session.id ?? ""}`,
+            stripeRef: `cs_${session.id}`,
             currency: session.currency,
           });
-          // Unlock the full app too. The landing page promises a donation does
-          // more than buy a vote, and until now that was only true of the
-          // monthly plan — a one-time supporter got seated, earned votes, and
-          // still saw ads. Nobody has an existing window here: the account was
-          // created seconds ago by approveEmail.
-          const { data: current } = await db
-            .from("users")
-            .select("premium_until")
-            .eq("id", userId)
-            .maybeSingle();
-          await setPremium(
-            userId,
-            premiumUntilFor(gross, (current?.premium_until as string | null) ?? null),
-            null,
-          );
           await track(userId, "skip_line_seated", {
             cents: gross,
             months: premiumMonthsFor(gross),
@@ -175,7 +158,11 @@ export async function POST(request: Request) {
           // Seated but unattributable. Logged loudly rather than swallowed:
           // the bar and their votes are both wrong until somebody looks.
           console.error(`skip_line: seated ${email} but found no users row to credit`);
+          return NextResponse.json({ error: "skip_line_user_missing" }, { status: 500 });
         }
+        return NextResponse.json({ received: true });
+      }
+      if (event.type === "checkout.session.async_payment_succeeded") {
         return NextResponse.json({ received: true });
       }
 

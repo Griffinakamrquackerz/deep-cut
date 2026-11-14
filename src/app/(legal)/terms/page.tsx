@@ -56,7 +56,9 @@ export default function TermsPage() {
         separate one-time donations. Paid subscription charges and donations count toward
         the current film round: each whole dollar of the combined total earns one vote, with
         no vote cap. Contributions also count toward the published, cumulative perk tiers.
-        A larger contribution carries more voting influence.
+        A larger contribution carries more voting influence. Each one-time donation over $4
+        provides 30 days of premium access; this runs alongside any existing subscription or
+        lifetime access and does not change subscription billing.
       </p>
       <p>
         When available, the $150 lifetime offer is a one-time payment for lifetime premium

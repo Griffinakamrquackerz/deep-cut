@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function FundDonation() {
   const [amount, setAmount] = useState("25");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signIn, setSignIn] = useState(false);
+  const [returned, setReturned] = useState(false);
+
+  useEffect(() => {
+    setReturned(new URLSearchParams(window.location.search).get("support") === "complete");
+  }, []);
 
   async function donate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +59,14 @@ export default function FundDonation() {
       <p className="lp-prose" style={{ marginTop: "0.75rem" }}>
         Make an optional one-time donation alongside a subscription or on its own.
         Each whole dollar in your current-round total earns a vote and counts toward the perk tiers.
+        A donation over $4 also gives you 30 days of premium.
       </p>
+      {returned && (
+        <p role="status" className="lp-note" style={{ marginTop: "0.75rem" }}>
+          Thanks for supporting the fund. Votes and eligible premium appear after Stripe confirms
+          your payment. <Link href="/vote" className="lp-link">Go to the ballot</Link>
+        </p>
+      )}
       <label htmlFor="fund-donation" className="lp-mono">One-time amount in USD</label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginTop: "0.5rem" }}>
         <input id="fund-donation" type="text" inputMode="decimal" value={amount}
@@ -68,7 +80,8 @@ export default function FundDonation() {
         {error} {signIn && <Link href="/login" className="lp-link">Sign in</Link>}
       </p>}
       <p className="lp-note" style={{ marginTop: "0.75rem" }}>
-        One-time payment, not a subscription. Donations do not change your subscription.
+        One-time payment, not a subscription. Donation premium runs alongside any existing
+        subscription or lifetime access; it does not change your billing.
       </p>
     </form>
   );

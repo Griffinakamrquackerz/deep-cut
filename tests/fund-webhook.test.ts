@@ -2,6 +2,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   record: vi.fn(),
+  donation: vi.fn(),
   rpc: vi.fn(),
   from: vi.fn(),
   setPremium: vi.fn(),
@@ -12,10 +13,9 @@ vi.mock("@/lib/stripe", () => ({
   getSubscription: vi.fn(),
   verifyWebhookSignature: () => true,
 }));
-vi.mock("@/lib/premium", () => ({ setPremium: mocks.setPremium }));
 vi.mock("@/lib/fund", () => ({
   recordContribution: mocks.record,
-  premiumUntilFor: vi.fn(),
+  recordDonation: mocks.donation,
   premiumMonthsFor: vi.fn(),
 }));
 vi.mock("@/lib/supabase/admin", () => ({ supabaseAdmin: () => ({ rpc: mocks.rpc, from: mocks.from }) }));
@@ -28,6 +28,7 @@ describe("donation webhook", () => {
   beforeEach(() => {
     vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
     mocks.record.mockReset().mockResolvedValue(true);
+    mocks.donation.mockReset().mockResolvedValue(undefined);
     mocks.rpc.mockReset();
     mocks.setPremium.mockReset();
   });
@@ -91,10 +92,10 @@ describe("donation webhook", () => {
       } } }),
     }));
 
-  it("records a paid donation once by session and leaves premium alone", async () => {
+  it("records a paid donation through the atomic entitlement handler", async () => {
     expect((await deliver("paid")).status).toBe(200);
-    expect(mocks.record).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      userId: "member-1", grossCents: 2500, kind: "donation", stripeRef: "cs_cs_test",
+    expect(mocks.donation).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      userId: "member-1", grossCents: 2500, stripeRef: "cs_cs_test",
     }));
     expect(mocks.setPremium).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
@@ -102,13 +103,13 @@ describe("donation webhook", () => {
 
   it("waits for payment and handles asynchronous success", async () => {
     expect((await deliver("unpaid")).status).toBe(200);
-    expect(mocks.record).not.toHaveBeenCalled();
+    expect(mocks.donation).not.toHaveBeenCalled();
     expect((await deliver("paid", "checkout.session.async_payment_succeeded")).status).toBe(200);
-    expect(mocks.record).toHaveBeenCalledTimes(1);
+    expect(mocks.donation).toHaveBeenCalledTimes(1);
   });
 
   it("asks Stripe to retry if the donation cannot be recorded", async () => {
-    mocks.record.mockResolvedValue(false);
+    mocks.donation.mockRejectedValue(new Error("ledger unavailable"));
     expect((await deliver("paid")).status).toBe(500);
   });
 });

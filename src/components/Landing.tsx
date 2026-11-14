@@ -633,6 +633,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <p>
                   Yes. It&apos;s free to use once you&apos;re in. You can optionally subscribe for the full app,
                   donate to support the fund, or do both. Paid support earns votes on the current film round.
+                  A one-time donation over $4 also gives you 30 days of premium.
                 </p>
               </details>
               <details>

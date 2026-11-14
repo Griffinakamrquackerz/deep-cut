@@ -113,8 +113,7 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
         {tier?.credit ? ` · credited as ${tier.credit}` : null}
         <br />
         {Math.floor(cents / 100)} vote{cents >= 200 ? "s" : ""} ·{" "}
-        {premiumMonthsFor(cents)} month{premiumMonthsFor(cents) === 1 ? "" : "s"} of the
-        full app · 60% into the Fund
+        {premiumMonthsFor(cents)} month of the full app · 60% into the Fund
       </p>
 
       <input

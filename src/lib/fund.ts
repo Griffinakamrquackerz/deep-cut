@@ -52,29 +52,9 @@ export function pointsFor(grossCents: number): number {
   return Math.floor(Math.max(0, grossCents) / 100);
 }
 
-/**
- * How long a ONE-TIME contribution unlocks the full app for.
- *
- * The landing page says a donation does more than unlock the app, which was
- * true of the monthly plan and quietly false of every one-time payment: those
- * seated the member and earned them votes, and never touched premium_until.
- * Somebody who put in $25 got ads.
- *
- * A fiver a month is the rate, matching the Ticket Holder tier, so every $5
- * buys a month and the floor is one month. Legible in a sentence, which is the
- * test any pricing rule has to pass.
- */
+/** A one-time donation over $4 grants 30 days of premium. */
 export function premiumMonthsFor(grossCents: number): number {
-  return Math.max(1, Math.floor(Math.max(0, grossCents) / 500));
-}
-
-/** That window as a timestamp, extending whatever they already have. */
-export function premiumUntilFor(grossCents: number, from?: string | null): string {
-  // Extend rather than replace: a member who supports twice in a month should
-  // end up with two months, not have the second payment overwrite the first.
-  const base = from ? new Date(from).getTime() : 0;
-  const start = Number.isFinite(base) && base > Date.now() ? base : Date.now();
-  return new Date(start + premiumMonthsFor(grossCents) * 30 * 24 * 60 * 60 * 1000).toISOString();
+  return grossCents > 400 ? 1 : 0;
 }
 
 /** The Fund's cut of a payment. Rounded down — never over-promise the pot. */
@@ -83,6 +63,25 @@ export function fundCutCents(grossCents: number): number {
 }
 
 export type ContributionKind = "subscription" | "lifetime" | "donation" | "adjustment";
+
+/** Record a paid donation and its premium entitlement atomically. */
+export async function recordDonation(
+  db: SupabaseClient,
+  input: { userId: string; grossCents: number; stripeRef: string; currency: string | undefined },
+): Promise<void> {
+  if (input.currency !== "usd" || fundCurrency() !== "usd") {
+    throw new Error("donation currency does not match the USD fund");
+  }
+  const { data, error } = await db.rpc("record_fund_donation", {
+    p_user_id: input.userId,
+    p_gross_cents: input.grossCents,
+    p_fund_cents: fundCutCents(input.grossCents),
+    p_cycle: currentCycle(),
+    p_stripe_ref: input.stripeRef,
+    p_currency: input.currency,
+  });
+  if (error || data !== true) throw new Error(`donation recording failed: ${error?.message ?? "unknown error"}`);
+}
 
 /**
  * Record a payment against the Fund.

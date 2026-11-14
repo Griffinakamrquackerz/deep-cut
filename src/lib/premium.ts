@@ -39,14 +39,18 @@ export async function getPremium(userId: string): Promise<PremiumState> {
     .select("premium_until, stripe_customer_id")
     .eq("id", userId)
     .maybeSingle();
-  if (!error && data && (data.premium_until || data.stripe_customer_id)) {
-    return {
+  const base = !error && data && (data.premium_until || data.stripe_customer_id)
+    ? {
       premiumUntil: (data.premium_until as string | null) ?? null,
       stripeCustomerId: (data.stripe_customer_id as string | null) ?? null,
-    };
-  }
-  // Columns missing (pre-0005) or empty — consult the fallback either way.
-  return readFallback(userId);
+    }
+    : await readFallback(userId);
+  const donation = await db.from("donation_premium").select("premium_until").eq("user_id", userId).maybeSingle();
+  if (donation.error) throw new Error(`donation premium unreadable: ${donation.error.message}`);
+  const donationUntil = (donation.data?.premium_until as string | null) ?? null;
+  const premiumUntil = donationUntil && (!base.premiumUntil || new Date(donationUntil) > new Date(base.premiumUntil))
+    ? donationUntil : base.premiumUntil;
+  return { ...base, premiumUntil };
 }
 
 export async function isPremium(userId: string): Promise<boolean> {
