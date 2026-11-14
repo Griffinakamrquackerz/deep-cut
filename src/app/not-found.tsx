@@ -24,8 +24,7 @@ export default function NotFound() {
           <p className="card-signed">— The Management</p>
         </div>
         <p className="card-note">
-          Error 404. This page was never shot, got cut for time, or fell off the back of the truck
-          between here and the last theatre.
+          Error 404. That page isn&apos;t in the can. It may have moved, or it was never shot.
         </p>
         <div className="card-actions">
           <Link href="/" className="card-btn card-btn--amber">

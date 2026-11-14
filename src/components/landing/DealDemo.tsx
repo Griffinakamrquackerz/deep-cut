@@ -30,7 +30,7 @@ const HAND = [
     title: "Chungking Express",
     meta: "1994 · Wong Kar-wai",
     hue: "#2f4e5c",
-    why: "Lovesick cops, expiring pineapple and a Hong Kong that never sleeps. Same ache, twice the pulse.",
+    why: "Two lovesick cops and a snack bar in Hong Kong. The same loneliness, moving faster.",
   },
   {
     depth: 4,
@@ -46,7 +46,7 @@ const HAND = [
     title: "Liquid Sky",
     meta: "1982 · Slava Tsukerman",
     hue: "#7a2e2e",
-    why: "Tiny aliens land on a downtown New York rooftop. Neon, synths, and nobody supervising.",
+    why: "Aliens land on a downtown New York rooftop in 1982. Neon, synths, and no adults.",
   },
 ];
 

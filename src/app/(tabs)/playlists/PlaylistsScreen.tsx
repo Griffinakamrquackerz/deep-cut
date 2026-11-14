@@ -321,7 +321,7 @@ export default function PlaylistsScreen({
                   name={p.name}
                   items={p.playlist_items}
                   meta="made for you"
-                  sticker="Be kind · rewind"
+                  sticker="For you"
                   plain
                 />
               </li>

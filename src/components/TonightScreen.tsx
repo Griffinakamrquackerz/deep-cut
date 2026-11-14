@@ -471,7 +471,7 @@ export default function TonightScreen({
           what="deal"
           audience="your taste only"
           label="Deep cuts"
-          fine="May contain subtitles, slow burns and feelings. Dealt by the house."
+          fine="For subtitles, long takes and unresolved endings."
         />
         <ul className="flex flex-col gap-4">
           {visible.map((rec, idx) => {

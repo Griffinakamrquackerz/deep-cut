@@ -249,9 +249,7 @@ export default function ProfileView(data: ProfileViewData) {
               ...(data.playlists.length > 0
                 ? [{ role: "mixtapes", names: data.playlists.slice(0, 4).map((p) => p.name) }]
                 : []),
-              { role: "special thanks", names: [data.isMe ? "everyone who lent you a tape" : "you, for reading this far"], you: true },
             ]}
-            tail="No films were harmed in the making of this taste."
           />
         </div>
       )}

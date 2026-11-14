@@ -173,7 +173,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 what="double feature"
                 audience="people who stay through the credits"
                 label="Deep cuts only"
-                fine="Some films may be unknown to your friends. Viewer discretion is the whole point."
+                fine="For films you haven't heard of yet. No prior viewing required."
               />
             </div>
             <div className="lp-double-head">
@@ -364,8 +364,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               How a film <em>gets made</em> here
             </h2>
             <p className="lp-lede" data-reveal="rise">
-              No studio, no algorithm, no room you can&apos;t get into. Your membership goes in one end and a
-              feature comes out the other. Five frames, start to premiere.
+              No studio, and no room you can&apos;t get into. Membership goes in one end and a feature comes
+              out the other. Five frames, start to premiere.
             </p>
 
             <div className="lp-strip">
@@ -567,8 +567,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <p className="lp-door-for">If you watch them</p>
                 <h3>You&apos;ve seen the top row of every app.</h3>
                 <p className="lp-door-desc">
-                  You want the one a friend with unbearable taste would press into your hands. Deep Cut is that
-                  friend, with a streaming service attached and a vote on what gets made next.
+                  You want the film a friend with good taste would hand you without explaining it. Deep Cut
+                  does that, runs {channels} channels of shorts, and gives you a vote on what gets made next.
                 </p>
                 <ul>
                   <li>Recommendations with a reason on every card</li>
