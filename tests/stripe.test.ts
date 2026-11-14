@@ -72,6 +72,7 @@ describe("verifyWebhookSignature", () => {
       const params = new URLSearchParams(fetchMock.mock.calls[0][1].body);
       expect(params.get("mode")).toBe("subscription");
       expect(params.has("managed_payments[enabled]")).toBe(false);
+      expect(params.get("subscription_data[trial_period_days]")).toBe("30");
     });
 
     it("validates and creates an annual subscription with the same trial", async () => {
@@ -95,7 +96,7 @@ describe("verifyWebhookSignature", () => {
       const params = new URLSearchParams(fetchMock.mock.calls[1][1].body);
       expect(params.get("line_items[0][price]")).toBe("price_annual");
       expect(params.get("mode")).toBe("subscription");
-      expect(params.get("subscription_data[trial_period_days]")).toBe("90");
+      expect(params.get("subscription_data[trial_period_days]")).toBe("30");
       expect(params.get("subscription_data[metadata][user_id]")).toBe("user-1");
       expect(params.get("subscription_data[metadata][plan]")).toBe("annual");
       await expect(validateAnnualPrice()).rejects.toThrow("USD $39.99 yearly");

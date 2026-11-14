@@ -1,5 +1,5 @@
 // Minimal Stripe client over raw REST — no SDK dependency. Everything the
-// Balcony Seats subscription needs: checkout with a 3-month trial, the
+// Balcony Seats subscription needs: checkout with a 30-day trial, the
 // billing portal, subscription reads, and webhook signature verification.
 
 import { createHmac, timingSafeEqual } from "crypto";
@@ -41,7 +41,7 @@ async function stripeGet<T>(path: string): Promise<T> {
   return data;
 }
 
-const TRIAL_DAYS = 90; // the 3-month free trial
+const TRIAL_DAYS = 30;
 
 export type BalconyPlan = "monthly" | "annual" | "lifetime" | "support" | "donation" | "points";
 

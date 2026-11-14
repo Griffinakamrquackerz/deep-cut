@@ -58,11 +58,11 @@ describe("donation webhook", () => {
     });
     afterEach(() => vi.unstubAllEnvs());
 
-    const deliver = (paymentStatus: string, amount = 15_000) =>
+    const deliver = (paymentStatus: string, amount = 15_000, subtotal = 15_000) =>
       POST(new Request("https://example.test/api/stripe/webhook", {
         method: "POST",
         body: JSON.stringify({ type: "checkout.session.completed", data: { object: {
-          id: "cs_lifetime", amount_total: amount, currency: "usd", payment_status: paymentStatus,
+          id: "cs_lifetime", amount_subtotal: subtotal, amount_total: amount, currency: "usd", payment_status: paymentStatus,
           metadata: { plan: "lifetime", user_id: "member-1", lifetime_reservation_id: "slot-1" },
         } } }),
       }));
@@ -76,9 +76,16 @@ describe("donation webhook", () => {
       }));
     });
 
+    it("grants lifetime and credits the full amount when tax is added", async () => {
+      expect((await deliver("paid", 15_938)).status).toBe(200);
+      expect(mocks.rpc).toHaveBeenCalledWith("grant_lifetime_premium", { p_user_id: "member-1" });
+      expect(mocks.record).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ grossCents: 15_938 }));
+    });
+
     it("does not grant lifetime for an unpaid or incorrect amount", async () => {
       expect((await deliver("unpaid")).status).toBe(200);
       expect((await deliver("paid", 100)).status).toBe(500);
+      expect((await deliver("paid", 15_000, 100)).status).toBe(500);
       expect(mocks.rpc).not.toHaveBeenCalled();
       expect(mocks.record).not.toHaveBeenCalled();
     });

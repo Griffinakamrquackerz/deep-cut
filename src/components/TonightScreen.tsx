@@ -126,7 +126,7 @@ export default function TonightScreen({
         const data = await res.json().catch(() => null);
         setMessage(
           data?.premium === false
-            ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 3 months free in Settings."
+            ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 30 days free in Settings."
             : "You've hit today's deal limit — back tomorrow.",
         );
       } else if (!res.ok) {

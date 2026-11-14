@@ -638,7 +638,7 @@ function BalconySeats({
       return;
     }
     setErr(
-      data?.error === "lifetime_sold_out" ? "The first 100 lifetime seats have sold out." :
+      data?.error === "lifetime_sold_out" ? "The first 1,000 lifetime seats are currently purchased or reserved." :
       data?.error === "lifetime_already_owned" ? "You already have lifetime access." :
       data?.error === "lifetime_reservation_pending" ? "Your lifetime checkout is still pending. Please try again after it expires." :
       data?.error === "lifetime_unavailable" ? "Lifetime checkout is not available right now." :
@@ -668,6 +668,23 @@ function BalconySeats({
         <p className="eyebrow text-ticket">Balcony Seats</p>
         {active && <span className="stamp stamp-gold">Member</span>}
       </div>
+      {lifetimeAvailable && !lifetime && (
+        <div className="mt-3 rounded border border-amber p-3">
+          <p className="font-display text-xl text-amber">LIFETIME BALCONY — $150 ONCE</p>
+          <p className="mt-1 font-mono text-[0.65rem] text-cream/90">
+            Premium access for the first 1,000 lifetime buyers · at least 150 votes in the current round.
+            Plus applicable tax.
+            {hasCustomer ? " Buying lifetime does not cancel an existing subscription; manage it separately." : ""}
+          </p>
+          <button
+            onClick={() => void checkout("lifetime")}
+            disabled={!!busy}
+            className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
+          >
+            {busy === "lifetime" ? "Opening the box office…" : "🏛 Get lifetime access — $150"}
+          </button>
+        </div>
+      )}
       {active ? (
         <>
           <p className="mt-1 font-display text-2xl text-amber">
@@ -697,7 +714,7 @@ function BalconySeats({
                 disabled={!!busy}
                 className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
               >
-                {busy === "annual" ? "Opening the box office…" : "3 months free, then $39.99/year"}
+                {busy === "annual" ? "Opening the box office…" : "30 days free, then $39.99/year"}
               </button>
               <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
                 Plus applicable tax; renews yearly until canceled. Paid charges earn one vote per whole dollar in your current-round total.
@@ -719,7 +736,7 @@ function BalconySeats({
               disabled={!!busy}
               className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
             >
-              {busy === "monthly" ? "Opening the box office…" : "★ 3 months free — see monthly price at checkout ★"}
+              {busy === "monthly" ? "Opening the box office…" : "★ 30 days free — see monthly price at checkout ★"}
             </button>
           )}
           {annualAvailable && (
@@ -728,7 +745,7 @@ function BalconySeats({
               disabled={!!busy}
               className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
             >
-              {busy === "annual" ? "Opening the box office…" : "3 months free, then $39.99/year"}
+              {busy === "annual" ? "Opening the box office…" : "30 days free, then $39.99/year"}
             </button>
           )}
           {annualAvailable && (
@@ -740,21 +757,6 @@ function BalconySeats({
             <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
               the price of one rental · cancel anytime
             </p>
-          )}
-          {lifetimeAvailable && !lifetime && (
-            <>
-              <button
-                onClick={() => void checkout("lifetime")}
-                disabled={!!busy}
-                className="mt-3 w-full rounded border border-amber px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-amber disabled:opacity-50"
-              >
-                {busy === "lifetime" ? "Opening the box office…" : "🏛 $150 once — lifetime access"}
-              </button>
-              <p className="mt-1.5 text-center font-mono text-[0.6rem] text-dim">
-                First 100 lifetime purchases · $150 one-time · earns 150 votes in the current round.
-                {hasCustomer ? " Buying lifetime does not cancel an existing subscription; manage it separately." : ""}
-              </p>
-            </>
           )}
         </>
       )}

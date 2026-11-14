@@ -97,6 +97,13 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <span>{channels} channels of shorts</span>
                 <span>$1 = 1 vote on what gets made</span>
               </p>
+              {lifetimeConfigured() && (
+                <p className="lp-cta-proof" style={{ marginTop: "0.9rem" }}>
+                  <Link href="/settings" className="lp-link">
+                    $150 lifetime premium · first 1,000 lifetime buyers · plus applicable tax ↗
+                  </Link>
+                </p>
+              )}
             </div>
           }
           bill={
@@ -369,7 +376,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
             </p>
             {lifetimeConfigured() && (
               <p className="lp-lede" data-reveal="rise">
-                The first 100 lifetime purchases get full app access for a one-time $150 payment.{" "}
+                The first 1,000 lifetime buyers get premium access for a one-time $150 payment plus applicable tax.{" "}
                 <Link href="/settings" className="lp-link">See the lifetime offer</Link>
               </p>
             )}

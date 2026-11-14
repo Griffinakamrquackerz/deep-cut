@@ -69,6 +69,7 @@ export async function POST(request: Request) {
         subscription?: string;
         mode?: string;
         payment_status?: string;
+        amount_subtotal?: number;
         amount_total?: number;
         // Stripe's own answer, not ours. If a charge ever settles in something
         // other than the fund's currency, the ledger has to know — see
@@ -189,7 +190,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ received: true });
           }
           if (session.metadata?.lifetime_reservation_id) {
-            if (session.amount_total !== 15_000 || session.currency !== "usd") {
+            if (session.amount_subtotal !== 15_000 || typeof session.amount_total !== "number" ||
+                session.amount_total < 15_000 || session.currency !== "usd") {
               console.error("invalid lifetime payment", session.id);
               return NextResponse.json({ error: "invalid_lifetime_payment" }, { status: 500 });
             }

@@ -61,13 +61,14 @@ export default function TermsPage() {
         lifetime access and does not change subscription billing.
       </p>
       <p>
-        The annual Balcony Seats plan costs $39.99 per year plus applicable tax after a 90-day free trial and
+        New monthly and annual Balcony Seats subscriptions include a 30-day free trial. The annual plan
+        costs $39.99 per year plus applicable tax after the trial and
         renews annually until canceled. Votes are earned when a subscription charge is paid,
         not during the free trial.
       </p>
       <p>
-        When available, the $150 lifetime offer is a one-time payment for lifetime premium
-        access, limited to the first 100 lifetime purchases. Buying it does not cancel an
+        When available, the $150 lifetime offer plus applicable tax is a one-time payment for lifetime premium
+        access, limited to the first 1,000 lifetime purchases. Buying it does not cancel an
         existing subscription; manage or cancel that separately.
       </p>
       <p>
