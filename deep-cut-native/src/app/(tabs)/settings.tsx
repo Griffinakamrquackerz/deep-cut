@@ -21,8 +21,9 @@ import { pushPermissionGranted, registerForPush, unregisterForPush } from "@/lib
 import { supabase } from "@/lib/supabase";
 import { colors, fonts, mono, PROFILE_THEMES } from "@/lib/theme";
 import { SERVICES, SERVICE_LABELS, type SearchHit, type Service } from "@/lib/types";
-import { Button, Chip, Eyebrow, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button, Chip, Eyebrow, Marquee } from "@/components/ui";
 import { resetStudioTour } from "@/components/UsherTour";
+import { ReelEnd, Slate } from "@/components/house";
 
 // The projection booth — the native port of the web SettingsScreen. Style your
 // card (photo, theme, signature film), set your handle, streaming services,
@@ -294,8 +295,7 @@ export default function Settings() {
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 8 }}>Projection booth</Eyebrow>
+          <Slate>Projection booth</Slate>
           <Marquee size={40}>SETTINGS</Marquee>
         </View>
 
@@ -566,6 +566,7 @@ export default function Settings() {
             <Button title="Delete account" kind="outline" onPress={confirmDelete} />
           </View>
         </View>
+        <ReelEnd />
       </ScrollView>
     </SafeAreaView>
   );

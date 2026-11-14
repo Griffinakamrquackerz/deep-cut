@@ -18,10 +18,11 @@ import { reportContent } from "@/lib/report";
 import HouseCall from "@/components/HouseCall";
 import Inbox from "@/components/Inbox";
 import TakesWall from "@/components/TakesWall";
-import { Eyebrow, MarqueeBulbs, Poster } from "@/components/ui";
+import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
-import { colors, fonts, glowAmber } from "@/lib/theme";
+import { colors, fonts } from "@/lib/theme";
 import { useAuth } from "../_layout";
+import { Slate, TitleCard } from "@/components/house";
 
 // The Lobby — native port of the web LobbyScreen (../src/app/(tabs)/
 // lobby/LobbyScreen.tsx). Three views under one marquee: the feed of what
@@ -127,6 +128,8 @@ const HEADLINE: Record<ViewKey, string> = {
   people: "FIND YOUR PEOPLE",
   inbox: "YOUR PIGEONHOLE",
 };
+/** The word of each headline set in amber. */
+const ACCENT: Record<ViewKey, string> = { feed: "watching", takes: "hot takes", people: "people", inbox: "pigeonhole" };
 
 function Avatar({ url, name, size = 34 }: { url?: string | null; name: string; size?: number }) {
   if (url) {
@@ -444,11 +447,10 @@ export default function Community() {
 
   const header = (
     <View>
-      <MarqueeBulbs />
-      <Eyebrow style={{ marginTop: 8 }}>Community</Eyebrow>
-      <Text style={[styles.headline, glowAmber]}>
+      <Slate>Community</Slate>
+      <TitleCard size={40} accent={ACCENT[view]}>
         {view === "feed" && house ? "WHAT THE HOUSE IS WATCHING" : HEADLINE[view]}
-      </Text>
+      </TitleCard>
       {view === "takes" && (
         <Text style={styles.takesSub}>takes so hot the nitrate catches fire · 250 characters, no mercy</Text>
       )}

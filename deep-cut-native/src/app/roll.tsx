@@ -11,7 +11,8 @@ import { colors, fonts, glowAmber, mono, posterUrl } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { VIBES, type Vibe } from "@/lib/types";
 import { Image } from "expo-image";
-import { Button, Eyebrow, Marquee, MarqueeBulbs } from "@/components/ui";
+import { Button, Marquee } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // Just Roll It — the lean-back channel, native. Pick a channel; trailers roll
 // (45s segments, 12s for poster-only films) until one grabs you. Same pool,
@@ -162,11 +163,10 @@ export default function Roll() {
     return (
       <SafeAreaView style={styles.screen}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <MarqueeBulbs />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
             <View>
-              <Eyebrow style={{ marginTop: 10 }}>Lean back</Eyebrow>
-              <Marquee size={42}>JUST ROLL IT</Marquee>
+              <Slate>Lean back</Slate>
+              <Marquee size={42} accent="roll">JUST ROLL IT</Marquee>
             </View>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Text style={styles.close}>✕</Text>

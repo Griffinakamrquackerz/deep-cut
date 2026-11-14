@@ -8,10 +8,11 @@ import {
   Karla_400Regular_Italic,
   Karla_700Bold,
 } from "@expo-google-fonts/karla";
+import { InstrumentSerif_400Regular_Italic } from "@expo-google-fonts/instrument-serif";
 import type { Session } from "@supabase/supabase-js";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
-import { Stack } from "expo-router";
+import { Stack, router, type ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -21,6 +22,8 @@ import { useNotificationRouting } from "@/lib/push-routing";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import FilmAtmosphere from "@/components/FilmAtmosphere";
+import { BoothCard } from "@/components/house";
+import { Button } from "@/components/ui";
 
 // Root layout: loads the house typefaces (nothing renders in a system font),
 // owns the Supabase session, and hands both to every screen. `ready`
@@ -49,6 +52,29 @@ const AuthContext = createContext<AuthState>({
 });
 export const useAuth = () => useContext(AuthContext);
 
+// The film broke.
+//
+// Expo Router wraps the tree in this when it's exported from a layout, so
+// anything a screen throws lands here instead of on a white screen. In a
+// booth this is the print jamming in the gate, and the fix is the same:
+// stop, splice, run it again. `retry` is the splice.
+//
+// Rendered outside the font gate below, so it can fire before Bebas has
+// loaded — the type falls back to the system face rather than not drawing.
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <BoothCard
+      big={"The film\nbroke"}
+      sorry="Please remain seated."
+      signed="The Projectionist"
+      note="Something jammed in the gate on our end, not yours. Splicing it usually does it."
+    >
+      <Button title="Splice it & run it again" onPress={() => void retry()} />
+      <Button title="Back to the house" kind="outline" onPress={() => router.replace("/")} />
+    </BoothCard>
+  );
+}
+
 export default function RootLayout() {
   const [state, setState] = useState<AuthState>({ session: null, ready: false, premium: true });
   const [fontsLoaded] = useFonts({
@@ -58,6 +84,7 @@ export default function RootLayout() {
     Karla_400Regular,
     Karla_400Regular_Italic,
     Karla_700Bold,
+    InstrumentSerif_400Regular_Italic,
   });
 
   useEffect(() => {

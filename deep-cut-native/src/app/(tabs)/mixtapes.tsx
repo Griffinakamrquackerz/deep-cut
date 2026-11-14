@@ -13,11 +13,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Confetti from "@/components/Confetti";
-import { Button, Eyebrow, Marquee, MarqueeBulbs } from "@/components/ui";
+import { Button, Eyebrow, Marquee } from "@/components/ui";
 import { api } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import { colors, fonts } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
+import { ReelEnd, Slate, Tape } from "@/components/house";
 
 // The Mixtapes room — native port of the web PlaylistsScreen. Three inline
 // states, same as web: the list (Sent / Received), the create flow, and the
@@ -45,25 +46,12 @@ function progress(items: Array<{ crossed_off: boolean }>) {
   return { done, total, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
 }
 
-function ProgressBar({ items }: { items: Array<{ crossed_off: boolean }> }) {
-  const { done, total, pct } = progress(items);
-  return (
-    <View style={{ marginTop: 6 }}>
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct}%` }]} />
-      </View>
-      <Text style={styles.progressText}>
-        {done}/{total} crossed off
-      </Text>
-    </View>
-  );
-}
-
 export default function Mixtapes() {
   const [sent, setSent] = useState<PlaylistRow[]>([]);
   const [received, setReceived] = useState<PlaylistRow[]>([]);
   const [pickPool, setPickPool] = useState<PoolFilm[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<ScrollView>(null);
 
   // create flow
   const [creating, setCreating] = useState(false);
@@ -157,8 +145,8 @@ export default function Mixtapes() {
       <SafeAreaView style={styles.screen} edges={["top"]}>
         <Confetti fire={1} />
         <ScrollView contentContainerStyle={styles.body}>
-          <Eyebrow>Mixtape sealed</Eyebrow>
-          <Marquee size={38}>SEND IT</Marquee>
+          <Slate>Mixtape sealed</Slate>
+          <Marquee size={38} accent="it">SEND IT</Marquee>
           <View style={styles.linkCard}>
             <Text style={styles.linkText}>{shareLink}</Text>
           </View>
@@ -180,8 +168,8 @@ export default function Mixtapes() {
     return (
       <SafeAreaView style={styles.screen} edges={["top"]}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          <Eyebrow>New mixtape</Eyebrow>
-          <Marquee size={38}>MAKE A PLAYLIST</Marquee>
+          <Slate>New mixtape</Slate>
+          <Marquee size={38} accent="playlist">MAKE A PLAYLIST</Marquee>
 
           <TextInput
             value={name}
@@ -276,12 +264,11 @@ export default function Mixtapes() {
   // ── List ──
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <MarqueeBulbs />
-            <Eyebrow style={{ marginTop: 8 }}>Playlists</Eyebrow>
-            <Marquee size={38}>MOVIE MIXTAPES</Marquee>
+            <Slate>Playlists</Slate>
+            <Marquee size={38} accent="mixtapes">MOVIE MIXTAPES</Marquee>
           </View>
           <Pressable style={styles.newBtn} onPress={() => setCreating(true)}>
             <Text style={styles.newBtnText}>+ New</Text>
@@ -303,28 +290,16 @@ export default function Mixtapes() {
               ) : (
                 <View style={{ gap: 8 }}>
                   {sent.map((p) => (
-                    <Pressable
+                    <Tape
                       key={p.id}
-                      style={styles.tapeCard}
+                      id={p.id}
+                      name={p.name}
+                      meta={p.recipient_name ? `FOR ${p.recipient_name.toUpperCase()}` : "FROM YOU"}
+                      done={progress(p.playlist_items).done}
+                      total={p.playlist_items.length}
+                      sticker={p.is_public === false ? "Private" : undefined}
                       onPress={() => router.push(`/playlist/${p.id}`)}
-                    >
-                      <View style={styles.tapeTop}>
-                        <View style={styles.tapeNameRow}>
-                          <Text style={styles.tapeName} numberOfLines={1}>
-                            {p.name}
-                          </Text>
-                          {p.is_public === false && (
-                            <View style={styles.privateBadge}>
-                              <Text style={styles.privateBadgeText}>🔒 Private</Text>
-                            </View>
-                          )}
-                        </View>
-                        {p.recipient_name ? (
-                          <Text style={styles.forName}>for {p.recipient_name}</Text>
-                        ) : null}
-                      </View>
-                      <ProgressBar items={p.playlist_items} />
-                    </Pressable>
+                    />
                   ))}
                 </View>
               )}
@@ -337,20 +312,24 @@ export default function Mixtapes() {
               ) : (
                 <View style={{ gap: 8 }}>
                   {received.map((p) => (
-                    <Pressable
+                    <Tape
                       key={p.id}
-                      style={styles.tapeCard}
+                      id={p.id}
+                      name={p.name}
+                      meta="MADE FOR YOU"
+                      done={progress(p.playlist_items).done}
+                      total={p.playlist_items.length}
+                      sticker="For you"
+                      stickerKind="green"
                       onPress={() => router.push(`/playlist/${p.id}`)}
-                    >
-                      <Text style={styles.tapeName}>{p.name}</Text>
-                      <ProgressBar items={p.playlist_items} />
-                    </Pressable>
+                    />
                   ))}
                 </View>
               )}
             </View>
           </>
         )}
+        <ReelEnd onRewind={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} />
       </ScrollView>
     </SafeAreaView>
   );

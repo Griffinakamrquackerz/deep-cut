@@ -18,7 +18,8 @@ import { api } from "@/lib/api";
 import { colors, fonts, mono, posterUrl } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
 import RatingLine from "@/components/RatingLine";
-import { Button, Eyebrow, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button, Eyebrow, Marquee, Poster } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // This Meets That — name two or three films, get the one that feels like their
 // offspring. The splice itself runs server-side (/api/blend): an LLM that
@@ -330,11 +331,10 @@ export default function Blend() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-        <MarqueeBulbs />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
           <View style={{ flex: 1 }}>
-            <Eyebrow style={{ marginTop: 10 }}>The splice</Eyebrow>
-            <Marquee size={42}>THIS MEETS THAT</Marquee>
+            <Slate>The splice</Slate>
+            <Marquee size={42} accent="meets">THIS MEETS THAT</Marquee>
           </View>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Text style={styles.close}>✕</Text>

@@ -7,7 +7,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { api } from "@/lib/api";
 import { colors, fonts, glowAmber, mono } from "@/lib/theme";
-import { Eyebrow, MarqueeBulbs } from "@/components/ui";
+import { Eyebrow } from "@/components/ui";
+import { Slate, TitleCard } from "@/components/house";
 
 // The greenlight ballot, native.
 //
@@ -128,9 +129,8 @@ export default function VoteScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 10 }}>Greenlight</Eyebrow>
-          <Text style={styles.h1}>THE BALLOT</Text>
+          <Slate>Greenlight</Slate>
+          <TitleCard size={52} accent="ballot" center>THE BALLOT</TitleCard>
           <Text style={styles.lede}>
             Every pitch here has been read and every director&apos;s previous work
             watched. What&apos;s left is the part we don&apos;t decide:{" "}

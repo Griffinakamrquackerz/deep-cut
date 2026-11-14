@@ -5,6 +5,7 @@ import { colors, fonts } from "@/lib/theme";
 import { SERVICE_LABELS, type Rec, type Service } from "@/lib/types";
 import RatingLine from "./RatingLine";
 import { gemLabel } from "@/lib/gem";
+import { ShelfTalker } from "./house";
 import { Button, ObscurityDots, Poster } from "./ui";
 
 // One dealt film — poster, the dealer's reason, obscurity, availability, and
@@ -52,13 +53,12 @@ export default function RecCard({
             genres={m.genres}
             style={{ marginTop: 4 }}
           />
-          {/* Two lines, not four — this card repeats a dozen times down the
-              feed, so every extra line of prose compounds into a wall. */}
-          <Text style={styles.reason} numberOfLines={2}>
-            “{rec.reason}”
-          </Text>
+          {/* The reason, as the card a video-store clerk tapes under a tape
+              they need you to rent. Three lines at most — this card repeats a
+              dozen times down the feed, so prose compounds into a wall. */}
+          <ShelfTalker>{rec.reason}</ShelfTalker>
           {services.length > 0 && (
-            <Text style={styles.services} numberOfLines={1}>
+            <Text style={[styles.services, { marginTop: 10 }]} numberOfLines={1}>
               ▸ {services.map((s) => SERVICE_LABELS[s]).join(" · ")}
             </Text>
           )}

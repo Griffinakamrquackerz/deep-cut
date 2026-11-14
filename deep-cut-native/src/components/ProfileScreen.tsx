@@ -20,10 +20,11 @@ import { primaryRatingLabel } from "@/components/RatingLine";
 import Shrine from "@/components/Shrine";
 import TonightStatus, { type TonightCard } from "@/components/TonightStatus";
 import Turntable from "@/components/Turntable";
-import { Eyebrow, MarqueeBulbs, Poster } from "@/components/ui";
+import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
 import { colors, fonts, profilePalette, type ProfilePalette } from "@/lib/theme";
+import { CreditRoll, ReelEnd, Slate, Tape } from "@/components/house";
 
 // The member card — the single source of truth for how a profile looks, native
 // port of the web ProfileView. Both the You tab (your own key) and /u/[key]
@@ -247,8 +248,7 @@ export default function ProfileScreen({
         {standalone && <BackButton style={{ marginBottom: 12 }} />}
         {/* Header */}
         <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 8 }}>Member card</Eyebrow>
+          <Slate>Member card</Slate>
           <View style={styles.headerRow}>
             <View style={styles.idRow}>
               <Avatar url={person.avatar_url} name={name} accent={palette.amber} />
@@ -453,21 +453,37 @@ export default function ProfileScreen({
             </Eyebrow>
             <View style={{ gap: 8 }}>
               {data.playlists.map((p) => (
-                <Pressable key={p.id} style={styles.tapeRow} onPress={() => router.push(`/p/${p.share_slug}`)}>
-                  <View style={styles.tapeName}>
-                    <Text style={styles.tapeTitle} numberOfLines={1}>
-                      {p.name}
-                    </Text>
-                    {data.isMe && !p.isPublic && (
-                      <View style={styles.privateBadge}>
-                        <Text style={styles.privateBadgeText}>🔒 Private</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.tapeCount}>{p.itemCount} films ↗</Text>
-                </Pressable>
+                <Tape
+                  key={p.id}
+                  id={p.id}
+                  name={p.name}
+                  meta={`SEALED BY ${name.toUpperCase()}`}
+                  total={p.itemCount}
+                  sticker={data.isMe && !p.isPublic ? "Private" : undefined}
+                  onPress={() => router.push(`/p/${p.share_slug}`)}
+                />
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Every picture ends on its credits, and so does every member card:
+            the films they love get top billing and their taste gets the
+            writing credit. Built from what's already on the card. */}
+        {(loved.length > 0 || data.threads.length > 0) && (
+          <View>
+            <Eyebrow style={{ marginBottom: 8 }}>The credits</Eyebrow>
+            <CreditRoll
+              credits={[
+                { role: "a picture by", names: [name] },
+                ...(loved.length > 0 ? [{ role: "starring", names: loved.slice(0, 6).map((m) => m.title) }] : []),
+                ...(data.signature ? [{ role: "signature film", names: [data.signature.title] }] : []),
+                ...(data.threads.length > 0 ? [{ role: "taste by", names: data.threads.map((t) => t.title) }] : []),
+                ...(data.playlists.length > 0
+                  ? [{ role: "mixtapes", names: data.playlists.slice(0, 4).map((p) => p.name) }]
+                  : []),
+              ]}
+            />
           </View>
         )}
 
@@ -485,6 +501,7 @@ export default function ProfileScreen({
 
         {/* Your booth — management tools, only on your own tab */}
         {data.isMe && footer}
+        <ReelEnd />
       </ScrollView>
       {standalone && <HouseNav />}
     </SafeAreaView>

@@ -7,6 +7,7 @@ import { colors, fonts, mono } from "@/lib/theme";
 import BackButton from "@/components/BackButton";
 import HouseNav from "@/components/HouseNav";
 import { Button, Eyebrow, Marquee } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // The Door, on a phone — the owner's waitlist controls, mirroring the web
 // console's Door tab against the same /api/admin/waitlist endpoint. The gate is
@@ -176,8 +177,8 @@ export default function DoorScreen() {
         <BackButton />
 
         <View>
-          <Eyebrow style={{ marginTop: 4 }}>The door</Eyebrow>
-          <Marquee size={40}>WHO&apos;S IN LINE</Marquee>
+          <Slate>The door</Slate>
+          <Marquee size={40} accent="in line">{"WHO'S IN LINE"}</Marquee>
         </View>
 
         {state === null ? (

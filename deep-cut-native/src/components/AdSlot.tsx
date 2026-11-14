@@ -1,8 +1,7 @@
 import { router } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "@/app/_layout";
-import { colors, fonts, glowAmber } from "@/lib/theme";
+import { Snipe } from "./house";
 
 // The ad slot — native port of ../src/components/AdSlot.tsx.
 //
@@ -57,56 +56,16 @@ export default function AdSlot({
 
   const ad = HOUSE_ADS[index % HOUSE_ADS.length];
 
+  // The drive-in intermission reel: a clock counting down to showtime and a
+  // suggestion about what to do with the ten minutes.
   return (
-    <View style={[styles.card, style]}>
-      <Text style={styles.eyebrow}>{ad.eyebrow.toUpperCase()}</Text>
-      <Text style={[styles.title, glowAmber]}>{ad.title}</Text>
-      <Text style={styles.line}>{ad.line}</Text>
-      <Pressable style={styles.cta} onPress={() => router.push(ad.href as never)}>
-        <Text style={styles.ctaText}>{ad.cta} →</Text>
-      </Pressable>
-    </View>
+    <Snipe
+      style={style}
+      kicker={ad.eyebrow}
+      title={ad.title}
+      line={ad.line}
+      cta={ad.cta}
+      onPress={() => router.push(ad.href as never)}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    padding: 16,
-    alignItems: "center",
-  },
-  eyebrow: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1.6, color: colors.dim },
-  title: {
-    marginTop: 4,
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.amber,
-    textAlign: "center",
-  },
-  line: {
-    marginTop: 4,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.dim,
-    textAlign: "center",
-  },
-  cta: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: colors.amber,
-    borderRadius: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  ctaText: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-    color: colors.amber,
-  },
-});

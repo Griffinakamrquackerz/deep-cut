@@ -114,7 +114,7 @@ export default function Onboarding() {
     <SafeAreaView style={styles.screen}>
       {step === "films" && (
         <View style={styles.body}>
-          <Eyebrow>Step 1 of 4 · Rip your ticket</Eyebrow>
+          <Eyebrow>Take 1 of 4 · Rip your ticket</Eyebrow>
           <Text style={styles.h1}>PICK 8+ FILMS YOU LOVE</Text>
           <FlatList
             data={grid}
@@ -145,7 +145,7 @@ export default function Onboarding() {
 
       {step === "services" && (
         <View style={styles.body}>
-          <Eyebrow>Step 2 of 4 · Your screens</Eyebrow>
+          <Eyebrow>Take 2 of 4 · Your screens</Eyebrow>
           <Text style={styles.h1}>WHAT DO YOU PAY FOR?</Text>
           <View style={styles.chips}>
             {SERVICES.map((s) => (
@@ -173,7 +173,7 @@ export default function Onboarding() {
 
       {step === "signature" && (
         <View style={styles.body}>
-          <Eyebrow>Step 3 of 4 · Signature film</Eyebrow>
+          <Eyebrow>Take 3 of 4 · Signature film</Eyebrow>
           <Text style={styles.h1}>YOUR FAVORITE FILM, EVER</Text>
           <Text style={styles.hint}>It fronts your member card as a stills collage.</Text>
           <TextInput
@@ -216,7 +216,7 @@ export default function Onboarding() {
 
       {step === "handle" && (
         <View style={styles.body}>
-          <Eyebrow>Step 4 of 4 · The marquee</Eyebrow>
+          <Eyebrow>Take 4 of 4 · The marquee</Eyebrow>
           <Text style={styles.h1}>PICK YOUR HANDLE</Text>
           <TextInput
             value={handle}

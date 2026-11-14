@@ -26,8 +26,9 @@ import Confetti from "@/components/Confetti";
 import RecCard from "@/components/RecCard";
 import NowShowing from "@/components/NowShowing";
 import ReactionSheet, { type ReactionPayload } from "@/components/ReactionSheet";
-import { Button, Eyebrow, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button, Marquee } from "@/components/ui";
 import { useUsherTarget } from "@/lib/usher";
+import { RatingBand, ReelEnd, Slate } from "@/components/house";
 
 // The Tonight screen — a faithful port of the web app's front room:
 // bulbs → marquee → Now Showing → the doors → "TONIGHT I WANT…" card
@@ -200,14 +201,14 @@ export default function Tonight() {
     [recs, depth],
   );
 
+  const listRef = useRef<FlatList<Rec>>(null);
   const header = useMemo(
     () => (
       <View style={{ gap: 16, paddingBottom: 16 }}>
         {/* Marquee header — same words as the web front room */}
         <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 10 }}>Tonight</Eyebrow>
-          <Marquee size={46}>MOVIES YOU HAVEN&apos;T SEEN YET</Marquee>
+          <Slate>Tonight</Slate>
+          <Marquee size={46} accent="haven't seen">{"MOVIES YOU HAVEN'T SEEN YET"}</Marquee>
         </View>
 
         {/* The open call. Above Now Showing because it is the one thing the
@@ -331,6 +332,18 @@ export default function Tonight() {
           {message && <Text style={styles.message}>{message}</Text>}
           {dealDiagnostic && <Text selectable style={styles.message}>{dealDiagnostic}</Text>}
         </View>
+
+        {/* What's about to be shown, and to whom — the card before every
+            trailer, approving tonight's deal for one person. Same words as
+            the web. */}
+        {recs.length > 0 && (
+          <RatingBand
+            what="deal"
+            audience="your taste only"
+            label="Deep cuts"
+            fine="For subtitles, long takes and unresolved endings."
+          />
+        )}
       </View>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,7 +355,13 @@ export default function Tonight() {
       <FlatList
         data={rankedRecs}
         keyExtractor={(r) => r.id}
+        ref={listRef}
         ListHeaderComponent={header}
+        ListFooterComponent={
+          rankedRecs.length > 0 ? (
+            <ReelEnd onRewind={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })} />
+          ) : null
+        }
         contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.amber} />
