@@ -251,7 +251,7 @@ export function StampButton({
       ]}
     >
       <View style={[styles.stampInner, { borderColor: color }]}>
-        <Text style={[styles.stampText, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+        <Text style={[styles.stampText, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {title.toUpperCase()}
         </Text>
       </View>
@@ -264,6 +264,62 @@ export function ShelfLip() {
     <View style={styles.shelf}>
       <View style={styles.shelfHi} />
     </View>
+  );
+}
+
+/** The genre's sticker colour (falls back to the house dim). */
+export function genreColor(g: string | undefined): string {
+  return (g && DOTS[g]) || colors.dim;
+}
+
+// ── Lobby cards ─────────────────────────────────────────────────────────
+// The Community feed, pinned up the way a cinema did it: each item a lobby
+// card — a still in a printed frame the colour of the film's first genre,
+// the title in a paper snipe, and the card's number in the bottom margin.
+// Same as the web's .lobby-card in platform.css.
+
+/** `a` blended over `b` by `t` (0–1), both #rrggbb. RN has no color-mix(). */
+function mix(a: string, b: string, t: number): string {
+  const p = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  const c = [0, 1, 2].map((i) => Math.round(p(a, i) * t + p(b, i) * (1 - t)));
+  return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+export function LobbyCard({
+  tint,
+  index,
+  foot,
+  children,
+}: {
+  tint: string;
+  index: number;
+  /** Bottom-margin fine print, left side. The card number is added on the right. */
+  foot: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View
+      style={[
+        styles.lc,
+        { backgroundColor: mix(tint.length === 7 ? tint : colors.dim, "#1a120e", 0.58) },
+        { transform: [{ rotate: index % 2 ? "0.3deg" : "-0.35deg" }] },
+      ]}
+    >
+      <View style={styles.lcInner}>{children}</View>
+      <View style={styles.lcFoot}>
+        <Text style={styles.lcFootText}>{foot.toUpperCase()}</Text>
+        <Text style={[styles.lcFootText, { fontFamily: fonts.monoSemi }]}>NO. {index + 1}</Text>
+      </View>
+    </View>
+  );
+}
+
+/** The title on a strip of printed paper. */
+export function TitleSnipe({ children, onPress }: { children: string; onPress?: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={styles.lcSnipe}>
+      <Text style={styles.lcSnipeText}>{children.toUpperCase()}</Text>
+    </Pressable>
   );
 }
 
@@ -655,10 +711,47 @@ const styles = StyleSheet.create({
   dot: { width: 9, height: 9, borderRadius: 4.5 },
   dotText: { color: "rgba(243,233,215,0.8)", fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.3 },
   stamp: { borderWidth: 1.5, borderRadius: 3, padding: 2.5 },
-  stampInner: { borderWidth: 1, borderRadius: 2, paddingVertical: 7, paddingHorizontal: 4, alignItems: "center" },
-  stampText: { fontFamily: fonts.monoSemi, fontSize: 10, letterSpacing: 1.6 },
+  stampInner: { borderWidth: 1, borderRadius: 2, paddingVertical: 7, paddingHorizontal: 2, alignItems: "center" },
+  stampText: { fontFamily: fonts.monoSemi, fontSize: 10, letterSpacing: 0.9 },
   shelf: { height: 13, backgroundColor: "#54361f", borderBottomLeftRadius: 3, borderBottomRightRadius: 3, borderBottomWidth: 4, borderBottomColor: "#2f1d11" },
   shelfHi: { height: 1, backgroundColor: "rgba(255,220,170,0.4)" },
+  // lobby cards
+  lc: {
+    borderRadius: 3,
+    paddingTop: 7,
+    paddingHorizontal: 7,
+    shadowColor: "#000",
+    shadowOpacity: 0.85,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  lcInner: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 11,
+    borderRadius: 2,
+    backgroundColor: "#15100d",
+    borderWidth: 1,
+    borderColor: "rgba(255,241,214,0.14)",
+  },
+  lcFoot: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5, paddingHorizontal: 2 },
+  lcFootText: { color: "rgba(20,12,8,0.78)", fontFamily: fonts.mono, fontSize: 8, letterSpacing: 2.2 },
+  lcSnipe: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    marginTop: 7,
+    backgroundColor: "#f3e7cf",
+    paddingHorizontal: 8,
+    paddingTop: 3,
+    paddingBottom: 1,
+    transform: [{ rotate: "-0.8deg" }],
+    shadowColor: "#000",
+    shadowOpacity: 0.45,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  lcSnipeText: { color: colors.paperInk, fontFamily: fonts.display, fontSize: 24, lineHeight: 25, letterSpacing: 0.4 },
   // membership card
   card: {
     borderRadius: 12,
