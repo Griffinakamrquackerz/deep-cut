@@ -3,12 +3,17 @@
 A working note for whoever (or whichever session) continues the Deep Cut
 redesign. It is not product documentation; delete it when the work is done.
 
-**Branch:** `claude/happy-wozniak-fg67ng` (pushed, no PR opened — the owner
-has not asked for one). `main` is untouched at `da177d6`.
+**Branch:** `claude/continue-previous-work-sh53go` (pushed, no PR opened —
+the owner has not asked for one). `main` is untouched at `da177d6`.
+
+The redesign line (`claude/happy-wozniak-fg67ng`) and a parallel line of
+fund/premium work had diverged at `196c8df`; `16e3024` merged them, and this
+branch now carries both. Work here, not on happy-wozniak.
 
 **State when this was written:** everything below marked *done* is committed
-and pushed. Web typecheck, the 488-test suite and `next build` all pass. One
-piece of work is mid-flight: the native port of "the rooms" (see §4).
+and pushed, and nothing is mid-flight. Web typecheck, the 519-test suite and
+`next build` all pass; native typecheck is down to the one known pre-existing
+error in §7.
 
 ---
 
@@ -85,7 +90,7 @@ piece of work is mid-flight: the native port of "the rooms" (see §4).
 |---|---|
 | `src/app/globals.css` | The house style: `.slate`, `.title-card` (+ `<em>` for the amber word), `.serif-it`, `.rack-in`, film-strip `.app-frame` on ≥768px, italics → Instrument Serif, surface/button lift rules. |
 | `src/app/house.css` | Set-pieces: `.rating-band`, `.credit-roll`, `.billing`, `.snipe`, `.shelf-talker`, `.vhs` + `.tape-face`, `.reel-end`, `.frame-slip`, booth cards (`.card-page`, `.film-burn`). |
-| `src/app/platform.css` | The rooms: `.mq` marquee, `.bo` box office, `.door-plate`, `.rental` / `.vhs-case` / `.case-sticker` / `.genre-dot` / `.stamp-btn` / `.rental-shelf`, `.laurel`, `.showcase`, `.member-card`, `.punch`, `.felt`, `.cork` / `.pinned`, `.booth` (dymo labels + screws), `.menu-board`, `.paper-sheet`, `.tape-write`, `.app-form`, `.pedigree`. |
+| `src/app/platform.css` | The rooms: `.mq` marquee, `.bo` box office, `.door-plate`, `.rental` / `.vhs-case` / `.case-sticker` / `.genre-dot` / `.stamp-btn` / `.rental-shelf`, `.laurel`, `.showcase`, `.member-card`, `.punch`, `.felt`, `.cork` / `.pinned`, `.booth` (dymo labels + screws), `.menu-board`, `.paper-sheet`, `.tape-write`, `.app-form`, `.pedigree`, lobby cards (`.lobby-card`/`.lc-*`), the pigeonhole (`.pigeon`, `.memo*`), `.contact` sheets, and the three doors' interiors: `.set` + `.tuner` (Roll), `.bench` / `.strip` / `.splice-join` / `.spliced` (Blend), `.docket` / `.stamp-mark` / `.exhibit-tab` (Settle). |
 | `src/components/landing/landing.css` | The public site (`.lp-*`), incl. page hero, doorway, legal. |
 | `src/components/house/*` | `RatingBand`, `CreditRoll`, `Snipe`, `ReelEnd`, `MarqueeBoard`, `Laurel` (+ `Sprig`), `TabIcons`, `ApplicationStrip`. |
 | `src/components/site/*` | `SiteShell` (+ `PageHero`, `Slate`), `SiteNav`, `NavAuth`, `SiteCredits`, `Doorway`. |
@@ -118,7 +123,7 @@ piece of work is mid-flight: the native port of "the rooms" (see §4).
   `+not-found.tsx`; `ErrorBoundary` exported from the root layout.
 - Copy mirrors the web word for word where the same card exists.
 
-## 4. In flight — do this first
+## 4. The native rooms — done
 
 `deep-cut-native/src/components/rooms.tsx` is the native port of
 `platform.css`. It exports `MarqueeBoard`, `BoxOffice`, `Grille`, `VhsCase`,
@@ -126,57 +131,39 @@ piece of work is mid-flight: the native port of "the rooms" (see §4).
 `memberNo`, `PunchCard`, `FeltBoard`, `Cork`, `Pinned`, `PaperHead`,
 `ApplicationStrip`, `Dymo`, `BoothPlate`.
 
-**Six screens are wired (commit `6267944`), four are not.** All of it
-typechecks. **None of the six has been looked at since being wired** — not on
-a device, not even in the web export. Screenshot them before trusting them,
-especially the box office's expanded state, the rental case at narrow
-widths, and the cream-on-cork takes.
+All ten screens are wired. The six from `6267944` (tonight, RecCard,
+ProfileScreen, ProjectionistCard, community, TakesWall) plus the four that
+`1294f47` finished: settings on dymo-labelled booth plates, the comment card
+as a printed form, the mixtapes create view on a blank cassette label, and
+onboarding's membership-application strip. Orphaned styles were cleared in
+the same commit. Every native tab was then checked through the web export
+against mock data (`03cf4e6`).
 
-Done:
-
-| Native file | What landed |
-|---|---|
-| `src/app/(tabs)/tonight.tsx` | `<MarqueeBoard>`; the controls inside `<BoxOffice glass={…}>` with `<Grille />` beside the summary and the deal button in the slot; the three games as door plates (Bebas, no emoji, tour refs intact). `message` / `dealDiagnostic` now sit *below* the booth. |
-| `src/components/RecCard.tsx` | `<VhsCase>`, `<CaseSticker>` for the gem label, `<GenreDots>` (genres no longer passed to `RatingLine`), three `<StampButton>`s, `<ShelfLip />`. |
-| `src/components/ProfileScreen.tsx` | `<MemberCard>` replaces the header row. |
-| `src/components/ProjectionistCard.tsx` | `<PunchCard>` replaces the track/fill bar. |
-| `src/app/(tabs)/community.tsx` | `<FeltBoard>`, fed by a new `FELT` const. |
-| `src/components/TakesWall.tsx` | `<Cork>` + `<Pinned index={i}>`; byline, take body and banter re-inked to `paperInk` / `paperDim`, take body set in the serif. |
-
-Still to do:
-
-| Native file | Change |
-|---|---|
-| `src/app/(tabs)/settings.tsx` | The 10 section `<Eyebrow>`s → `<Dymo>` (`tone="red"` where the eyebrow was ticket-coloured, `"amber"` where amber); the `styles.card` sections → `<BoothPlate>`. |
-| `src/components/ReactionSheet.tsx` | `styles.sheet` background → `colors.paper`; `<Eyebrow>You saw {title}</Eyebrow>` → `<PaperHead left="Comment card" right="You watched" />` with the title in Bebas; chips and note text to paper ink. |
-| `src/app/(tabs)/mixtapes.tsx` (create view) | Name + recipient inputs on a cassette label (web: `.tape-face` / `.tape-write`; `CassetteFace` in `house.tsx` is the read-only version to copy). Placeholder: "Name this tape…". |
-| `src/app/onboarding.tsx` | `<Eyebrow>Take N of 4 · …</Eyebrow>` → `<ApplicationStrip part={N} />` (×4). |
-
-Then verify (recipe in §6), commit, push. Afterwards run
-`npx tsc --noEmit --noUnusedLocals` and clear the styles the rewiring
-orphaned (`headerRow`, `idRow`, `name`, `handle`, `follows` in
-ProfileScreen; `track`, `fill`, `nextLine` in ProjectionistCard;
-`viewChip*` in community). Ignore the pre-existing `'React' is declared but
-never read` noise — that predates all of this.
-
-
-## 5. After that — ideas not started
+## 5. After that — where it stands
 
 Owner's last ask was "I think we can do more", weighted to the platform.
-Candidates, roughly by value:
 
-- **Community feed items** as lobby cards (web `LobbyScreen.tsx` still uses
-  plain `.film-card` rows).
-- **Inbox** ("your pigeonhole") as mail slots / telegrams (`Inbox.tsx`).
-- **Film page actions** (`MovieActions.tsx`) as stamps; **You** poster grids
-  as a contact sheet with frame numbers.
-- **Settle It / Just Roll It / This Meets That** interiors — only their
-  headers and loading lines were touched.
+Landed since:
+
+- **Community feed** items are lobby cards, web and native; **Inbox** is a
+  pigeonhole of cubbies with "while you were out" slips and carbon copies;
+  **film page actions** are rubber stamps; **You** poster grids are contact
+  sheets with frame numbers (`49d0acd`, `c1fbd0f`, `03cf4e6`).
+- **Settle It / Just Roll It / This Meets That** interiors — the three doors
+  off Tonight now open onto equipment rather than plain screens: a television
+  set with a tuner, a splicing bench, and a case docket. Emoji and the
+  second-joke-inside-the-form copy went with it. Checked at 390px.
+
+Still not started:
+
 - **The Theatre** (`/tv`) is already the richest screen; left alone.
 - A real-device pass on native (see §7).
+- Native tab bar is still emoji; the web's are drawn SVGs. Needs
+  `react-native-svg`, which §2 says not to add casually — ask first.
 - Existing copy that predates this work was mostly left alone when it read
   dry (crew-rank ladder, vibe chips, "pull up a beanbag"). The owner has not
   ruled on those; ask before rewriting them wholesale.
+
 
 ## 6. How to preview and verify
 
@@ -217,7 +204,7 @@ rebuild it as needed:
 
 Checks before every commit:
 ```
-npx tsc --noEmit && npx vitest run          # web: 57 files / 486 tests pass
+npx tsc --noEmit && npx vitest run          # web: 65 files / 519 tests pass
 NEXT_TELEMETRY_DISABLED=1 npx next build    # stop `next dev` first; rm -rf .next after
 (cd deep-cut-native && npx tsc --noEmit)    # exactly ONE known error, below
 ```
@@ -231,7 +218,6 @@ NEXT_TELEMETRY_DISABLED=1 npx next build    # stop `next dev` first; rm -rf .nex
 - Native has only ever been seen through the **web export** against mock
   data. Fonts, shadows, `transformOrigin`, and animation timing on a real
   iPhone/Android are unverified.
-- Native tab bar still uses emoji; web's are drawn SVGs (`TabIcons.tsx`).
 - The live site (thedeepcut.xyz) has lagged the branch — the owner has sent
   screenshots of copy that was already fixed. Check the branch before
   "fixing" something from a screenshot.
