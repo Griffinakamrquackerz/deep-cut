@@ -111,7 +111,7 @@ error in §7.
 ### Web — screens
 - **Landing** (`Landing.tsx`), condensed: projector hero (headline, a
   one-sentence gloss under each half, an admission board beside it) → ticker →
-  The Deal beside the dial demo, with the three public games as door plates →
+  green band → The Deal beside the dial demo, with the three public games as door plates →
   The Greenlight beside the playable ballot, then five caption-only frames and
   the live fund bar → Theatre channel guide → house picks → the opening of the
   founder's letter → two doors → four-question Q&A → last call → credits.
@@ -240,7 +240,10 @@ NEXT_TELEMETRY_DISABLED=1 npx next build    # stop `next dev` first; rm -rf .nex
 - The $150 lifetime line used to sit in the hero and again under "how a film
   gets made". It now appears once, under the last call. Where it is shown is
   the owner's call — it was moved to keep the first screen to the pitch.
-- The rating band (`RatingBand`) is off the front page; it cost a full screen
-  between the hero and the first feature. It is still used inside the app.
+- The rating band is on the front page, ahead of the two features, and is
+  worded like the real card: "approved for all audiences", with a box naming
+  the two features. The owner likes the band and found its earlier copy
+  cheesy ("people who stay through the credits", "deep cuts only", and
+  before that "may contain subtitles") — keep anything written on it plain.
 - `SettingsScreen.tsx` contains two different monthly prices ($4.99 in a
   comment, $3.99 on the button). Not touched; no price is quoted in new copy.

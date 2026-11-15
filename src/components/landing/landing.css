@@ -2110,6 +2110,11 @@
 .lp-paper .lp-more:hover { color: #a8371d; border-bottom-color: #a8371d; }
 .lp-paper-more { margin-top: 1.5rem; padding-left: 1.25rem; }
 
+/* The green band, ahead of the double feature. Held to a card's width so it
+   reads as a card on the wall rather than a section of its own. */
+.lp-band { margin-bottom: clamp(3rem, 7vw, 5.5rem); }
+.lp-band .rating-band { max-width: 46rem; margin-inline: auto; }
+
 /* ── A feature: copy on one side, the thing itself on the other ──────── */
 .lp-feature {
   --tone: var(--color-amber);

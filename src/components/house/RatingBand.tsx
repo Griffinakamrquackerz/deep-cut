@@ -1,9 +1,9 @@
 // The green band.
 //
 // Every trailer ever cut opens on a card saying who it has been approved for.
-// This is that card, approving things for narrower audiences: a double
-// feature for people who stay through the credits, tonight's deal for your
-// taste and nobody else's.
+// This is that card. On the front page it is worded exactly as the real one
+// is ("approved for all audiences"); on Tonight it approves the deal for your
+// taste only, which is simply what a deal is.
 //
 // The band is the one piece of film furniture everybody recognises without
 // being told, so it says "something is about to be shown to you" faster than a

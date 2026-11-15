@@ -17,6 +17,7 @@ import { lifetimeConfigured } from "@/lib/stripe";
 import { CHANNELS } from "@/lib/shorts";
 import { PERKS } from "@/lib/perks";
 import "@/components/landing/landing.css";
+import RatingBand from "@/components/house/RatingBand";
 
 // The front door.
 //
@@ -188,6 +189,19 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
 
         {/* ══════════ FEATURE ONE — the programming ══════════ */}
         <section id="feature" aria-labelledby="deal-title" className="lp-section lp-feature">
+          {/* The card before every trailer ever cut. It is worded the way the
+              real one is — "approved for all audiences", then a box naming
+              what's on — because the card is the joke and anything clever
+              written on it is a second one. The box doubles as the contents
+              page for the two sections below. */}
+          <div className="lp-wrap lp-band" data-reveal="rise">
+            <RatingBand
+              what="double feature"
+              audience="all audiences"
+              label="Two features"
+              fine="The Deal: movies you haven't seen yet. The Greenlight: you decide what gets made."
+            />
+          </div>
           <div id="deal" className="lp-wrap lp-feature-grid" style={{ scrollMarginTop: "5rem" }}>
             <div>
               <Slate reel="Feature one">The Deal</Slate>
