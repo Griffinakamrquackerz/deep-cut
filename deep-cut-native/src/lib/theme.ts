@@ -9,6 +9,15 @@ export const colors = {
   amber: "#ffb454",
   ticket: "#e4573d",
   avail: "#8fbf7f",
+  // The dark of the house, and lamp light as it lands on a wall — what a
+  // projected title is made of. Both mirror globals.css.
+  ink: "#0c0908",
+  light: "#fff1d6",
+  // Paper and ink, for the things that are printed rather than projected:
+  // shelf talkers, tape labels.
+  paper: "#f1e4c9",
+  paperInk: "#2a1c15",
+  paperDim: "#6b5545",
 } as const;
 
 // The web app's exact typefaces (--font-bebas / --font-plex-mono / --font-karla),
@@ -20,6 +29,9 @@ export const fonts = {
   body: "Karla_400Regular",
   bodyBold: "Karla_700Bold",
   bodyItalic: "Karla_400Regular_Italic",
+  // Title-card italics (web: --font-serif). The one soft voice in the house:
+  // a reason on a rec card, the name on a tape, the role in a credit.
+  serif: "InstrumentSerif_400Regular_Italic",
 } as const;
 
 /** Back-compat alias — every style that says `fontFamily: mono` gets Plex. */
@@ -30,6 +42,13 @@ export const glowAmber = {
   textShadowColor: "rgba(255, 180, 84, 0.55)",
   textShadowOffset: { width: 0, height: 0 },
   textShadowRadius: 14,
+} as const;
+
+/** Lamp light on a wall (web: .title-card) — a warm bloom rather than neon. */
+export const glowLight = {
+  textShadowColor: "rgba(255, 214, 150, 0.45)",
+  textShadowOffset: { width: 0, height: 0 },
+  textShadowRadius: 16,
 } as const;
 
 /** TMDB poster URL helper (same CDN + sizes the web app uses). */

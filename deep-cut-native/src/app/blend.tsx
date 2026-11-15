@@ -18,7 +18,8 @@ import { api } from "@/lib/api";
 import { colors, fonts, mono, posterUrl } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
 import RatingLine from "@/components/RatingLine";
-import { Button, Eyebrow, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button, Eyebrow, Marquee, Poster } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // This Meets That — name two or three films, get the one that feels like their
 // offspring. The splice itself runs server-side (/api/blend): an LLM that
@@ -194,7 +195,7 @@ interface BlendPick {
 // without lying — a slow model just stays "something's moving".
 const EXAMPLE_ROTATE_MS = 3000;
 
-const SPLICE_STAGES = ["Reading the DNA…", "Crossing the strands…", "Something's moving…"];
+const SPLICE_STAGES = ["Pulling both prints…", "Finding the cut point…", "Making the splice…"];
 
 /** A waiting slot. The next one to fill breathes amber so it reads as live. */
 function EmptySlot({ live, optional }: { live: boolean; optional: boolean }) {
@@ -309,7 +310,7 @@ export default function Blend() {
     if (!res.ok) {
       setError("The splice didn't take. Try again.");
     } else if (!res.data?.picks?.length) {
-      setError("No offspring survived. Swap one out.");
+      setError("The splice didn't hold. Swap one out.");
     } else {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPicks(res.data.picks);
@@ -330,17 +331,16 @@ export default function Blend() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-        <MarqueeBulbs />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
           <View style={{ flex: 1 }}>
-            <Eyebrow style={{ marginTop: 10 }}>The splice</Eyebrow>
-            <Marquee size={42}>THIS MEETS THAT</Marquee>
+            <Slate>The splice</Slate>
+            <Marquee size={42} accent="meets">THIS MEETS THAT</Marquee>
           </View>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Text style={styles.close}>✕</Text>
           </Pressable>
         </View>
-        <Text style={styles.lead}>Combine two or three. See what crawls out.</Text>
+        <Text style={styles.lead}>Splice two or three films together. See what plays.</Text>
 
         {/* The bench. Always three slots, filled or waiting — the shape of the
             game is visible before you've done anything, and the next slot to
@@ -498,7 +498,7 @@ export default function Blend() {
         {/* The offspring */}
         {picks && (
           <View style={{ marginTop: 22 }}>
-            <Eyebrow>The offspring</Eyebrow>
+            <Eyebrow>What came out</Eyebrow>
             <View style={{ gap: 12, marginTop: 10 }}>
               {picks.map((p, i) => (
                 <Animated.View

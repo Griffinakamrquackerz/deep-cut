@@ -39,21 +39,25 @@ export default function ProjectionistCard({
       {/* Sprocket progress strip toward the next tier */}
       {stats.next ? (
         <div className="mt-3">
+          {/* A punch card: ten holes to the next credit, one punched for
+              every tenth of the way there. */}
           <div
-            className="relative h-3 overflow-hidden rounded-full border border-line bg-bg"
+            className="punch"
             role="progressbar"
             aria-valuenow={Math.round(stats.progress * 100)}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label={`Progress to ${stats.next.title}`}
           >
-            <div
-              className="h-full bg-amber transition-[width] duration-700"
-              style={{ width: `${Math.max(4, stats.progress * 100)}%` }}
-            />
+            {Array.from({ length: 10 }, (_, i) => (
+              <i key={i} className={i < Math.floor(stats.progress * 10 + 0.001) ? "is-punched" : ""} />
+            ))}
           </div>
-          <p className="mt-1 text-right font-mono text-[0.6rem] text-dim">
-            next: {stats.next.glyph} {stats.next.title} at {stats.next.at} reels
+          <p className="punch-note">
+            <span>{Math.floor(stats.progress * 10 + 0.001)} of 10 punched</span>
+            <span>
+              next: {stats.next.title} at {stats.next.at} reels
+            </span>
           </p>
         </div>
       ) : (

@@ -26,8 +26,10 @@ import Confetti from "@/components/Confetti";
 import RecCard from "@/components/RecCard";
 import NowShowing from "@/components/NowShowing";
 import ReactionSheet, { type ReactionPayload } from "@/components/ReactionSheet";
-import { Button, Eyebrow, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useUsherTarget } from "@/lib/usher";
+import { RatingBand, ReelEnd } from "@/components/house";
+import { BoxOffice, Grille, MarqueeBoard } from "@/components/rooms";
 
 // The Tonight screen — a faithful port of the web app's front room:
 // bulbs → marquee → Now Showing → the doors → "TONIGHT I WANT…" card
@@ -200,15 +202,14 @@ export default function Tonight() {
     [recs, depth],
   );
 
+  const listRef = useRef<FlatList<Rec>>(null);
   const header = useMemo(
     () => (
       <View style={{ gap: 16, paddingBottom: 16 }}>
-        {/* Marquee header — same words as the web front room */}
-        <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 10 }}>Tonight</Eyebrow>
-          <Marquee size={46}>MOVIES YOU HAVEN&apos;T SEEN YET</Marquee>
-        </View>
+        {/* The marquee over the door: a lit letterboard with tonight's date
+            on it, letters hung by hand. The front of the house, and the only
+            screen that gets one. */}
+        <MarqueeBoard title="Movies you haven't seen yet" red="haven't seen" />
 
         {/* The open call. Above Now Showing because it is the one thing the
             house is asking for, and it draws nothing at all when there's no
@@ -231,10 +232,10 @@ export default function Tonight() {
             screens themselves, not to the front room every single visit. */}
         <View ref={doorsRef} collapsable={false} style={styles.chipRow}>
           <Pressable ref={settleRef} collapsable={false} style={styles.chip} onPress={() => router.push("/settle")}>
-            <Text style={styles.chipText}>⚖️  SETTLE IT</Text>
+            <Text style={styles.chipText}>Settle It</Text>
           </Pressable>
           <Pressable ref={rollRef} collapsable={false} style={styles.chip} onPress={() => router.push("/roll")}>
-            <Text style={styles.chipText}>📺  JUST ROLL IT</Text>
+            <Text style={styles.chipText}>Just Roll It</Text>
           </Pressable>
           {/* The staff pick. Video stores hand-wrote these on index cards and
               taped them to the shelf, which is exactly the register this app is
@@ -242,7 +243,7 @@ export default function Tonight() {
               "FEATURED" never does. */}
           <Pressable ref={blendRef} collapsable={false} style={[styles.chip, styles.chipPick]} onPress={() => router.push("/blend")}>
             <Text style={styles.chipBadge}>★ GRIFF&apos;S FAVORITE</Text>
-            <Text style={[styles.chipText, { color: colors.amber }]}>🧬  THIS MEETS THAT</Text>
+            <Text style={[styles.chipText, { color: colors.amber }]}>This Meets That</Text>
           </Pressable>
         </View>
 
@@ -252,7 +253,9 @@ export default function Tonight() {
             five rows of controls before meeting a single movie. The controls
             outranked the product. The dial is one tap away and the deal button
             never moves. */}
-        <View style={styles.wantCard}>
+        <BoxOffice
+          glass={
+            <>
           <Pressable
             ref={dialRef}
             collapsable={false}
@@ -261,14 +264,18 @@ export default function Tonight() {
             accessibilityRole="button"
             accessibilityLabel={`Tonight I want: ${tuneSummary}. Tap to change.`}
           >
-            <Text style={styles.tunerText} numberOfLines={1}>
-              {tuneSummary}
-            </Text>
+            <Grille />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.tunerLabel}>TONIGHT I WANT</Text>
+              <Text style={styles.tunerText} numberOfLines={1}>
+                {tuneSummary}
+              </Text>
+            </View>
             <Text style={styles.tunerChevron}>{tuning ? "▴" : "▾"}</Text>
           </Pressable>
 
           {tuning && (
-          <>
+          <View style={styles.boControls}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -317,9 +324,11 @@ export default function Tonight() {
             </View>
             <Text style={styles.checkLabel}>my services only</Text>
           </Pressable>
-          </>
+          </View>
           )}
-
+            </>
+          }
+        >
           <View ref={dealRef} collapsable={false}>
             <Button
               title={dealing ? "Dealing…" : "★  Deal me more  ★"}
@@ -328,9 +337,23 @@ export default function Tonight() {
               pulse
             />
           </View>
-          {message && <Text style={styles.message}>{message}</Text>}
-          {dealDiagnostic && <Text selectable style={styles.message}>{dealDiagnostic}</Text>}
-        </View>
+        </BoxOffice>
+        {message && <Text style={styles.message}>{message}</Text>}
+        {dealDiagnostic && <Text selectable style={styles.message}>{dealDiagnostic}</Text>}
+
+        {/* What's about to be shown, and to whom — the card before every
+            trailer, approving tonight's deal for one person. Same words as
+            the web. */}
+        {recs.length > 0 && (
+          <RatingBand
+            what="deal"
+            audience="your taste only"
+            label="Dealt tonight"
+            fine={`${recs.length} film${recs.length === 1 ? "" : "s"} off your shelf. ${
+              depth === 3 ? "Niche and deeper" : depth === 4 ? "Obscure and deeper" : "Deep cuts only"
+            }.`}
+          />
+        )}
       </View>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,7 +365,13 @@ export default function Tonight() {
       <FlatList
         data={rankedRecs}
         keyExtractor={(r) => r.id}
+        ref={listRef}
         ListHeaderComponent={header}
+        ListFooterComponent={
+          rankedRecs.length > 0 ? (
+            <ReelEnd onRewind={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })} />
+          ) : null
+        }
         contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.amber} />
@@ -388,15 +417,17 @@ const styles = StyleSheet.create({
   // The games' rail. 46pt tall so the whole row costs about what one door did,
   // and a hair over Apple's 44pt touch minimum.
   chipRow: { flexDirection: "row", gap: 8 },
+  // A door plate: a brass-less steel plate screwed beside a door, with the
+  // room's name engraved on it.
   chip: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 50,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
+    borderColor: "#4a392f",
+    borderRadius: 4,
+    backgroundColor: "#211a16",
     paddingVertical: 8,
     paddingHorizontal: 6,
   },
@@ -412,19 +443,20 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: colors.cream,
-    fontFamily: mono,
-    fontSize: 9.5,
-    letterSpacing: 0.5,
+    fontFamily: fonts.display,
+    fontSize: 16,
+    letterSpacing: 1.2,
     textAlign: "center",
-    lineHeight: 14,
+    lineHeight: 17,
   },
-  wantCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
+  // Behind the glass of the box office.
+  boControls: {
     gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(243,233,215,0.16)",
+    borderStyle: "dashed",
   },
   controlLabel: {
     color: colors.dim,
@@ -437,9 +469,14 @@ const styles = StyleSheet.create({
   tuner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    paddingVertical: 4,
+    gap: 12,
+  },
+  tunerLabel: {
+    color: colors.dim,
+    fontFamily: mono,
+    fontSize: 7.5,
+    letterSpacing: 2.4,
+    marginBottom: 2,
   },
   tunerText: { color: colors.cream, fontFamily: mono, fontSize: 12.5, letterSpacing: 0.5, flex: 1 },
   tunerChevron: { color: colors.amber, fontSize: 12 },

@@ -27,7 +27,8 @@ import {
   type SettleAnswers,
   type Verdict,
 } from "@/lib/settle";
-import { Button, Chip, Eyebrow, FilmStrip, Marquee, MarqueeBulbs, Poster } from "@/components/ui";
+import { Button, Chip, Eyebrow, FilmStrip, Marquee, Poster } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // Settle It — the couch standoff, native. Two people, one phone, five
 // questions each; the house rules. Engine is the verbatim web lib; this file
@@ -54,12 +55,12 @@ const STAMP_SLAM = new Keyframe({
 }).duration(550);
 
 const DELIBERATIONS = [
-  "consulting the ledger…",
-  "flipping a two-headed coin…",
-  "polling the back row…",
-  "checking who paid for snacks…",
-  "overruling your worst instincts…",
-  "cross-referencing the deep cuts…",
+  "reading both sheets…",
+  "comparing the answers…",
+  "striking what neither of you would watch…",
+  "checking what's on tonight…",
+  "drawing up the docket…",
+  "the house is deliberating…",
 ];
 
 function toAnswers(name: string, sheet: Sheet): SettleAnswers {
@@ -198,11 +199,10 @@ export default function Settle() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}>
         {/* header + close */}
         <View style={{ marginBottom: 14 }}>
-          <MarqueeBulbs />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
             <View>
-              <Eyebrow style={{ marginTop: 10 }}>The couch standoff</Eyebrow>
-              <Marquee size={40}>SETTLE IT</Marquee>
+              <Slate>The couch standoff</Slate>
+              <Marquee size={40} accent="it">SETTLE IT</Marquee>
             </View>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Text style={styles.close}>✕</Text>

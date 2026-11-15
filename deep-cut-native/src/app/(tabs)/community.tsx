@@ -18,10 +18,12 @@ import { reportContent } from "@/lib/report";
 import HouseCall from "@/components/HouseCall";
 import Inbox from "@/components/Inbox";
 import TakesWall from "@/components/TakesWall";
-import { Eyebrow, MarqueeBulbs, Poster } from "@/components/ui";
+import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
-import { colors, fonts, glowAmber } from "@/lib/theme";
+import { colors, fonts } from "@/lib/theme";
 import { useAuth } from "../_layout";
+import { Slate, Tape, TitleCard } from "@/components/house";
+import { FeltBoard, genreColor, LobbyCard, TitleSnipe } from "@/components/rooms";
 
 // The Lobby — native port of the web LobbyScreen (../src/app/(tabs)/
 // lobby/LobbyScreen.tsx). Three views under one marquee: the feed of what
@@ -127,6 +129,16 @@ const HEADLINE: Record<ViewKey, string> = {
   people: "FIND YOUR PEOPLE",
   inbox: "YOUR PIGEONHOLE",
 };
+/** The rooms off the lobby, as they read on the felt board. */
+const FELT = [
+  { key: "feed", label: "Marquee", sub: "who's watching" },
+  { key: "takes", label: "Takes", sub: "the wall" },
+  { key: "people", label: "People", sub: "find them" },
+  { key: "inbox", label: "Inbox", sub: "for you" },
+] as const;
+
+/** The word of each headline set in amber. */
+const ACCENT: Record<ViewKey, string> = { feed: "watching", takes: "hot takes", people: "people", inbox: "pigeonhole" };
 
 function Avatar({ url, name, size = 34 }: { url?: string | null; name: string; size?: number }) {
   if (url) {
@@ -313,69 +325,68 @@ export default function Community() {
         entering={FadeInDown.duration(350)
           .delay(Math.min(index, 8) * 70)
           .reduceMotion(ReduceMotion.System)}
-        style={styles.watchCard}
       >
-        <Pressable style={{ width: 80 }} onPress={() => router.push(`/m/${item.movie.id}`)}>
-          <Poster
-            path={item.movie.poster_path}
-            title={item.movie.title}
-            year={item.movie.year}
-            width={80}
-            badge={primaryRatingLabel({ imdb: item.movie.imdb, rt: item.movie.rt, tmdb: item.movie.tmdb })}
-          />
-          {stamp && (
-            <View style={[styles.stamp, stamp.gold && styles.stampGold]}>
-              <Text style={[styles.stampText, stamp.gold && { color: colors.amber }]}>{stamp.text}</Text>
+        <LobbyCard tint={genreColor(item.movie.genres[0])} index={index} foot="Deep Cut · Lobby">
+          <Pressable style={styles.still} onPress={() => router.push(`/m/${item.movie.id}`)}>
+            <Poster
+              path={item.movie.poster_path}
+              title={item.movie.title}
+              year={item.movie.year}
+              width={74}
+              badge={primaryRatingLabel({ imdb: item.movie.imdb, rt: item.movie.rt, tmdb: item.movie.tmdb })}
+            />
+            {stamp && (
+              <View style={[styles.stamp, stamp.gold && styles.stampGold]}>
+                <Text style={[styles.stampText, stamp.gold && { color: colors.amber }]}>{stamp.text}</Text>
+              </View>
+            )}
+          </Pressable>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.actorLine}>
+              <Avatar url={item.actor.avatar_url} name={feedName(item.actor, myId)} size={22} />
+              <Text style={styles.actorText} numberOfLines={2}>
+                <Text style={{ color: colors.amber }} onPress={() => router.push(`/u/${profileKey(item.actor)}`)}>
+                  {feedName(item.actor, myId)}
+                </Text>{" "}
+                {REACTION_LABEL[item.reaction] ?? item.reaction}
+              </Text>
             </View>
-          )}
-        </Pressable>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={styles.actorLine}>
-            <Avatar url={item.actor.avatar_url} name={feedName(item.actor, myId)} size={22} />
-            <Text style={styles.actorText} numberOfLines={2}>
-              <Text style={{ color: colors.amber }} onPress={() => router.push(`/u/${profileKey(item.actor)}`)}>
-                {feedName(item.actor, myId)}
-              </Text>{" "}
-              {REACTION_LABEL[item.reaction] ?? item.reaction}
+            <TitleSnipe onPress={() => router.push(`/m/${item.movie.id}`)}>{item.movie.title}</TitleSnipe>
+            <RatingLine
+              imdb={item.movie.imdb}
+              rt={item.movie.rt}
+              tmdb={item.movie.tmdb}
+              genres={item.movie.genres}
+              style={{ marginTop: 6 }}
+            />
+            <Text style={styles.watchMeta}>
+              {item.movie.year ?? ""}
+              {item.why ? ` · for the ${item.why}` : ""}
             </Text>
+            {item.note ? (
+              <View style={styles.noteRow}>
+                <Text style={[styles.caption, { flex: 1 }]}>“{item.note}”</Text>
+                {/* Free text somebody else wrote, on the main feed. It had no
+                    report control at all — the backend has accepted watch_note
+                    reports the whole time. */}
+                {item.actor.id !== myId && (
+                  <Pressable
+                    hitSlop={10}
+                    accessibilityLabel="Report this note"
+                    onPress={() => reportContent("watch_note", String(item.id))}
+                  >
+                    <Text style={styles.reportFlag}>⚑</Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
+            {item.actor.id !== myId && (
+              <Pressable style={styles.watchlistBtn} onPress={() => void addToWatchlist(item.movie.id)}>
+                <Text style={styles.watchlistBtnText}>+ Watchlist</Text>
+              </Pressable>
+            )}
           </View>
-          <Text style={styles.watchTitle} onPress={() => router.push(`/m/${item.movie.id}`)}>
-            {item.movie.title}
-          </Text>
-          <RatingLine
-            imdb={item.movie.imdb}
-            rt={item.movie.rt}
-            tmdb={item.movie.tmdb}
-            genres={item.movie.genres}
-            style={{ marginTop: 2 }}
-          />
-          <Text style={styles.watchMeta}>
-            {item.movie.year ?? ""}
-            {item.why ? ` · for the ${item.why}` : ""}
-          </Text>
-          {item.note ? (
-            <View style={styles.noteRow}>
-              <Text style={[styles.watchNote, { flex: 1 }]}>“{item.note}”</Text>
-              {/* Free text somebody else wrote, on the main feed. It had no
-                  report control at all — the backend has accepted watch_note
-                  reports the whole time. */}
-              {item.actor.id !== myId && (
-                <Pressable
-                  hitSlop={10}
-                  accessibilityLabel="Report this note"
-                  onPress={() => reportContent("watch_note", String(item.id))}
-                >
-                  <Text style={styles.reportFlag}>⚑</Text>
-                </Pressable>
-              )}
-            </View>
-          ) : null}
-          {item.actor.id !== myId && (
-            <Pressable style={styles.watchlistBtn} onPress={() => void addToWatchlist(item.movie.id)}>
-              <Text style={styles.watchlistBtnText}>+ Watchlist</Text>
-            </Pressable>
-          )}
-        </View>
+        </LobbyCard>
       </Animated.View>
     );
   }
@@ -386,38 +397,35 @@ export default function Community() {
         entering={FadeInDown.duration(350)
           .delay(Math.min(index, 8) * 70)
           .reduceMotion(ReduceMotion.System)}
-        style={styles.tonightCard}
       >
-        <Pressable style={{ width: 56 }} onPress={() => router.push(`/m/${item.movie.id}`)}>
-          <Poster
-            path={item.movie.poster_path}
-            title={item.movie.title}
-            year={item.movie.year}
-            width={56}
-          />
-        </Pressable>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.tonightEyebrow}>🍿 TONIGHT</Text>
-          <Text style={styles.tonightLine}>
-            <Text
-              style={{ color: colors.amber }}
-              onPress={() => router.push(`/u/${profileKey(item.actor)}`)}
-            >
-              {feedName(item.actor, myId)}
+        <LobbyCard
+          tint={colors.ticket}
+          index={index}
+          foot={`Tonight${item.movie.year ? ` · ${item.movie.year}` : ""}`}
+        >
+          <Pressable style={[styles.still, { width: 56 }]} onPress={() => router.push(`/m/${item.movie.id}`)}>
+            <Poster path={item.movie.poster_path} title={item.movie.title} year={item.movie.year} width={50} />
+          </Pressable>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.liveRow}>
+              <View style={styles.liveLamp} />
+              <Text style={styles.tonightEyebrow}>NOW SHOWING</Text>
+            </View>
+            <Text style={styles.tonightLine}>
+              <Text style={{ color: colors.amber }} onPress={() => router.push(`/u/${profileKey(item.actor)}`)}>
+                {feedName(item.actor, myId)}
+              </Text>
+              {item.actor.id === myId ? " are watching" : " is watching"}
             </Text>
-            {item.actor.id === myId ? " are watching " : " is watching "}
-            <Text style={styles.tonightTitle} onPress={() => router.push(`/m/${item.movie.id}`)}>
-              {item.movie.title}
-            </Text>
-            {item.movie.year ? <Text style={{ color: colors.dim }}> ({item.movie.year})</Text> : null}
-          </Text>
-          {item.note ? <Text style={styles.tonightNote}>“{item.note}”</Text> : null}
-          {item.actor.id !== myId && (
-            <Pressable style={styles.watchlistBtn} onPress={() => void addToWatchlist(item.movie.id)}>
-              <Text style={styles.watchlistBtnText}>+ Watch along</Text>
-            </Pressable>
-          )}
-        </View>
+            <TitleSnipe onPress={() => router.push(`/m/${item.movie.id}`)}>{item.movie.title}</TitleSnipe>
+            {item.note ? <Text style={styles.caption}>“{item.note}”</Text> : null}
+            {item.actor.id !== myId && (
+              <Pressable style={styles.watchlistBtn} onPress={() => void addToWatchlist(item.movie.id)}>
+                <Text style={styles.watchlistBtnText}>+ Watch along</Text>
+              </Pressable>
+            )}
+          </View>
+        </LobbyCard>
       </Animated.View>
     );
   }
@@ -429,81 +437,63 @@ export default function Community() {
           .delay(Math.min(index, 8) * 70)
           .reduceMotion(ReduceMotion.System)}
       >
-        <Pressable style={styles.playlistCard} onPress={() => router.push(`/p/${item.shareSlug}`)}>
-          <Text style={styles.playlistEyebrow}>
-            ✉ MIXTAPE SEALED BY <Text style={{ color: colors.amber }}>{feedName(item.actor, myId).toUpperCase()}</Text>
-          </Text>
-          <Text style={styles.playlistName}>{item.name}</Text>
-          <Text style={styles.playlistMeta}>
-            {item.filmCount} film{item.filmCount === 1 ? "" : "s"} inside — open it ↗
-          </Text>
-        </Pressable>
+        {/* A sealed mixtape, spine-out on the shelf like the ones in Mixtapes. */}
+        <Tape
+          id={item.id}
+          name={item.name}
+          meta={`Sealed by ${feedName(item.actor, myId)}`}
+          total={item.filmCount}
+          sticker="Mixtape"
+          onPress={() => router.push(`/p/${item.shareSlug}`)}
+        />
       </Animated.View>
     );
   }
 
   const header = (
     <View>
-      <MarqueeBulbs />
-      <Eyebrow style={{ marginTop: 8 }}>Community</Eyebrow>
-      <Text style={[styles.headline, glowAmber]}>
+      <Slate>Community</Slate>
+      <TitleCard size={40} accent={ACCENT[view]}>
         {view === "feed" && house ? "WHAT THE HOUSE IS WATCHING" : HEADLINE[view]}
-      </Text>
+      </TitleCard>
       {view === "takes" && (
-        <Text style={styles.takesSub}>takes so hot the nitrate catches fire · 250 characters, no mercy</Text>
+        <Text style={styles.takesSub}>
+          250 characters, pinned to one film
+        </Text>
       )}
 
       {/* The room people are already in, reading what everyone else is up to
           — the right place to ask for a script. */}
       <HouseCall style={{ marginTop: 14 }} />
 
-      <View style={styles.viewChips}>
-        {VIEWS.map((t) => (
-          <Pressable
-            key={t.key}
-            onPress={() => {
-              void Haptics.selectionAsync();
-              setView(t.key);
-              if (t.key === "inbox") setUnread(0);
-            }}
-            style={[styles.viewChip, view === t.key && styles.viewChipOn]}
-          >
-            <Text style={[styles.viewChipText, view === t.key && { color: colors.amber }]}>{t.label}</Text>
-            {t.key === "inbox" && unread > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        ))}
+      {/* The felt letterboard over the concession stand: four rooms off the
+          lobby, in white letters on black. */}
+      <View style={{ marginTop: 12 }}>
+        <FeltBoard
+          items={FELT}
+          value={view}
+          badges={{ inbox: unread }}
+          onChange={(k) => {
+            void Haptics.selectionAsync();
+            setView(k);
+            if (k === "inbox") setUnread(0);
+          }}
+        />
       </View>
 
-      <Pressable style={styles.settleCard} onPress={() => router.push("/settle")}>
-        <Text style={{ fontSize: 28 }}>⚖️</Text>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.settleTitle}>SETTLE IT</Text>
-          <Text style={styles.settleSub}>Two of you, one phone, one movie — the house picks. →</Text>
-        </View>
-        <View style={[styles.stampChip]}>
-          <Text style={styles.stampChipText}>Party</Text>
-        </View>
-      </Pressable>
-
-      {/* The greenlight ballot. Same card shape as Settle It so it reads as
-          another room in the house rather than a banner. Reading it needs
-          nothing; voting needs votes, which are earned on the website. */}
-      <Pressable style={styles.settleCard} onPress={() => router.push("/vote")}>
-        <Text style={{ fontSize: 28 }}>🎞</Text>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.settleTitle}>THE BALLOT</Text>
-          <Text style={styles.settleSub}>
-            Read the pitches and spend your votes on the next Deep Cut Original. →
-          </Text>
-        </View>
-        <View style={[styles.stampChip]}>
-          <Text style={styles.stampChipText}>Greenlight</Text>
-        </View>
-      </Pressable>
+      {/* Two more rooms off the lobby, on the same plates as Tonight's
+          doors. The ballot can be read by anyone; voting needs votes, which
+          are earned on the website. */}
+      <View style={styles.plates}>
+        <Pressable style={[styles.plate, styles.platePick]} onPress={() => router.push("/settle")}>
+          <Text style={styles.plateSmall}>TWO OF YOU · ONE PHONE</Text>
+          <Text style={[styles.plateText, { color: colors.amber }]}>Settle It</Text>
+        </Pressable>
+        <Pressable style={styles.plate} onPress={() => router.push("/vote")}>
+          <Text style={styles.plateSmall}>THE NEXT ORIGINAL</Text>
+          <Text style={styles.plateText}>The Ballot</Text>
+        </Pressable>
+      </View>
 
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
@@ -695,27 +685,38 @@ export default function Community() {
 }
 
 const styles = StyleSheet.create({
+  still: { width: 80, alignSelf: "flex-start", transform: [{ rotate: "-1.2deg" }], borderWidth: 3, borderColor: colors.paper, borderRadius: 3 },
+  caption: { color: colors.light, fontFamily: fonts.serif, fontSize: 17, lineHeight: 21, marginTop: 7 },
+  liveRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  liveLamp: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.ticket,
+    shadowColor: colors.ticket,
+    shadowOpacity: 0.9,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  plates: { flexDirection: "row", gap: 8, marginTop: 12, marginBottom: 14 },
+  plate: {
+    flex: 1,
+    minHeight: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#4a392f",
+    borderRadius: 4,
+    backgroundColor: "#211a16",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  platePick: { borderColor: colors.amber },
+  plateSmall: { color: colors.dim, fontFamily: fonts.mono, fontSize: 7, letterSpacing: 1.2, marginBottom: 3 },
+  plateText: { color: colors.cream, fontFamily: fonts.display, fontSize: 17, letterSpacing: 1.2, textTransform: "uppercase" },
   screen: { flex: 1, backgroundColor: colors.bg },
   scrollBody: { padding: 20, paddingBottom: 40 },
-  headline: {
-    color: colors.amber,
-    fontFamily: fonts.display,
-    fontSize: 40,
-    lineHeight: 40,
-    letterSpacing: 1,
-    marginTop: 2,
-  },
   takesSub: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, marginTop: 4 },
-  viewChips: { flexDirection: "row", gap: 6, marginTop: 12 },
-  viewChip: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 999,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-  },
-  viewChipOn: { borderColor: colors.amber },
   houseNote: {
     marginTop: 12,
     borderWidth: 1,
@@ -737,55 +738,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.dim,
     textAlign: "center",
-  },
-  badge: {
-    position: "absolute",
-    top: -5,
-    right: -4,
-    minWidth: 17,
-    height: 17,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: colors.ticket,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: { fontFamily: fonts.mono, fontSize: 9, color: colors.cream },
-  viewChipText: {
-    color: colors.dim,
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  settleCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    padding: 12,
-  },
-  settleTitle: { color: colors.amber, fontFamily: fonts.display, fontSize: 22, letterSpacing: 1 },
-  settleSub: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, marginTop: 2 },
-  stampChip: {
-    borderWidth: 1.5,
-    borderColor: colors.amber,
-    borderRadius: 4,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    transform: [{ rotate: "-4deg" }],
-  },
-  stampChipText: {
-    color: colors.amber,
-    fontFamily: fonts.monoSemi,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
   },
   notice: {
     color: colors.amber,
@@ -862,16 +814,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 6,
   },
-  tonightCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "rgba(228,87,61,0.4)",
-    backgroundColor: "rgba(228,87,61,0.06)",
-    borderRadius: 10,
-    padding: 12,
-  },
   tonightEyebrow: {
     fontFamily: fonts.mono,
     fontSize: 9,
@@ -884,26 +826,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 19,
     color: colors.cream,
-  },
-  tonightTitle: { fontFamily: fonts.bodyBold },
-  tonightNote: {
-    color: "rgba(243,233,215,0.85)",
-    fontFamily: fonts.bodyItalic,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 5,
-    paddingLeft: 8,
-    borderLeftWidth: 2,
-    borderLeftColor: "rgba(228,87,61,0.5)",
-  },
-  watchCard: {
-    flexDirection: "row",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    padding: 12,
   },
   stamp: {
     position: "absolute",
@@ -934,20 +856,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     flexShrink: 1,
   },
-  watchTitle: { color: colors.cream, fontFamily: fonts.display, fontSize: 22, lineHeight: 24, marginTop: 3 },
   watchMeta: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 2 },
   noteRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   reportFlag: { fontFamily: fonts.mono, fontSize: 12, color: colors.dim, paddingTop: 2 },
-  watchNote: {
-    color: "rgba(243,233,215,0.85)",
-    fontFamily: fonts.bodyItalic,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 6,
-    paddingLeft: 8,
-    borderLeftWidth: 2,
-    borderLeftColor: "rgba(255,180,84,0.5)",
-  },
   watchlistBtn: {
     alignSelf: "flex-start",
     marginTop: 8,
@@ -964,20 +875,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
   },
-  playlistCard: {
-    borderWidth: 1,
-    borderColor: colors.ticket,
-    borderStyle: "dashed",
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    padding: 16,
-  },
-  playlistEyebrow: {
-    color: colors.ticket,
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    letterSpacing: 1.5,
-  },
-  playlistName: { color: colors.cream, fontFamily: fonts.display, fontSize: 22, lineHeight: 24, marginTop: 4 },
-  playlistMeta: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 2 },
 });

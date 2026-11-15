@@ -224,7 +224,10 @@ export default function SettingsScreen({
   }
 
   return (
-    <section className="flex flex-col gap-4">
+    // `booth` turns this screen into the projection booth's control panel:
+    // every boxed section becomes a steel plate with a screw in each corner,
+    // and every label is punched out of embossing tape (see platform.css).
+    <section className="booth flex flex-col gap-4">
       <header>
         <p className="slate">
           <b>Projection booth</b>

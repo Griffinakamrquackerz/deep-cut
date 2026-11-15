@@ -15,10 +15,11 @@ import BackButton from "./BackButton";
 import HouseNav from "./HouseNav";
 import Confetti from "@/components/Confetti";
 import RatingLine from "@/components/RatingLine";
-import { Eyebrow, Marquee, Poster } from "@/components/ui";
+import { Poster } from "@/components/ui";
 import { api } from "@/lib/api";
 import { colors, fonts } from "@/lib/theme";
 import { reportContent } from "@/lib/report";
+import { CassetteFace } from "@/components/house";
 
 // Shared mixtape detail — native port of the web PlaylistDetail. Cross films
 // off, leave a reaction and a note, flip a tape public/private (owner only),
@@ -90,7 +91,6 @@ export default function PlaylistDetailView({ endpoint }: { endpoint: string }) {
 
   const total = items.length;
   const done = items.filter((i) => i.crossed_off).length;
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
   async function update(itemId: string, patch: Record<string, unknown>) {
     setItems((prev) =>
@@ -147,17 +147,16 @@ export default function PlaylistDetailView({ endpoint }: { endpoint: string }) {
       ) : (
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <BackButton style={{ marginBottom: 12 }} />
-          <Eyebrow>
-            A mixtape from {detail.ownerName}
-            {detail.recipientName ? ` · for ${detail.recipientName}` : ""}
-          </Eyebrow>
-          <Marquee size={36}>{detail.name.toUpperCase()}</Marquee>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${pct}%` }]} />
-          </View>
-          <Text style={styles.progressText}>
-            {done}/{total} crossed off
-          </Text>
+          {/* The tape itself. Crossing films off winds it from the feed
+              spool to the take-up, so the progress bar is the thing a
+              progress bar on a cassette always was. */}
+          <CassetteFace
+            id={detail.id ?? detail.name}
+            name={detail.name}
+            from={`A mixtape from ${detail.ownerName}${detail.recipientName ? ` · for ${detail.recipientName}` : ""}`}
+            done={done}
+            total={total}
+          />
 
           <View style={{ gap: 12, marginTop: 4 }}>
             {items

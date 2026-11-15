@@ -80,7 +80,7 @@ const BEATS: Beat[] = [
     route: "/tonight",
     target: "blend",
     eyebrow: "This meets that",
-    line: "Name two or three films and watch their love child turn up.",
+    line: "Name two or three films and the house splices them. Whatever comes out, you can go and watch.",
   },
   {
     id: "tv",

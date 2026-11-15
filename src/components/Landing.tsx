@@ -24,7 +24,7 @@ import RatingBand from "@/components/house/RatingBand";
 // it read as a streaming site with a recommendation feature and a donation
 // link. The actual pitch is a double feature —
 //
-//   THE DEAL        a recommendation engine for people who've seen the top row
+//   THE DEAL        a repertory house that programs for one person
 //   THE GREENLIGHT  an indie streaming house whose members vote, with points
 //                   they earn by supporting it, on which original gets made
 //
@@ -95,7 +95,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               <p className="lp-cta-proof" style={{ marginTop: "0.9rem" }}>
                 <span>Free to join</span>
                 <span>{channels} channels of shorts</span>
-                <span>$1 = 1 vote on what gets made</span>
+                <span>$1 = 1 vote</span>
               </p>
               {lifetimeConfigured() && (
                 <p className="lp-cta-proof" style={{ marginTop: "0.9rem" }}>
@@ -142,10 +142,10 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
             <span>that don&apos;t exist yet.</span>
           </h1>
           <p className="lp-sub" style={{ "--i": 3 } as React.CSSProperties}>
-            Deep Cut is two things on one ticket. A recommendation engine that deals you{" "}
-            <strong>movies you haven&apos;t seen yet</strong>. And an indie streaming house where{" "}
-            <strong>members vote on which original film gets made next</strong> &mdash; paid for by {share}% of
-            every dollar the membership puts in.
+            Deep Cut is two things on one ticket. A rep house that programs{" "}
+            <strong>movies you haven&apos;t seen yet</strong> out of the films you already love. And an
+            independent studio where <strong>members vote on which original gets made next</strong> &mdash;
+            financed by {share}% of every dollar the membership puts in.
           </p>
         </ProjectorHero>
       </header>
@@ -180,7 +180,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 what="double feature"
                 audience="people who stay through the credits"
                 label="Deep cuts only"
-                fine="Some films may be unknown to your friends. Viewer discretion is the whole point."
+                fine="Feature one: the programming. Feature two: the greenlight."
               />
             </div>
             <div className="lp-double-head">
@@ -204,7 +204,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 </span>
               </p>
 
-              {/* ── Feature one: the recommendation engine ── */}
+              {/* ── Feature one: the programming ── */}
               <article id="deal" className="lp-onesheet" data-reveal="rise">
                 <div className="lp-onesheet-art">
                   {posters.length > 0 && (
@@ -223,16 +223,16 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   )}
                   <p className="lp-onesheet-tag">
                     <span>Feature one</span>
-                    <span>The recommendation engine</span>
+                    <span>Repertory programming</span>
                   </p>
                   <p className="lp-onesheet-name">The Deal</p>
                   <h3 className="lp-onesheet-title">Movies you haven&apos;t seen yet</h3>
                 </div>
                 <div className="lp-onesheet-body">
                   <p>
-                    Mark the films you love. Deep Cut reads them back as <strong>taste threads</strong> &mdash;
-                    your taste, in plain English &mdash; then deals you deep cuts you&apos;ve never met. Every
-                    card comes with a one-line reason it&apos;s yours, on the services you already pay for.
+                    Mark the films you love. The house reads your shelf and names what keeps coming up &mdash;
+                    your <strong>taste threads</strong>. Then it programs against them: films you haven&apos;t
+                    seen, each with a line on why it&apos;s on your bill and which service has it tonight.
                   </p>
                   <div className="lp-onesheet-demo">
                     <DealDemo />
@@ -240,8 +240,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   <ul className="lp-points">
                     <li>
                       <span>
-                        <b>The obscurity dial.</b> Crowd-pleasers at one end, buried treasure at the other. You
-                        decide how far off the map tonight goes.
+                        <b>The obscurity dial.</b> Niche, obscure, or deep cut. The top row never makes the
+                        bill &mdash; the dial sets how far past it you go.
                       </span>
                     </li>
                     <li>
@@ -371,8 +371,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               How a film <em>gets made</em> here
             </h2>
             <p className="lp-lede" data-reveal="rise">
-              No studio, no algorithm, no room you can&apos;t get into. Your membership goes in one end and a
-              feature comes out the other. Five frames, start to premiere.
+              No studio, and no room you can&apos;t get into. Membership goes in one end and a feature comes
+              out the other. Five frames, start to premiere.
             </p>
             {lifetimeConfigured() && (
               <p className="lp-lede" data-reveal="rise">
@@ -553,7 +553,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               </h2>
               <blockquote className="lp-pull" data-reveal="rise">
                 &ldquo;I wanted that feeling back.&rdquo;
-                <cite>Griffin Howes · founder · ten years working in film</cite>
+                <cite>Griffin Howes · founder · more than ten years in film</cite>
               </blockquote>
             </div>
             <div className="lp-paper" data-reveal="rise">
@@ -579,11 +579,11 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 <p className="lp-door-for">If you watch them</p>
                 <h3>You&apos;ve seen the top row of every app.</h3>
                 <p className="lp-door-desc">
-                  You want the one a friend with unbearable taste would press into your hands. Deep Cut is that
-                  friend, with a streaming service attached and a vote on what gets made next.
+                  You want the film a friend with good taste would hand you without explaining it. Deep Cut
+                  does that, runs {channels} channels of shorts, and gives you a vote on what gets made next.
                 </p>
                 <ul>
-                  <li>Recommendations with a reason on every card</li>
+                  <li>A bill programmed off your own shelf, with a note on every card</li>
                   <li>{channels} channels of shorts the big apps don&apos;t carry</li>
                   <li>A say in the next Deep Cut Original</li>
                 </ul>
@@ -668,8 +668,9 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               <details>
                 <summary>What if the fund never fills?</summary>
                 <p>
-                  The fund keeps growing toward its goal. Subscriptions pay for membership; points purchases
-                  buy voting points. Nothing is held in escrow against a film that might not happen.
+                  Then nothing gets commissioned and the fund keeps growing. Subscriptions pay for membership
+                  &mdash; the Theatre, the programming, the whole house; points purchases buy voting points.
+                  Nothing is held in escrow against a film that might not happen.
                 </p>
               </details>
               <details>

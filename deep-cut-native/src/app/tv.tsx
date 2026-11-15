@@ -27,7 +27,8 @@ import { api } from "@/lib/api";
 import { colors, fonts, mono } from "@/lib/theme";
 import BackButton from "@/components/BackButton";
 import HouseNav from "@/components/HouseNav";
-import { Eyebrow, Marquee, MarqueeBulbs } from "@/components/ui";
+import { Eyebrow, Marquee } from "@/components/ui";
+import { Slate } from "@/components/house";
 
 // Deep Cut Theatre — a television in a basement that only plays short films.
 //
@@ -1009,9 +1010,8 @@ export default function TvScreen() {
         <BackButton />
 
         <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 10 }}>Monthly showcase</Eyebrow>
-          <Marquee size={38}>DEEP CUT THEATRE</Marquee>
+          <Slate>Monthly showcase</Slate>
+          <Marquee size={38} accent="theatre">DEEP CUT THEATRE</Marquee>
           <Text style={styles.lead}>
             Award-winning indie films you&apos;ve never seen. New bill every month. Pick a
             channel, then have a look around the room.

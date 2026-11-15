@@ -11,6 +11,7 @@ import type { TasteStats } from "@/lib/rank";
 import type { TonightCard } from "@/lib/tonight";
 import CreditRoll from "@/components/house/CreditRoll";
 import { tapeHue } from "@/lib/tape";
+import { memberNo } from "@/lib/member-no";
 
 const REACTION_LABEL: Record<string, string> = {
   loved: "loved",
@@ -81,35 +82,50 @@ export default function ProfileView(data: ProfileViewData) {
   return (
     <>
       <header>
-        <p className="slate mb-3">
-          <b>Member card</b>
-        </p>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar url={person.avatar_url} name={name} size="lg" />
-            <div className="min-w-0">
-              <h1 className="glow-amber font-display text-4xl leading-tight text-amber">
+        {/* The membership card: laminated, a photo window, a number, a
+            signature strip. The accents read the profile theme's tokens, so a
+            noir member carries a noir card. */}
+        <div className="member-card">
+          <div className="member-card-top">
+            <span className="member-card-brand">
+              DEEP CUT<i>.</i> VIDEO
+            </span>
+            <span className="member-card-kind">Membership card</span>
+          </div>
+          <div className="member-card-body">
+            <span className="member-card-photo">
+              <Avatar url={person.avatar_url} name={name} size="lg" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h1 className="glow-amber font-display text-4xl leading-none text-amber">
                 {name.toUpperCase()}
               </h1>
               {person.handle && person.display_name && (
-                <p className="font-mono text-xs text-dim">@{person.handle}</p>
+                <p className="mt-1 font-mono text-xs text-dim">@{person.handle}</p>
               )}
-              <p className="mt-1 font-mono text-[0.65rem] text-dim">
-                {data.followerCount} follower{data.followerCount === 1 ? "" : "s"} · following{" "}
-                {data.followingCount}
-              </p>
+              <p className="member-card-no">No. {memberNo(person.id)}</p>
             </div>
+            {data.isMe ? (
+              <Link
+                href="/settings"
+                className="self-start rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim"
+              >
+                Style it
+              </Link>
+            ) : data.viewerSignedIn ? (
+              <span className="self-start">
+                <FollowButton userId={person.id} initiallyFollowing={data.iFollow} size="lg" />
+              </span>
+            ) : null}
           </div>
-          {data.isMe ? (
-            <Link
-              href="/settings"
-              className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-dim"
-            >
-              Style it ✨
-            </Link>
-          ) : data.viewerSignedIn ? (
-            <FollowButton userId={person.id} initiallyFollowing={data.iFollow} size="lg" />
-          ) : null}
+          <div className="member-card-foot">
+            <span className="member-card-sig">{name}</span>
+            <span className="member-card-bar" aria-hidden />
+          </div>
+          <p className="member-card-terms">
+            {data.followerCount} follower{data.followerCount === 1 ? "" : "s"} · following {data.followingCount} ·
+            not transferable
+          </p>
         </div>
       </header>
 
@@ -155,7 +171,7 @@ export default function ProfileView(data: ProfileViewData) {
           <ShowMore
             initial={12}
             step={24}
-            wrapperClassName="grid grid-cols-4 gap-2"
+            wrapperClassName="contact grid grid-cols-4 gap-2"
             label="Roll more posters"
           >
             {data.lovedMovies.map((m) => (
@@ -249,9 +265,7 @@ export default function ProfileView(data: ProfileViewData) {
               ...(data.playlists.length > 0
                 ? [{ role: "mixtapes", names: data.playlists.slice(0, 4).map((p) => p.name) }]
                 : []),
-              { role: "special thanks", names: [data.isMe ? "everyone who lent you a tape" : "you, for reading this far"], you: true },
             ]}
-            tail="No films were harmed in the making of this taste."
           />
         </div>
       )}

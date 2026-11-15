@@ -12,6 +12,8 @@ import Poster from "@/components/Poster";
 import Avatar from "@/components/Avatar";
 import FilmLeader from "@/components/FilmLeader";
 import { sfxClick, sfxPop, haptic } from "@/lib/sfx";
+import { genreDot } from "@/lib/genre-dots";
+import { tapeHue } from "@/lib/tape";
 import { toast } from "@/lib/toast";
 
 const REACTION_LABEL: Record<string, string> = {
@@ -184,7 +186,7 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         </h1>
         {view === "takes" && (
           <p className="mt-1 font-mono text-[0.65rem] text-dim">
-            takes so hot the nitrate catches fire · 250 characters, no mercy
+            250 characters, pinned to one film
           </p>
         )}
       </header>
@@ -195,13 +197,15 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
           with no campaign doesn't leave a stray gap between cards. */}
       <HouseCall />
 
-      <div className="flex gap-1.5">
+      {/* The felt letterboard over the concession stand: four rooms off the
+          lobby, in white letters on black. */}
+      <div className="felt" role="group" aria-label="Lobby sections">
         {(
           [
-            { key: "feed", label: "☰ The marquee" },
-            { key: "takes", label: "🔥 Hot takes" },
-            { key: "people", label: "★ People" },
-            { key: "inbox", label: "✉ Inbox" },
+            { key: "feed", label: "Marquee", sub: "who's watching" },
+            { key: "takes", label: "Takes", sub: "the wall" },
+            { key: "people", label: "People", sub: "find them" },
+            { key: "inbox", label: "Inbox", sub: "for you" },
           ] as const
         ).map((t) => (
           <button
@@ -212,15 +216,12 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
               if (t.key === "inbox") setUnread(0);
             }}
             aria-pressed={view === t.key}
-            className={`relative rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider ${
-              view === t.key
-                ? "border-amber bg-surface text-amber glow-amber"
-                : "border-line bg-surface text-dim"
-            }`}
+            className="relative"
           >
             {t.label}
+            <small>{t.sub}</small>
             {t.key === "inbox" && unread > 0 && (
-              <span className="absolute -right-1 -top-1 min-w-[1.1rem] rounded-full bg-ticket px-1 text-center font-mono text-[0.55rem] leading-[1.1rem] text-cream">
+              <span className="absolute right-1 top-1 min-w-[1.1rem] rounded-full bg-ticket px-1 text-center font-mono text-[0.55rem] leading-[1.1rem] text-cream">
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
@@ -228,21 +229,11 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
         ))}
       </div>
 
-      <Link
-        href="/settle"
-        onClick={() => sfxPop()}
-        className="film-card flex items-center gap-3 rounded-lg p-3"
-      >
-        <span aria-hidden className="text-3xl">⚖️</span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-2xl leading-tight text-amber">
-            SETTLE IT
-          </span>
-          <span className="font-mono text-[0.65rem] text-dim">
-            Two of you, one phone, one movie — the house picks. →
-          </span>
-        </span>
-        <span className="stamp stamp-gold shrink-0">Party</span>
+      {/* The same brass plate as on Tonight's door, with its one line of
+          explanation underneath. */}
+      <Link href="/settle" onClick={() => sfxPop()} className="door-plate door-plate--pick">
+        <small>Two of you · one phone · one film</small>
+        Settle It
       </Link>
 
       {view === "takes" ? (
@@ -380,138 +371,136 @@ export default function LobbyScreen({ myId, premium = false }: { myId: string; p
                 )}
 
                 {item.kind === "watch" && (
-                  <div
-                    className="film-card deal-in flex gap-3 rounded-lg p-3"
-                    style={{ "--i": idx } as CSSProperties}
+                  <article
+                    className="lobby-card deal-in"
+                    style={{ "--i": idx, "--tint": genreDot(item.movie.genres[0] ?? "") } as CSSProperties}
                   >
-                    <Link href={`/m/${item.movie.id}`} className="wiggle relative w-20 shrink-0">
-                      <Poster
-                        posterPath={item.movie.poster_path}
-                        title={item.movie.title}
-                        year={item.movie.year}
-                        genres={item.movie.genres}
-                      />
-                      {stamp && (
-                        <span
-                          className={`stamp absolute -left-2 top-2 ${stamp.gold ? "stamp-gold" : ""}`}
-                        >
-                          {stamp.text}
-                        </span>
-                      )}
-                    </Link>
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <p className="flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-dim">
-                        <Avatar url={item.actor.avatar_url} name={feedName(item.actor, myId)} size="sm" />
-                        <span>
-                          <Link href={profileHref(item.actor)} className="text-amber">
-                            {feedName(item.actor, myId)}
-                          </Link>{" "}
-                          {REACTION_LABEL[item.reaction] ?? item.reaction}
-                        </span>
-                      </p>
-                      <Link
-                        href={`/m/${item.movie.id}`}
-                        className="mt-0.5 font-display text-2xl leading-tight text-cream"
-                      >
-                        {item.movie.title}
-                      </Link>
-                      <p className="font-mono text-[0.6rem] text-dim">
-                        {item.movie.year ?? ""}
-                        {item.movie.genres.length
-                          ? ` · ${item.movie.genres.slice(0, 2).join(" / ")}`
-                          : ""}
-                        {item.why ? ` · for the ${item.why}` : ""}
-                      </p>
-                      {item.note && (
-                        <p className="mt-1.5 border-l-2 border-amber/50 pl-2 text-sm italic text-cream/85">
-                          “{item.note}”
-                        </p>
-                      )}
-                      {item.actor.id !== myId && (
-                        <div className="mt-auto pt-2">
-                          <button
-                            onClick={() => {
-                              sfxPop();
-                              void addToWatchlist(item.movie.id);
-                            }}
-                            className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
+                    <div className="lc-inner">
+                      <Link href={`/m/${item.movie.id}`} className="lc-still">
+                        <Poster
+                          posterPath={item.movie.poster_path}
+                          title={item.movie.title}
+                          year={item.movie.year}
+                          genres={item.movie.genres}
+                        />
+                        {stamp && (
+                          <span
+                            className={`stamp absolute -left-2 top-2 ${stamp.gold ? "stamp-gold" : ""}`}
                           >
-                            + Watchlist
-                          </button>
+                            {stamp.text}
+                          </span>
+                        )}
+                      </Link>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="lc-who">
+                          <Avatar url={item.actor.avatar_url} name={feedName(item.actor, myId)} size="sm" />
+                          <span>
+                            <Link href={profileHref(item.actor)} className="text-amber">
+                              {feedName(item.actor, myId)}
+                            </Link>{" "}
+                            {REACTION_LABEL[item.reaction] ?? item.reaction}
+                          </span>
+                        </p>
+                        <div>
+                          <Link href={`/m/${item.movie.id}`} className="lc-snipe">
+                            {item.movie.title}
+                          </Link>
                         </div>
-                      )}
+                        <p className="lc-meta">
+                          {item.movie.year ?? ""}
+                          {item.movie.genres.length
+                            ? ` · ${item.movie.genres.slice(0, 2).join(" / ")}`
+                            : ""}
+                          {item.why ? ` · for the ${item.why}` : ""}
+                        </p>
+                        {item.note && <p className="lc-caption">“{item.note}”</p>}
+                        {item.actor.id !== myId && (
+                          <div className="mt-auto pt-2.5">
+                            <button
+                              onClick={() => void addToWatchlist(item.movie.id)}
+                              className="lc-btn"
+                            >
+                              + Watchlist
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                    <p className="lc-foot">
+                      <span>Deep Cut · Lobby</span>
+                      <b>No. {idx + 1}</b>
+                    </p>
+                  </article>
                 )}
 
                 {item.kind === "tonight" && (
-                  <div
-                    className="deal-in flex items-center gap-3 rounded-lg border border-ticket/40 bg-ticket/5 p-3"
+                  <article
+                    className="lobby-card lobby-card--now deal-in"
                     style={{ "--i": idx } as CSSProperties}
                   >
-                    <Link href={`/m/${item.movie.id}`} className="wiggle w-14 shrink-0">
-                      <Poster
-                        posterPath={item.movie.poster_path}
-                        title={item.movie.title}
-                        year={item.movie.year}
-                        genres={item.movie.genres}
-                      />
-                    </Link>
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <p className="font-mono text-[0.6rem] uppercase tracking-widest text-ticket">
-                        🍿 Tonight
-                      </p>
-                      <p className="mt-0.5 text-sm text-cream">
-                        <Link href={profileHref(item.actor)} className="text-amber">
-                          {feedName(item.actor, myId)}
-                        </Link>{" "}
-                        {item.actor.id === myId ? "are" : "is"} watching{" "}
-                        <Link
-                          href={`/m/${item.movie.id}`}
-                          className="font-display text-lg leading-none text-cream"
-                        >
-                          {item.movie.title}
-                        </Link>
-                        {item.movie.year ? <span className="text-dim"> ({item.movie.year})</span> : null}
-                      </p>
-                      {item.note && (
-                        <p className="mt-1 border-l-2 border-ticket/50 pl-2 text-sm italic text-cream/85">
-                          “{item.note}”
+                    <div className="lc-inner items-center">
+                      <Link href={`/m/${item.movie.id}`} className="lc-still lc-still--small">
+                        <Poster
+                          posterPath={item.movie.poster_path}
+                          title={item.movie.title}
+                          year={item.movie.year}
+                          genres={item.movie.genres}
+                        />
+                      </Link>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="lc-who">
+                          <span className="lc-live">Now showing</span>
                         </p>
-                      )}
-                      {item.actor.id !== myId && (
-                        <div className="mt-2">
-                          <button
-                            onClick={() => {
-                              sfxPop();
-                              void addToWatchlist(item.movie.id);
-                            }}
-                            className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
-                          >
-                            + Watch along
-                          </button>
+                        <p className="mt-1 text-sm text-cream">
+                          <Link href={profileHref(item.actor)} className="text-amber">
+                            {feedName(item.actor, myId)}
+                          </Link>{" "}
+                          {item.actor.id === myId ? "are" : "is"} watching
+                        </p>
+                        <div>
+                          <Link href={`/m/${item.movie.id}`} className="lc-snipe">
+                            {item.movie.title}
+                          </Link>
                         </div>
-                      )}
+                        {item.note && <p className="lc-caption">“{item.note}”</p>}
+                        {item.actor.id !== myId && (
+                          <div className="mt-2.5">
+                            <button
+                              onClick={() => void addToWatchlist(item.movie.id)}
+                              className="lc-btn"
+                            >
+                              + Watch along
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                    <p className="lc-foot">
+                      <span>Tonight{item.movie.year ? ` · ${item.movie.year}` : ""}</span>
+                      <b>No. {idx + 1}</b>
+                    </p>
+                  </article>
                 )}
 
                 {item.kind === "playlist" && (
+                  // A mixtape somebody sealed, on the shelf spine-out like the
+                  // ones in Mixtapes.
                   <Link
                     href={`/p/${item.shareSlug}`}
-                    className="ticket-edge deal-in block rounded bg-surface p-4"
-                    style={{ "--i": idx } as CSSProperties}
+                    className="vhs deal-in"
+                    style={{ "--i": idx, "--hue": tapeHue(item.id) } as CSSProperties}
                   >
-                    <p className="font-mono text-[0.65rem] uppercase tracking-widest text-ticket">
-                      ✉ Mixtape sealed by{" "}
-                      <span className="text-amber">{feedName(item.actor, myId)}</span>
-                    </p>
-                    <p className="mt-1 font-display text-2xl leading-tight text-cream">
-                      {item.name}
-                    </p>
-                    <p className="mt-0.5 font-mono text-[0.6rem] text-dim">
-                      {item.filmCount} film{item.filmCount === 1 ? "" : "s"} inside — open it ↗
-                    </p>
+                    <span className="vhs-label">
+                      <span className="vhs-title">{item.name}</span>
+                      <span className="vhs-meta">
+                        Sealed by {feedName(item.actor, myId)} · {item.filmCount} film
+                        {item.filmCount === 1 ? "" : "s"}
+                      </span>
+                    </span>
+                    <span className="vhs-side">
+                      <span className="vhs-sticker">Mixtape</span>
+                      <span>Open ↗</span>
+                    </span>
                   </Link>
                 )}
               </li>

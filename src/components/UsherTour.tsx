@@ -65,7 +65,7 @@ const BEATS: Beat[] = [
     route: "/",
     sel: '[data-usher="blend"]',
     eyebrow: "This meets that",
-    line: "Name two or three films and watch their love child turn up.",
+    line: "Name two or three films and the house splices them. Whatever comes out, you can go and watch.",
   },
   {
     route: "/",

@@ -15,7 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { colors, fonts, glowAmber, mono } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
-import { Button, Eyebrow, FilmStrip, MarqueeBulbs } from "@/components/ui";
+import { Button, Eyebrow, FilmStrip } from "@/components/ui";
+import { Slate, TitleCard } from "@/components/house";
 
 // The front door. Members sign in with a password or a one-tap magic link that
 // deep-links back in (deepcut://auth-callback, handled in _layout).
@@ -113,10 +114,11 @@ export default function Login() {
       >
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <View style={{ alignItems: "center", marginBottom: 28 }}>
-            <MarqueeBulbs />
-            <Eyebrow style={{ marginTop: 10 }}>Admit one</Eyebrow>
-            <Text style={styles.logo}>DEEP CUT</Text>
-            <Text style={styles.tag}>movies you haven&apos;t seen yet</Text>
+            <Slate>Admit one</Slate>
+            <TitleCard size={78} accent="cut" center>
+              DEEP CUT
+            </TitleCard>
+            <Text style={styles.tag}>Movies you haven&apos;t seen yet.</Text>
             <View style={{ width: 170, marginTop: 12 }}>
               <FilmStrip holes={10} />
             </View>
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
   logo: { color: colors.amber, fontFamily: fonts.display, fontSize: 60, letterSpacing: 3, marginTop: 6, ...glowAmber },
-  tag: { color: colors.dim, fontFamily: mono, fontSize: 12, marginTop: 4 },
+  tag: { color: colors.cream, fontFamily: fonts.serif, fontSize: 23, marginTop: 6 },
   input: {
     borderWidth: 1,
     borderColor: colors.line,

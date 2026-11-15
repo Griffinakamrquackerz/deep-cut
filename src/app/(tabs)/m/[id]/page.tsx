@@ -7,7 +7,6 @@ import { cacheMovie, getMovieCredits, getMovieTrailer } from "@/lib/tmdb";
 import { SERVICES, type Service } from "@/lib/services";
 import Poster from "@/components/Poster";
 import ServiceBadges from "@/components/ServiceBadges";
-import RatingsBadges from "@/components/RatingsBadges";
 import MovieActions from "./MovieActions";
 import ShareFilm from "@/components/ShareFilm";
 import AdSlot from "@/components/AdSlot";
@@ -18,6 +17,8 @@ import JsonLd from "@/components/JsonLd";
 import CurtainReveal from "@/components/CurtainReveal";
 import HotTakesWall from "@/components/HotTakesWall";
 import { siteUrl } from "@/lib/site";
+import Laurel from "@/components/house/Laurel";
+import { genreDot } from "@/lib/genre-dots";
 
 // SEO: every film page is public and crawlable with its own title, description,
 // and poster card — free, compounding top-of-funnel discovery (the IMDb move).
@@ -118,8 +119,11 @@ export default async function MoviePage({
     <section className="flex flex-col gap-5">
       <JsonLd data={movieLd} />
       <CurtainReveal />
+      {/* The display case outside the theatre: this week's one-sheet behind
+          glass, lit from inside. Its ratings wear laurels, the way a poster
+          wears the festivals that took it. */}
       <div className="flex gap-4">
-        <div className="w-32 shrink-0">
+        <div className="showcase w-36" data-sign="NOW SHOWING">
           <Poster
             posterPath={movie.poster_path}
             title={movie.title}
@@ -127,19 +131,40 @@ export default async function MoviePage({
             genres={movie.genres}
           />
         </div>
-        <div className="min-w-0">
-          <h1 className="title-card rack-in text-3xl leading-tight">{movie.title}</h1>
-          <p className="mt-1 font-mono text-xs text-dim">
+        <div className="min-w-0 pt-1">
+          <h1 className="title-card rack-in text-4xl leading-[0.95]">{movie.title}</h1>
+          <p className="mt-1.5 font-mono text-xs text-dim">
             {movie.year ?? "—"}
             {movie.runtime ? ` · ${movie.runtime} min` : ""}
           </p>
-          <p className="mt-1 font-mono text-[0.65rem] text-dim">{movie.genres.join(" · ")}</p>
-          <RatingsBadges className="mt-2" ratings={movie.ratings} />
-          <div className="mt-2">
+          {movie.genres.length > 0 && (
+            <div className="genre-dots">
+              {movie.genres.slice(0, 3).map((g) => (
+                <span key={g} className="genre-dot" style={{ "--dot": genreDot(g) } as React.CSSProperties}>
+                  {g}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-3">
             <ServiceBadges available={available} mine={myServices} />
           </div>
         </div>
       </div>
+
+      {(movie.ratings?.imdb != null || movie.ratings?.rt != null || movie.ratings?.tmdb != null) && (
+        <div className="laurels justify-center">
+          {movie.ratings?.imdb != null && (
+            <Laurel top="IMDb" big={movie.ratings.imdb.toFixed(1)} sub="out of 10" title={`IMDb rating ${movie.ratings.imdb.toFixed(1)}`} />
+          )}
+          {movie.ratings?.rt != null && (
+            <Laurel top="Tomatometer" big={`${movie.ratings.rt}%`} sub="critics" title={`Rotten Tomatoes ${movie.ratings.rt}%`} />
+          )}
+          {movie.ratings?.tmdb != null && (
+            <Laurel top="TMDB" big={movie.ratings.tmdb.toFixed(1)} sub="out of 10" title={`TMDB rating ${movie.ratings.tmdb.toFixed(1)}`} />
+          )}
+        </div>
+      )}
 
       {trailer && (
         <div>

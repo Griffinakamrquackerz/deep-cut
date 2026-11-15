@@ -13,11 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Confetti from "@/components/Confetti";
-import { Button, Eyebrow, Marquee, MarqueeBulbs } from "@/components/ui";
+import { Button, Eyebrow, Marquee } from "@/components/ui";
 import { api } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import { colors, fonts } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
+import { ReelEnd, Slate, Tape } from "@/components/house";
+import { tapeStripes } from "@/lib/tape";
 
 // The Mixtapes room — native port of the web PlaylistsScreen. Three inline
 // states, same as web: the list (Sent / Received), the create flow, and the
@@ -45,25 +47,12 @@ function progress(items: Array<{ crossed_off: boolean }>) {
   return { done, total, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
 }
 
-function ProgressBar({ items }: { items: Array<{ crossed_off: boolean }> }) {
-  const { done, total, pct } = progress(items);
-  return (
-    <View style={{ marginTop: 6 }}>
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct}%` }]} />
-      </View>
-      <Text style={styles.progressText}>
-        {done}/{total} crossed off
-      </Text>
-    </View>
-  );
-}
-
 export default function Mixtapes() {
   const [sent, setSent] = useState<PlaylistRow[]>([]);
   const [received, setReceived] = useState<PlaylistRow[]>([]);
   const [pickPool, setPickPool] = useState<PoolFilm[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<ScrollView>(null);
 
   // create flow
   const [creating, setCreating] = useState(false);
@@ -157,8 +146,8 @@ export default function Mixtapes() {
       <SafeAreaView style={styles.screen} edges={["top"]}>
         <Confetti fire={1} />
         <ScrollView contentContainerStyle={styles.body}>
-          <Eyebrow>Mixtape sealed</Eyebrow>
-          <Marquee size={38}>SEND IT</Marquee>
+          <Slate>Mixtape sealed</Slate>
+          <Marquee size={38} accent="it">SEND IT</Marquee>
           <View style={styles.linkCard}>
             <Text style={styles.linkText}>{shareLink}</Text>
           </View>
@@ -180,23 +169,46 @@ export default function Mixtapes() {
     return (
       <SafeAreaView style={styles.screen} edges={["top"]}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          <Eyebrow>New mixtape</Eyebrow>
-          <Marquee size={38}>MAKE A PLAYLIST</Marquee>
+          <Slate>New mixtape</Slate>
+          <Marquee size={38} accent="playlist">MAKE A PLAYLIST</Marquee>
 
-          <TextInput
-            value={name}
-            onChangeText={(t) => setName(t.slice(0, 80))}
-            placeholder="Name it — “movies to fix your October”"
-            placeholderTextColor="rgba(183,164,145,0.6)"
-            style={styles.input}
-          />
-          <TextInput
-            value={recipient}
-            onChangeText={(t) => setRecipient(t.slice(0, 60))}
-            placeholder="For… (optional)"
-            placeholderTextColor="rgba(183,164,145,0.6)"
-            style={styles.input}
-          />
+          {/* A blank tape. You write its name on the label, in pen. */}
+          <View style={styles.blank}>
+            <View style={styles.blankLabel}>
+              <View style={styles.blankTop}>
+                <Text style={styles.blankSmall}>DEEP CUT VIDEO</Text>
+                <Text style={styles.blankSmall}>
+                  SIDE A · {count} FILM{count === 1 ? "" : "S"}
+                </Text>
+              </View>
+              <TextInput
+                value={name}
+                onChangeText={(t) => setName(t.slice(0, 80))}
+                placeholder="Name this tape…"
+                placeholderTextColor="rgba(42,28,21,0.38)"
+                accessibilityLabel="Mixtape name"
+                style={styles.write}
+              />
+              <TextInput
+                value={recipient}
+                onChangeText={(t) => setRecipient(t.slice(0, 60))}
+                placeholder="For… (optional)"
+                placeholderTextColor="rgba(42,28,21,0.38)"
+                accessibilityLabel="Who it's for"
+                style={[styles.write, styles.writeSmall]}
+              />
+              <View style={styles.blankStripes}>
+                {tapeStripes(name || "blank").map((c, i) => (
+                  <View key={i} style={{ flex: 1, backgroundColor: c }} />
+                ))}
+              </View>
+            </View>
+            <View style={styles.blankWindow}>
+              <View style={styles.blankSpool} />
+              <View style={styles.blankTapeRun} />
+              <View style={styles.blankSpool} />
+            </View>
+          </View>
           <TextInput
             value={query}
             onChangeText={search}
@@ -276,12 +288,11 @@ export default function Mixtapes() {
   // ── List ──
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <MarqueeBulbs />
-            <Eyebrow style={{ marginTop: 8 }}>Playlists</Eyebrow>
-            <Marquee size={38}>MOVIE MIXTAPES</Marquee>
+            <Slate>Playlists</Slate>
+            <Marquee size={38} accent="mixtapes">MOVIE MIXTAPES</Marquee>
           </View>
           <Pressable style={styles.newBtn} onPress={() => setCreating(true)}>
             <Text style={styles.newBtnText}>+ New</Text>
@@ -303,28 +314,16 @@ export default function Mixtapes() {
               ) : (
                 <View style={{ gap: 8 }}>
                   {sent.map((p) => (
-                    <Pressable
+                    <Tape
                       key={p.id}
-                      style={styles.tapeCard}
+                      id={p.id}
+                      name={p.name}
+                      meta={p.recipient_name ? `FOR ${p.recipient_name.toUpperCase()}` : "FROM YOU"}
+                      done={progress(p.playlist_items).done}
+                      total={p.playlist_items.length}
+                      sticker={p.is_public === false ? "Private" : undefined}
                       onPress={() => router.push(`/playlist/${p.id}`)}
-                    >
-                      <View style={styles.tapeTop}>
-                        <View style={styles.tapeNameRow}>
-                          <Text style={styles.tapeName} numberOfLines={1}>
-                            {p.name}
-                          </Text>
-                          {p.is_public === false && (
-                            <View style={styles.privateBadge}>
-                              <Text style={styles.privateBadgeText}>🔒 Private</Text>
-                            </View>
-                          )}
-                        </View>
-                        {p.recipient_name ? (
-                          <Text style={styles.forName}>for {p.recipient_name}</Text>
-                        ) : null}
-                      </View>
-                      <ProgressBar items={p.playlist_items} />
-                    </Pressable>
+                    />
                   ))}
                 </View>
               )}
@@ -337,20 +336,24 @@ export default function Mixtapes() {
               ) : (
                 <View style={{ gap: 8 }}>
                   {received.map((p) => (
-                    <Pressable
+                    <Tape
                       key={p.id}
-                      style={styles.tapeCard}
+                      id={p.id}
+                      name={p.name}
+                      meta="MADE FOR YOU"
+                      done={progress(p.playlist_items).done}
+                      total={p.playlist_items.length}
+                      sticker="For you"
+                      stickerKind="green"
                       onPress={() => router.push(`/playlist/${p.id}`)}
-                    >
-                      <Text style={styles.tapeName}>{p.name}</Text>
-                      <ProgressBar items={p.playlist_items} />
-                    </Pressable>
+                    />
                   ))}
                 </View>
               )}
             </View>
           </>
         )}
+        <ReelEnd onRewind={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -375,35 +378,38 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   dim: { color: colors.dim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  tapeCard: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    padding: 12,
-  },
-  tapeTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  tapeNameRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 },
-  tapeName: { color: colors.cream, fontFamily: fonts.display, fontSize: 18, letterSpacing: 0.5, flexShrink: 1 },
-  privateBadge: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 3,
+  // create — a blank tape (web: .tape-face / .tape-write)
+  blank: { borderRadius: 10, backgroundColor: "#14100e", borderWidth: 1, borderColor: "#000", padding: 10 },
+  blankLabel: { backgroundColor: colors.paper, borderRadius: 3, overflow: "hidden", padding: 12, paddingBottom: 22 },
+  blankTop: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+  blankSmall: { color: colors.paperDim, fontFamily: fonts.mono, fontSize: 8.5, letterSpacing: 1.8 },
+  write: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: "rgba(42,28,21,0.55)",
+    color: "#1d2a5c",
+    fontFamily: fonts.serif,
+    fontSize: 30,
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    marginTop: 8,
   },
-  privateBadgeText: {
-    color: colors.dim,
-    fontFamily: fonts.mono,
-    fontSize: 7.5,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
+  writeSmall: { fontSize: 20 },
+  blankStripes: { position: "absolute", left: 0, right: 0, bottom: 0, height: 8, flexDirection: "row" },
+  blankWindow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    alignSelf: "center",
+    width: "62%",
+    marginTop: 10,
+    borderRadius: 999,
+    backgroundColor: "#0a0807",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
-  forName: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10 },
-  track: { height: 6, width: "100%", borderRadius: 999, backgroundColor: colors.bg, overflow: "hidden" },
-  fill: { height: "100%", borderRadius: 999, backgroundColor: colors.avail },
-  progressText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 4 },
-  // create
+  blankSpool: { width: 30, height: 30, borderRadius: 15, borderWidth: 6, borderColor: "#3d2a1e", backgroundColor: "#0a0807" },
+  blankTapeRun: { flex: 1, height: 2, marginHorizontal: 6, backgroundColor: "rgba(61,42,30,0.7)" },
   input: {
     borderWidth: 1,
     borderColor: colors.line,

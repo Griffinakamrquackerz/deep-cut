@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "@/lib/theme";
+import { PunchCard } from "./rooms";
 
 // The Projectionist Card — taste made visibly compounding (web:
 // ProjectionistCard). Rank title, a sprocket progress strip to the next tier,
@@ -63,14 +64,11 @@ export default function ProjectionistCard({
 
       {stats.next ? (
         <View style={{ marginTop: 12 }}>
-          <View style={styles.track}>
-            <View
-              style={[styles.fill, { width: `${Math.max(4, stats.progress * 100)}%`, backgroundColor: accent }]}
-            />
-          </View>
-          <Text style={styles.nextLine}>
-            next: {stats.next.glyph} {stats.next.title} at {stats.next.at} reels
-          </Text>
+          {/* Ten holes to the next credit, one punched per tenth. */}
+          <PunchCard
+            progress={stats.progress}
+            note={`next: ${stats.next.title} at ${stats.next.at} reels`}
+          />
         </View>
       ) : (
         <Text style={styles.topLadder}>★ Top of the ladder — the archive is yours ★</Text>
@@ -131,16 +129,6 @@ const styles = StyleSheet.create({
   },
   rankTitle: { fontFamily: fonts.display, fontSize: 30, lineHeight: 32, marginTop: 4 },
   rankLine: { color: colors.dim, fontFamily: fonts.bodyItalic, fontSize: 11 },
-  track: {
-    height: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bg,
-    overflow: "hidden",
-  },
-  fill: { height: "100%" },
-  nextLine: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 4, textAlign: "right" },
   topLadder: {
     color: colors.ticket,
     fontFamily: fonts.mono,

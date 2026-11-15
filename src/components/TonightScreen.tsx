@@ -22,6 +22,8 @@ import { gemLabel } from "@/lib/gem";
 import { byRecommendationPreference } from "@/lib/recommendation-quality";
 import { FREE_DEALS_PER_WINDOW, FREE_DEAL_WINDOW_HOURS, PREMIUM_DEALS_PER_DAY } from "@/lib/deal-limits";
 import RatingBand from "@/components/house/RatingBand";
+import MarqueeBoard from "@/components/house/MarqueeBoard";
+import { genreDot } from "@/lib/genre-dots";
 
 interface RecRow {
   id: string;
@@ -267,14 +269,9 @@ export default function TonightScreen({
   return (
     <section className="flex flex-col gap-4">
       <Confetti trigger={confetti} />
-      <header className="program-header">
-        <p className="slate">
-          <b>Tonight</b>
-        </p>
-        <h1 className="title-card rack-in mt-2.5 text-5xl leading-[0.95]">
-          Movies you <em>haven&apos;t seen</em> yet
-        </h1>
-      </header>
+      {/* The marquee over the door: a lit letterboard with tonight's date
+          on it. The front of the house, and the only screen that gets one. */}
+      <MarqueeBoard title="Movies you haven't seen yet" red="haven't seen" />
 
       {/* Now Showing — the basement television, cropped out of its own
           photograph, in the slot the morning-after card used to hold. It flips
@@ -295,17 +292,17 @@ export default function TonightScreen({
           href="/settle"
           data-usher="settle"
           onClick={() => sfxClick()}
-          className="flex min-h-[46px] items-center justify-center rounded-lg border border-line bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-cream"
+          className="door-plate"
         >
-          ⚖️&nbsp;&nbsp;SETTLE IT
+          Settle It
         </Link>
         <Link
           href="/roll"
           data-usher="roll"
           onClick={() => sfxClick()}
-          className="flex min-h-[46px] items-center justify-center rounded-lg border border-line bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-cream"
+          className="door-plate"
         >
-          📺&nbsp;&nbsp;JUST ROLL IT
+          Just Roll It
         </Link>
         {/* The staff pick. Video stores hand-wrote these on index cards and
             taped them to the shelf, which is exactly the register this app is
@@ -315,12 +312,10 @@ export default function TonightScreen({
           href="/blend"
           data-usher="blend"
           onClick={() => sfxClick()}
-          className="flex min-h-[46px] flex-col items-center justify-center rounded-lg border border-amber bg-surface px-1.5 py-2 text-center font-mono text-[0.6rem] leading-snug tracking-wide text-amber"
+          className="door-plate door-plate--pick"
         >
-          <span className="mb-0.5 text-[0.45rem] font-medium tracking-widest">
-            ★ GRIFF&apos;S FAVORITE
-          </span>
-          🧬&nbsp;&nbsp;THIS MEETS THAT
+          <small>★ Griff&apos;s favorite</small>
+          This Meets That
         </Link>
       </div>
 
@@ -330,7 +325,12 @@ export default function TonightScreen({
           five rows of controls before meeting a single movie. The controls
           outranked the product. The dial is one click away; the deal button
           never moves. */}
-      <div className="flex flex-col gap-3 rounded border border-line bg-surface p-3">
+      {/* The box office. Same controls and the same one-line default as
+          before; it's a booth now — brass plate, a pane of glass with a
+          speaker grille, and a slot the tickets come out of. */}
+      <div className="bo">
+        <p className="bo-plate">Box office</p>
+        <div className="bo-glass">
         <button
           data-usher="dial"
           onClick={() => {
@@ -338,14 +338,18 @@ export default function TonightScreen({
             setTuning((t) => !t);
           }}
           aria-expanded={tuning}
-          className="flex w-full items-center justify-between gap-3 text-left"
+          className="bo-row"
         >
-          <span className="truncate font-mono text-xs tracking-wide text-cream">{tuneSummary}</span>
-          <span className="shrink-0 text-amber">{tuning ? "▴" : "▾"}</span>
+          <span className="bo-grille" aria-hidden />
+          <span className="bo-summary">
+            <small>Tonight I want</small>
+            {tuneSummary}
+          </span>
+          <span className="bo-toggle">{tuning ? "▴" : "▾"}</span>
         </button>
 
         {tuning && (
-        <>
+        <div className="bo-controls">
         <div>
           <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
             {VIBES.map((v) => {
@@ -402,8 +406,10 @@ export default function TonightScreen({
           />
           my services only
         </label>
-        </>
+        </div>
         )}
+        </div>
+        <div className="bo-slot">
         <button
           onClick={() => void deal()}
           disabled={dealing}
@@ -418,6 +424,10 @@ export default function TonightScreen({
             "★ Deal me more ★"
           )}
         </button>
+        <p className="bo-slot-label" aria-hidden>
+          Tickets
+        </p>
+        </div>
       </div>
 
       {message && <p className="font-mono text-xs text-ticket">{message}</p>}
@@ -471,8 +481,10 @@ export default function TonightScreen({
           compact
           what="deal"
           audience="your taste only"
-          label="Deep cuts"
-          fine="May contain subtitles, slow burns and feelings. Dealt by the house."
+          label="Dealt tonight"
+          fine={`${visible.length} film${visible.length === 1 ? "" : "s"} off your shelf. ${
+            depth === 3 ? "Niche and deeper" : depth === 4 ? "Obscure and deeper" : "Deep cuts only"
+          }.`}
         />
         <ul className="flex flex-col gap-4">
           {visible.map((rec, idx) => {
@@ -486,24 +498,24 @@ export default function TonightScreen({
                   <AdSlot index={0} slot="tonight-feed" />
                 </li>
               )}
-              <li
-                className="film-card deal-in flex gap-3 rounded-lg p-3"
-                style={{ "--i": idx } as React.CSSProperties}
-              >
-                <Link href={`/m/${m.id}`} className="wiggle relative w-24 shrink-0">
+              {/* A rental case on the shelf: the one-sheet in a clamshell,
+                  genre on the coloured dots a video store sorts by, the
+                  clerk's card underneath, and the lip of the shelf it's
+                  standing on. */}
+              <li className="rental deal-in" style={{ "--i": idx } as React.CSSProperties}>
+                <div className="rental-row">
+                <Link href={`/m/${m.id}`} className="vhs-case">
                   <Poster
                     posterPath={m.poster_path}
                     title={m.title}
                     year={m.year}
                     genres={m.genres}
                   />
-                  {/* Earned on acclaim-vs-reach, not reach alone: a stamp
+                  {/* Earned on acclaim-vs-reach, not reach alone: a sticker
                       that only meant "few votes" was promising quality it had
                       never checked. */}
                   {gemLabel(rec.gem ?? null) && (
-                    <span className="stamp stamp-gold absolute -left-2 top-2">
-                      {gemLabel(rec.gem ?? null)}
-                    </span>
+                    <span className="case-sticker">{gemLabel(rec.gem ?? null)}</span>
                   )}
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -518,11 +530,12 @@ export default function TonightScreen({
                     {m.runtime ? ` · ${m.runtime} min` : ""}
                   </p>
                   {m.genres.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="genre-dots">
                       {m.genres.slice(0, 3).map((g) => (
                         <span
                           key={g}
-                          className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-amber/80"
+                          className="genre-dot"
+                          style={{ "--dot": genreDot(g) } as React.CSSProperties}
                         >
                           {g}
                         </span>
@@ -545,27 +558,21 @@ export default function TonightScreen({
                   <div className="mt-1.5">
                     <ServiceBadges available={avail} mine={myServices} />
                   </div>
-                  <div className="mt-auto flex gap-2 pt-2">
-                    <button
-                      onClick={() => setStatus(rec, "watchlisted")}
-                      className="rounded border border-amber px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
-                    >
-                      + Watchlist
-                    </button>
-                    <button
-                      onClick={() => setReacting(rec)}
-                      className="rounded border border-line px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-cream"
-                    >
-                      Seen it
-                    </button>
-                    <button
-                      onClick={() => setStatus(rec, "dismissed")}
-                      className="rounded border border-line px-2.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-dim"
-                    >
-                      Not for me
-                    </button>
-                  </div>
                 </div>
+                </div>
+                {/* The three things you can do with it, stamped. */}
+                <div className="stamp-row">
+                  <button onClick={() => setStatus(rec, "watchlisted")} className="stamp-btn">
+                    + Watchlist
+                  </button>
+                  <button onClick={() => setReacting(rec)} className="stamp-btn">
+                    Seen it
+                  </button>
+                  <button onClick={() => setStatus(rec, "dismissed")} className="stamp-btn">
+                    Not for me
+                  </button>
+                </div>
+                <div className="rental-shelf" aria-hidden />
               </li>
               </React.Fragment>
             );

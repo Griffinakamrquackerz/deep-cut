@@ -5,9 +5,11 @@
 // feature for people who stay through the credits, tonight's deal for your
 // taste and nobody else's.
 //
-// It is a joke with a job. The band is the one piece of film furniture
-// everybody recognises without being told, so it says "something is about to
-// be shown to you" faster than a heading can.
+// The band is the one piece of film furniture everybody recognises without
+// being told, so it says "something is about to be shown to you" faster than a
+// heading can. That recognition is the whole joke. The box under it carries
+// plain facts — how many films, how deep the dial is set — and nothing that
+// is trying to be funny: a gag in the fine print is one joke too many.
 
 export default function RatingBand({
   what,

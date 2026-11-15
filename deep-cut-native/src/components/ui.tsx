@@ -19,7 +19,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { colors, fonts, glowAmber, posterUrl } from "@/lib/theme";
+import { colors, fonts, glowAmber, glowLight, posterUrl } from "@/lib/theme";
 
 // The camp UI kit — the native port of the web app's design system.
 // Marquee bulbs, film strips, amber glow, Plex-mono eyebrows, Bebas marquees.
@@ -82,18 +82,24 @@ export function Eyebrow({ children, style }: { children: React.ReactNode; style?
   return <Text style={[styles.eyebrow, style]}>{children}</Text>;
 }
 
-/** The big amber headline, Bebas + glow (web: font-display + .glow-amber).
- *  By default it buzzes like a half-dead motel VACANCY sign (web:
- *  .neon-flicker) — an irregular 4s flicker. Pass flicker={false} to hold it
- *  steady; reduced motion freezes it lit. */
+/** The screen's headline, as projected light (web: .title-card): lamp-white
+ *  Bebas with a warm bloom, and `accent` — a word or two of the title — set in
+ *  amber. It used to be solid neon amber; a whole app of that reads as a sign
+ *  shop, where this reads as a screen.
+ *
+ *  The lamp isn't perfectly steady, so by default it dips a little on an
+ *  irregular 4s cycle. Pass flicker={false} to hold it; reduced motion does. */
 export function Marquee({
   children,
   size = 44,
   flicker = true,
+  accent,
 }: {
   children: React.ReactNode;
   size?: number;
   flicker?: boolean;
+  /** Part of the title to light amber. Matched case-insensitively. */
+  accent?: string;
 }) {
   const reduced = useReducedMotion();
   const op = useSharedValue(1);
@@ -106,12 +112,12 @@ export function Marquee({
     op.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 720 }),
-        withTiming(0.55, { duration: 80 }),
+        withTiming(0.82, { duration: 80 }),
         withTiming(1, { duration: 80 }),
-        withTiming(0.55, { duration: 80 }),
+        withTiming(0.82, { duration: 80 }),
         withTiming(1, { duration: 40 }),
         withTiming(1, { duration: 1120 }),
-        withTiming(0.55, { duration: 80 }),
+        withTiming(0.86, { duration: 80 }),
         withTiming(1, { duration: 80 }),
         withTiming(1, { duration: 1720 }),
       ),
@@ -120,11 +126,21 @@ export function Marquee({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flicker, reduced]);
   const style = useAnimatedStyle(() => ({ opacity: op.value }));
+  const text = typeof children === "string" ? children : null;
+  const at = text && accent ? text.toUpperCase().indexOf(accent.toUpperCase()) : -1;
   return (
     <Animated.Text
-      style={[styles.marquee, glowAmber, { fontSize: size, lineHeight: size * 1.02 }, style]}
+      style={[styles.marquee, glowLight, { fontSize: size, lineHeight: size * 1.0 }, style]}
     >
-      {children}
+      {text && accent && at >= 0 ? (
+        <>
+          {text.slice(0, at)}
+          <Text style={[{ color: colors.amber }, glowAmber]}>{text.slice(at, at + accent.length)}</Text>
+          {text.slice(at + accent.length)}
+        </>
+      ) : (
+        children
+      )}
     </Animated.Text>
   );
 }
@@ -323,9 +339,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   marquee: {
-    color: colors.amber,
+    color: colors.light,
     fontFamily: fonts.display,
-    letterSpacing: 1.5,
+    letterSpacing: 0.8,
+    marginTop: 6,
   },
   btn: {
     alignItems: "center",

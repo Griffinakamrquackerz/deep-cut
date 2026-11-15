@@ -2,6 +2,9 @@ import Link from "next/link";
 import CreditRoll from "@/components/house/CreditRoll";
 
 // The footer, as a billing block — the small type at the bottom of a one-sheet.
+//
+// The credit roll above it is written straight: every line is a true statement
+// about how the house runs. The form is the joke; the copy doesn't tell one.
 // `quiet` drops the links, for the same reason the nav has a quiet mode.
 
 export default function SiteCredits({ quiet = false }: { quiet?: boolean }) {
@@ -17,14 +20,13 @@ export default function SiteCredits({ quiet = false }: { quiet?: boolean }) {
               { role: "a picture house for", names: ["people who love movies"] },
               { role: "founded by", names: ["Griffin Howes"] },
               { role: "programmed by", names: ["the house"] },
+              { role: "shorts by", names: ["the filmmakers who made them"] },
+              { role: "recommendations dealt from", names: ["the films you love"] },
+              { role: "originals financed by", names: ["the members"] },
               { role: "greenlit by", names: ["the members"] },
-              { role: "projectionist", names: ["asleep in the booth"] },
-              { role: "best boy", names: ["the obscurity dial"] },
-              { role: "catering", names: ["one large popcorn"] },
-              { role: "filmed in", names: ["glorious Deepcutscope"] },
               { role: "special thanks", names: ["your name here"], you: true },
             ]}
-            tail="No algorithms were harmed in the making of this picture. Any resemblance to a streaming service you already pay for is purely coincidental."
+            tail="Free to join. Run by the people who watch."
           />
         </div>
         <p className="lp-billing">

@@ -27,6 +27,7 @@ import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
 import { colors, fonts } from "@/lib/theme";
 import { SERVICE_LABELS, type Service } from "@/lib/types";
+import { BillingBlock } from "@/components/house";
 
 // Movie detail — native port of the web /m/[id] page: poster, ratings, where
 // it streams, the trailer, the overview, your actions (watchlist / loved / log
@@ -306,28 +307,17 @@ export default function MovieScreen() {
 
           {movie.overview ? <Text style={styles.overview}>{movie.overview}</Text> : null}
 
-          {/* Crew — director, writers, DP, composer */}
+          {/* Crew — director, writers, DP, composer — as the billing block at
+              the foot of a one-sheet: small word for the job, tall word for
+              the person. */}
           {(data?.crew ?? []).length > 0 && (
-            <View>
-              <Eyebrow style={{ marginBottom: 8 }}>Crew</Eyebrow>
-              <View style={{ gap: 4 }}>
-                {(data?.crew ?? []).map((c) => (
-                  <Text
-                    key={`${c.id}-${c.job}`}
-                    style={styles.crewLine}
-                    onPress={() => router.push(`/person/${c.id}`)}
-                  >
-                    <Text style={styles.crewJob}>{c.job}</Text>  <Text style={styles.crewName}>{c.name}</Text>
-                  </Text>
-                ))}
-              </View>
-            </View>
+            <BillingBlock crew={data?.crew ?? []} onPress={(id) => router.push(`/person/${id}`)} />
           )}
 
           {/* Cast — top-billed, horizontal headshots */}
           {(data?.cast ?? []).length > 0 && (
             <View>
-              <Eyebrow style={{ marginBottom: 8 }}>Cast</Eyebrow>
+              <Eyebrow style={{ marginBottom: 8 }}>Starring</Eyebrow>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                 {(data?.cast ?? []).map((c) => (
                   <Pressable key={c.id} style={styles.castCard} onPress={() => router.push(`/person/${c.id}`)}>

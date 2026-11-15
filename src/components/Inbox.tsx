@@ -98,25 +98,23 @@ export default function Inbox() {
   const switcher = (
     <>
       <PushGate ask />
-    <div className="mb-2 flex gap-1.5">
-      {(
-        [
-          { key: "in", label: "In" },
-          { key: "sent", label: "Sent" },
-        ] as const
-      ).map((t) => (
-        <button
-          key={t.key}
-          onClick={() => setBox(t.key)}
-          aria-pressed={box === t.key}
-          className={`rounded-full border px-3 py-1 font-mono text-[0.6rem] uppercase tracking-wider ${
-            box === t.key ? "border-amber text-amber" : "border-line text-dim"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
+      <div className="pigeon mb-3" role="group" aria-label="Inbox">
+        {(
+          [
+            { key: "in", label: "In" },
+            { key: "sent", label: "Sent" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setBox(t.key)}
+            aria-pressed={box === t.key}
+            data-count={t.key === "in" && unread ? String(unread) : undefined}
+          >
+            {t.label.toUpperCase()}
+          </button>
+        ))}
+      </div>
     </>
   );
 
@@ -131,32 +129,37 @@ export default function Inbox() {
             You haven&apos;t sent anyone a film yet. Hit 🎞 Send to… on any film.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {sent.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-start gap-2.5 rounded border border-line bg-surface p-3"
-              >
-                <Avatar url={s.to?.avatarUrl ?? null} name={who(s.to)} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-cream">
-                    You sent{" "}
+              <li key={s.id}>
+                <div className="memo memo--carbon">
+                  <p className="memo-head">
+                    <b>Copy</b>
+                    <span>{ago(s.sentAt)} ago</span>
+                  </p>
+                  <p className="memo-field">
+                    To <span className="memo-pen">{who(s.to)}</span>
+                  </p>
+                  <p className="memo-field">
+                    Film{" "}
                     {s.movieId ? (
-                      <Link href={`/m/${s.movieId}`} className="font-medium text-amber hover:underline">
+                      <Link href={`/m/${s.movieId}`} className="memo-pen hover:underline">
                         {s.title ?? "a film"}
                       </Link>
                     ) : (
-                      <span className="font-medium text-amber">{s.title ?? "a film"}</span>
-                    )}{" "}
-                    to <span className="font-medium text-amber">{who(s.to)}</span>
+                      <span className="memo-pen">{s.title ?? "a film"}</span>
+                    )}
                   </p>
-                  {s.note && <p className="mt-0.5 truncate text-[0.8rem] text-dim">“{s.note}”</p>}
-                  <p className="mt-0.5 font-mono text-[0.55rem] uppercase tracking-widest text-dim">
-                    {ago(s.sentAt)} ago ·{" "}
-                    <span className={s.seenAt ? "text-avail" : "text-dim"}>
-                      {s.seenAt ? "opened" : "delivered"}
-                    </span>
-                  </p>
+                  {s.note && (
+                    <p className="memo-field pr-20">
+                      Note <span className="memo-pen truncate">“{s.note}”</span>
+                    </p>
+                  )}
+                  <span
+                    className={`memo-stamp ${s.seenAt ? "memo-stamp--opened" : "memo-stamp--delivered"}`}
+                  >
+                    {s.seenAt ? "Opened" : "Delivered"}
+                  </span>
                 </div>
               </li>
             ))}
@@ -189,40 +192,44 @@ export default function Inbox() {
   return (
     <div>
       {switcher}
-    <ul className="flex flex-col gap-2">
-      {items.map((n) => {
-        const movieId = Number(n.props.movieId);
-        const href =
-          n.kind === "film_sent" && Number.isFinite(movieId)
-            ? `/m/${movieId}`
-            : n.actor?.handle
-              ? `/u/${n.actor.handle}`
-              : "/lobby";
-        const note = typeof n.props.note === "string" ? n.props.note : null;
-        return (
-          <li key={n.id}>
-            <Link
-              href={href}
-              className={`flex items-start gap-2.5 rounded border p-3 ${
-                n.readAt ? "border-line bg-surface" : "border-amber/40 bg-amber/5"
-              }`}
-            >
-              <Avatar url={n.actor?.avatarUrl ?? null} name={who(n.actor)} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-cream">
-                  <span className="font-medium text-amber">{who(n.actor)}</span>{" "}
-                  {n.kind === "mention" ? "tagged you in a comment." : "sent you a film."}
+      <ul className="flex flex-col gap-3">
+        {items.map((n) => {
+          const movieId = Number(n.props.movieId);
+          const href =
+            n.kind === "film_sent" && Number.isFinite(movieId)
+              ? `/m/${movieId}`
+              : n.actor?.handle
+                ? `/u/${n.actor.handle}`
+                : "/lobby";
+          const note = typeof n.props.note === "string" ? n.props.note : null;
+          return (
+            <li key={n.id}>
+              <Link href={href} className={`memo ${n.readAt ? "memo--read" : "memo--new"}`}>
+                <p className="memo-head">
+                  <b>While you were out</b>
+                  <span>{ago(n.createdAt)} ago</span>
                 </p>
-                {note && <p className="mt-0.5 truncate text-[0.8rem] text-dim">“{note}”</p>}
-                <p className="mt-0.5 font-mono text-[0.55rem] uppercase tracking-widest text-dim">
-                  {ago(n.createdAt)} ago
+                <p className="memo-field">
+                  From
+                  <span className="inline-flex items-center gap-1.5">
+                    <Avatar url={n.actor?.avatarUrl ?? null} name={who(n.actor)} size="sm" />
+                    <span className="memo-pen">{who(n.actor)}</span>
+                  </span>
                 </p>
-              </div>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+                <p className="memo-ticks">
+                  <span className={n.kind === "mention" ? "on" : ""}>Tagged you</span>
+                  <span className={n.kind === "film_sent" ? "on" : ""}>Sent you a film</span>
+                </p>
+                {note && (
+                  <p className="memo-field">
+                    Message <span className="memo-pen">“{note}”</span>
+                  </p>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

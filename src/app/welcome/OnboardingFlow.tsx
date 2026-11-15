@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { STARTER_GRID } from "@/lib/starter-grid";
 import { SERVICES, SERVICE_LABELS, type Service } from "@/lib/services";
 import InstallPrompt from "@/components/InstallPrompt";
+import ApplicationStrip from "@/components/house/ApplicationStrip";
 
 interface Pick {
   id: number;
@@ -157,9 +158,18 @@ export default function OnboardingFlow() {
   if (step === "reveal" && threads) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6">
-        <p className="eyebrow">Admit One · Taste Profile №001</p>
-        <div className="ticket-edge w-full max-w-sm rounded bg-surface p-6">
-          <h1 className="title-card rack-in text-4xl">Your <em>taste</em></h1>
+        {/* The application comes back stamped. */}
+        <div className="paper-sheet relative w-full max-w-sm rounded-sm p-6 shadow-2xl">
+          <p className="paper-head">
+            <b>Membership application</b>
+            <span>Deep Cut Video</span>
+          </p>
+          <span className="stamp-slam verdict-stamp absolute right-3 top-9 text-lg" style={{ color: "#a8371d", borderColor: "#a8371d", background: "rgba(246,236,217,0.6)" }}>
+            APPROVED
+          </span>
+          <h1 className="font-display text-4xl leading-none" style={{ color: "#2a1c15" }}>
+            YOUR TASTE
+          </h1>
           <ul className="mt-4 flex flex-col gap-4">
             {threads.map((t) => (
               <li key={t.title}>
@@ -205,8 +215,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Take 2 of 4</b></p>
-          <h1 className="title-card rack-in mt-2.5 text-4xl">Where do you <em>watch?</em></h1>
+          <ApplicationStrip part={2} />
+          <h1 className="title-card rack-in mt-4 text-4xl">Where do you <em>watch?</em></h1>
           <p className="mt-1 text-sm text-dim">
             We&apos;ll badge every rec that&apos;s watchable tonight.
           </p>
@@ -259,8 +269,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Take 3 of 4</b></p>
-          <h1 className="title-card rack-in mt-2.5 text-4xl">Your <em>signature</em> film</h1>
+          <ApplicationStrip part={3} />
+          <h1 className="title-card rack-in mt-4 text-4xl">Your <em>signature</em> film</h1>
           <p className="mt-1 text-sm text-dim">
             Choose your favorite film so we can customize your profile — it
             fronts your page as a stills collage.
@@ -358,8 +368,8 @@ export default function OnboardingFlow() {
     return (
       <main className="flex min-h-dvh flex-col gap-6 px-4 py-10">
         <div>
-          <p className="slate"><b>Take 4 of 4</b></p>
-          <h1 className="title-card rack-in mt-2.5 text-4xl">Pick your <em>marquee</em> name</h1>
+          <ApplicationStrip part={4} />
+          <h1 className="title-card rack-in mt-4 text-4xl">Pick your <em>marquee</em> name</h1>
           <p className="mt-1 text-sm text-dim">
             Your handle goes on your taste card and the community marquee — it&apos;s how
             friends find you.
@@ -416,8 +426,8 @@ export default function OnboardingFlow() {
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-4 py-8">
       <div>
-        <p className="slate"><b>Take 1 of 4</b></p>
-        <h1 className="title-card rack-in mt-2.5 text-4xl">Pick films you <em>love</em></h1>
+        <ApplicationStrip part={1} />
+        <h1 className="title-card rack-in mt-4 text-4xl">Pick films you <em>love</em></h1>
         <p className="mt-1 text-sm text-dim">
           Any genre, any era. At least 8 — the more the sharper. Deep cuts and
           guilty pleasures teach us more than classics do.

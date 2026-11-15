@@ -662,6 +662,9 @@
   .lp-cta-row form { flex: 0 1 24rem; }
 }
 @media (max-width: 639px) {
+  .lp-beam-light { filter: brightness(0.55); }
+  .lp-beam-haze { opacity: 0.4; }
+  .lp-cta-proof { color: rgba(243, 233, 215, 0.82); text-shadow: 0 2px 10px rgba(12, 9, 8, 0.9); }
   .lp-cta-row form { max-width: none; }
   /* The second button is a nice-to-have; on a phone it's a line of text, and
      the height it gives back is what keeps the projector above the fold. */
@@ -677,7 +680,7 @@
     text-decoration-color: rgba(255, 180, 84, 0.4);
     text-underline-offset: 5px;
   }
-  .lp-cta-proof { max-width: 52%; flex-direction: column; }
+  .lp-cta-proof { max-width: 58%; flex-direction: column; }
   .lp-kicker-rule { display: none; }
   .lp-kicker { flex-direction: column; align-items: flex-start; }
 }
@@ -1287,8 +1290,11 @@
   cursor: pointer;
 }
 .lp-dial output {
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
+  min-width: 5.5rem;
+  font-size: 0.56rem;
+  line-height: 1.5;
+  letter-spacing: 0.14em;
+  text-align: right;
   color: var(--color-amber);
 }
 .lp-card {

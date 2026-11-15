@@ -17,9 +17,9 @@ const MAX_PARENTS = 3;
 const EXAMPLE_ROTATE_MS = 3000;
 
 const SPLICE_STAGES = [
-  "Reading the DNA…",
-  "Crossing the strands…",
-  "Something's moving…",
+  "Pulling both prints…",
+  "Finding the cut point…",
+  "Making the splice…",
 ] as const;
 
 // Worked examples for the empty state — every one a real result the engine
@@ -291,7 +291,7 @@ export default function BlendGame() {
     }).catch(() => null);
     const data = res?.ok ? await res.json().catch(() => null) : null;
     if (!data) setError("The splice didn't take. Try again.");
-    else if (!data.picks?.length) setError("No offspring survived. Swap one out.");
+    else if (!data.picks?.length) setError("The splice didn't hold. Swap one out.");
     else setPicks(data.picks as BlendPick[]);
     setBusy(false);
   }
@@ -306,7 +306,7 @@ export default function BlendGame() {
         </p>
         <h1 className="title-card rack-in mt-2.5 text-5xl">This <em>meets</em> that</h1>
         <p className="mt-1 font-mono text-[0.65rem] text-dim">
-          Combine two or three. See what crawls out.
+          Splice two or three films together. See what plays.
         </p>
       </header>
 
@@ -536,7 +536,7 @@ export default function BlendGame() {
 
       {picks && (
         <section className="mx-auto w-full max-w-sm">
-          <p className="eyebrow mb-2">The offspring</p>
+          <p className="eyebrow mb-2">What came out</p>
           <ul className="flex flex-col gap-3">
             {picks.map((p, i) => (
               <li key={p.id} className="deal-in rounded border border-line bg-surface p-3">

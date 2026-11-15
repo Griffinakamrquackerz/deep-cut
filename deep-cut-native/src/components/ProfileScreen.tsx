@@ -20,10 +20,12 @@ import { primaryRatingLabel } from "@/components/RatingLine";
 import Shrine from "@/components/Shrine";
 import TonightStatus, { type TonightCard } from "@/components/TonightStatus";
 import Turntable from "@/components/Turntable";
-import { Eyebrow, MarqueeBulbs, Poster } from "@/components/ui";
+import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
 import { colors, fonts, profilePalette, type ProfilePalette } from "@/lib/theme";
+import { CreditRoll, ReelEnd, Tape } from "@/components/house";
+import { MemberCard } from "@/components/rooms";
 
 // The member card — the single source of truth for how a profile looks, native
 // port of the web ProfileView. Both the You tab (your own key) and /u/[key]
@@ -245,29 +247,20 @@ export default function ProfileScreen({
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.body}>
         {standalone && <BackButton style={{ marginBottom: 12 }} />}
-        {/* Header */}
-        <View>
-          <MarqueeBulbs />
-          <Eyebrow style={{ marginTop: 8 }}>Member card</Eyebrow>
-          <View style={styles.headerRow}>
-            <View style={styles.idRow}>
-              <Avatar url={person.avatar_url} name={name} accent={palette.amber} />
-              <View style={{ minWidth: 0, flexShrink: 1 }}>
-                <Text style={[styles.name, { color: palette.amber, textShadowColor: palette.amber }]}>
-                  {name.toUpperCase()}
-                </Text>
-                {person.handle && person.display_name ? (
-                  <Text style={styles.handle}>@{person.handle}</Text>
-                ) : null}
-                <Text style={styles.follows}>
-                  {data.followerCount} follower{data.followerCount === 1 ? "" : "s"} · following{" "}
-                  {data.followingCount}
-                </Text>
-              </View>
-            </View>
-            {data.isMe ? (
+        {/* The membership card: laminated, a photo window, a number, a
+            signature strip. The accents read the profile theme, so a noir
+            member carries a noir card. */}
+        <MemberCard
+          id={person.id}
+          name={name}
+          handle={person.handle && person.display_name ? person.handle : null}
+          accent={palette.amber}
+          photo={<Avatar url={person.avatar_url} name={name} accent={palette.amber} />}
+          footnote={`${data.followerCount} follower${data.followerCount === 1 ? "" : "s"} · following ${data.followingCount} · not transferable`}
+          action={
+            data.isMe ? (
               <Pressable style={styles.styleBtn} onPress={() => router.push("/(tabs)/settings")}>
-                <Text style={styles.styleBtnText}>Style it ✨</Text>
+                <Text style={styles.styleBtnText}>Style it</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -283,9 +276,9 @@ export default function ProfileScreen({
                   {following ? "following ✓" : "+ follow"}
                 </Text>
               </Pressable>
-            )}
-          </View>
-        </View>
+            )
+          }
+        />
 
         {/* What they're putting on tonight */}
         <TonightStatus
@@ -453,21 +446,37 @@ export default function ProfileScreen({
             </Eyebrow>
             <View style={{ gap: 8 }}>
               {data.playlists.map((p) => (
-                <Pressable key={p.id} style={styles.tapeRow} onPress={() => router.push(`/p/${p.share_slug}`)}>
-                  <View style={styles.tapeName}>
-                    <Text style={styles.tapeTitle} numberOfLines={1}>
-                      {p.name}
-                    </Text>
-                    {data.isMe && !p.isPublic && (
-                      <View style={styles.privateBadge}>
-                        <Text style={styles.privateBadgeText}>🔒 Private</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.tapeCount}>{p.itemCount} films ↗</Text>
-                </Pressable>
+                <Tape
+                  key={p.id}
+                  id={p.id}
+                  name={p.name}
+                  meta={`SEALED BY ${name.toUpperCase()}`}
+                  total={p.itemCount}
+                  sticker={data.isMe && !p.isPublic ? "Private" : undefined}
+                  onPress={() => router.push(`/p/${p.share_slug}`)}
+                />
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Every picture ends on its credits, and so does every member card:
+            the films they love get top billing and their taste gets the
+            writing credit. Built from what's already on the card. */}
+        {(loved.length > 0 || data.threads.length > 0) && (
+          <View>
+            <Eyebrow style={{ marginBottom: 8 }}>The credits</Eyebrow>
+            <CreditRoll
+              credits={[
+                { role: "a picture by", names: [name] },
+                ...(loved.length > 0 ? [{ role: "starring", names: loved.slice(0, 6).map((m) => m.title) }] : []),
+                ...(data.signature ? [{ role: "signature film", names: [data.signature.title] }] : []),
+                ...(data.threads.length > 0 ? [{ role: "taste by", names: data.threads.map((t) => t.title) }] : []),
+                ...(data.playlists.length > 0
+                  ? [{ role: "mixtapes", names: data.playlists.slice(0, 4).map((p) => p.name) }]
+                  : []),
+              ]}
+            />
           </View>
         )}
 
@@ -485,6 +494,7 @@ export default function ProfileScreen({
 
         {/* Your booth — management tools, only on your own tab */}
         {data.isMe && footer}
+        <ReelEnd />
       </ScrollView>
       {standalone && <HouseNav />}
     </SafeAreaView>
@@ -497,20 +507,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { padding: 20, paddingBottom: 112, gap: 18 },
   dim: { color: colors.dim, fontFamily: fonts.body, fontSize: 14 },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginTop: 2 },
-  idRow: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1, minWidth: 0 },
   avatar: { borderWidth: 2, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   avatarInitial: { fontFamily: fonts.display, fontSize: 26 },
-  name: {
-    fontFamily: fonts.display,
-    fontSize: 34,
-    lineHeight: 36,
-    letterSpacing: 1,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  handle: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11 },
-  follows: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, marginTop: 3 },
   styleBtn: { borderWidth: 1, borderColor: colors.line, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
   styleBtnText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase" },
   followBtn: { borderWidth: 1, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14 },
@@ -567,22 +565,6 @@ const styles = StyleSheet.create({
   watchTitle: { color: colors.cream, textDecorationLine: "underline" },
   watchYear: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11 },
   watchNote: { color: "rgba(243,233,215,0.8)", fontFamily: fonts.bodyItalic, fontSize: 12, marginTop: 4 },
-  tapeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    padding: 12,
-  },
-  tapeName: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 },
-  tapeTitle: { color: colors.cream, fontFamily: fonts.display, fontSize: 18, letterSpacing: 0.5, flexShrink: 1 },
-  privateBadge: { borderWidth: 1, borderColor: colors.line, borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2 },
-  privateBadgeText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 7.5, letterSpacing: 1.5, textTransform: "uppercase" },
-  tapeCount: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10 },
   safetyRow: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: 8 },
   safetyText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1 },
 });
