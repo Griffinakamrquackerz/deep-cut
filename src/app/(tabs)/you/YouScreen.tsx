@@ -40,7 +40,7 @@ export default function YouScreen(props: {
     setRefreshing(true);
     setMsg(null);
     const res = await fetch("/api/profile/generate", { method: "POST" });
-    if (res.status === 429) setMsg("One refresh a day — your taste needs time to marinate.");
+    if (res.status === 429) setMsg("One refresh a day. Try again tomorrow.");
     else if (!res.ok) setMsg("Refresh failed. Try again later.");
     setRefreshing(false);
     router.refresh();
@@ -110,9 +110,9 @@ export default function YouScreen(props: {
       {/* Watchlist — saved picks, unique to your tab */}
       <div>
         <p className="eyebrow mb-2">Your watchlist</p>
-        <ul className="grid grid-cols-3 gap-3">
+        <ul className="contact grid grid-cols-3 gap-3">
           {props.watchlist.length === 0 && (
-            <li className="col-span-3 text-center text-sm text-dim">
+            <li className="contact-empty col-span-3 text-center text-sm text-dim">
               Nothing saved yet — hit + Watchlist on a rec.
             </li>
           )}
@@ -212,7 +212,7 @@ function LovedSection({
           ))}
         </ul>
       )}
-      <ShowMore initial={24} step={24} wrapperClassName="grid grid-cols-3 gap-3" label="Roll more posters">
+      <ShowMore initial={24} step={24} wrapperClassName="contact grid grid-cols-3 gap-3" label="Roll more posters">
         {loved.map((l) =>
           l.movies ? (
             <div key={l.movie_id} className="relative">

@@ -462,7 +462,7 @@ export default function Community() {
       </TitleCard>
       {view === "takes" && (
         <Text style={styles.takesSub}>
-          250 characters, pinned to one film · nitrate stock, handle with care
+          250 characters, pinned to one film
         </Text>
       )}
 

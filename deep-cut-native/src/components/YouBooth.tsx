@@ -53,7 +53,7 @@ export default function YouBooth() {
     setRefreshing(true);
     setMsg(null);
     const res = await api("/api/profile/generate", { method: "POST" });
-    if (res.status === 429) setMsg("One refresh a day — let it marinate.");
+    if (res.status === 429) setMsg("One refresh a day. Try again tomorrow.");
     else if (!res.ok) setMsg("Refresh failed. Try again later.");
     else setMsg("Taste rebuilt — your card updates next visit.");
     setRefreshing(false);

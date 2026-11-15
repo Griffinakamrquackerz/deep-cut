@@ -9,7 +9,13 @@ export default function MovieActions({ movieId, title }: { movieId: number; titl
   const [addingRead, setAddingRead] = useState(false);
   const [readTitle, setReadTitle] = useState("");
   const [readUrl, setReadUrl] = useState("");
-  const [flash, setFlash] = useState<string | null>(null);
+  const [flash, setFlashState] = useState<{ ok: boolean; text: string } | null>(null);
+  // Bumped on every flash so the same stamp twice still slams twice.
+  const [flashN, setFlashN] = useState(0);
+  const setFlash = (f: { ok: boolean; text: string }) => {
+    setFlashState(f);
+    setFlashN((n) => n + 1);
+  };
 
   async function call(path: string, body: Record<string, unknown>, method = "POST") {
     const res = await fetch(path, {
@@ -22,55 +28,69 @@ export default function MovieActions({ movieId, title }: { movieId: number; titl
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
+      {/* The four things you can do with a film, as rubber stamps — the same
+          stamps as on Tonight's shelf. What you did comes back as an impression. */}
+      <div className="flex gap-2">
         <button
           onClick={async () => {
             const ok = await call("/api/watchlist", { movieId, source: "movie page" });
-            setFlash(ok ? "On the watchlist." : "Couldn't save.");
+            setFlash(ok ? { ok, text: "On the watchlist" } : { ok, text: "Couldn't save." });
           }}
-          className="rounded border border-amber px-3 py-2 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
+          className="stamp-btn"
         >
           + Watchlist
         </button>
         <button
           onClick={async () => {
             const ok = await call("/api/loved", { movieId });
-            setFlash(ok ? "Added to loved films — your profile just got sharper." : "Couldn't save.");
+            setFlash(ok ? { ok, text: "Loved" } : { ok, text: "Couldn't save." });
           }}
-          className="rounded border border-ticket px-3 py-2 font-mono text-[0.65rem] uppercase tracking-wider text-ticket"
+          className="stamp-btn"
+          style={{ color: "var(--color-ticket)" }}
         >
           ♥ Loved it
         </button>
-        <button
-          onClick={() => setReacting(true)}
-          className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-wider text-cream"
-        >
-          Log a watch
+        <button onClick={() => setReacting(true)} className="stamp-btn">
+          Seen it
         </button>
-        <button
-          onClick={() => setAddingRead((v) => !v)}
-          className="rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-wider text-dim"
-        >
-          + External read
+        <button onClick={() => setAddingRead((v) => !v)} className="stamp-btn" style={{ flex: 0.9 }}>
+          + Read
         </button>
       </div>
 
-      {flash && <p className="font-mono text-xs text-avail">{flash}</p>}
+      {flash &&
+        (flash.ok ? (
+          <p aria-live="polite" className="pt-1">
+            <span key={flash.text + flashN} className="stamp stamp-gold stamp-slam inline-block">
+              {flash.text}
+            </span>
+          </p>
+        ) : (
+          <p aria-live="polite" className="font-mono text-xs text-ticket">
+            {flash.text}
+          </p>
+        ))}
 
       {addingRead && (
-        <div className="flex flex-col gap-2 rounded border border-line bg-surface p-3">
+        <div className="paper-sheet flex flex-col gap-2 rounded-sm p-4">
+          <p className="paper-head !mb-1">
+            <b>Further reading</b>
+            <span>Pinned to this film</span>
+          </p>
           <input
             value={readTitle}
             onChange={(e) => setReadTitle(e.target.value.slice(0, 160))}
             placeholder="Article title"
-            className="rounded border border-line bg-bg px-3 py-2 text-sm text-cream placeholder:text-dim/60"
+            aria-label="Article title"
+            className="tape-write tape-write--small"
           />
           <input
             value={readUrl}
             onChange={(e) => setReadUrl(e.target.value.slice(0, 500))}
             placeholder="https://…"
             inputMode="url"
-            className="rounded border border-line bg-bg px-3 py-2 text-sm text-cream placeholder:text-dim/60"
+            aria-label="Link"
+            className="tape-write tape-write--small"
           />
           <button
             disabled={!readTitle.trim() || !readUrl.trim()}
@@ -86,10 +106,11 @@ export default function MovieActions({ movieId, title }: { movieId: number; titl
                 setReadUrl("");
                 router.refresh();
               } else {
-                setFlash("Couldn't add that link (is the URL valid?).");
+                setFlash({ ok: false, text: "Couldn't add that link. Check the URL." });
               }
             }}
-            className="rounded bg-amber px-3 py-2 font-mono text-[0.65rem] font-medium uppercase tracking-wider text-bg disabled:opacity-40"
+            className="stamp-btn mt-2 self-start px-4 disabled:opacity-40"
+            style={{ color: "#a8371d", flex: "none" }}
           >
             Add link
           </button>
@@ -103,7 +124,7 @@ export default function MovieActions({ movieId, title }: { movieId: number; titl
           onSubmit={async (payload: ReactionPayload) => {
             await call("/api/logs", { movieId, ...payload });
             setReacting(false);
-            setFlash("Logged. Your profile sharpens with every watch.");
+            setFlash({ ok: true, text: "Logged" });
           }}
         />
       )}

@@ -171,7 +171,7 @@ export default function ProfileView(data: ProfileViewData) {
           <ShowMore
             initial={12}
             step={24}
-            wrapperClassName="grid grid-cols-4 gap-2"
+            wrapperClassName="contact grid grid-cols-4 gap-2"
             label="Roll more posters"
           >
             {data.lovedMovies.map((m) => (
