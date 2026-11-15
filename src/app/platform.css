@@ -352,6 +352,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-cream);
+  white-space: nowrap;
   transition: transform 0.12s ease, background-color 0.12s ease;
 }
 .stamp-btn:nth-child(1) { rotate: -1.2deg; color: var(--color-amber); flex: 1.25; }
@@ -1120,7 +1121,7 @@ li:nth-child(even) > .lobby-card { rotate: 0.3deg; }
 li:nth-child(odd) > .memo { rotate: -0.5deg; }
 li:nth-child(even) > .memo { rotate: 0.4deg; }
 .memo:hover { transform: translateY(-2px); }
-.memo--read { filter: saturate(0.55) brightness(0.86); }
+.memo--read { filter: saturate(0.8) brightness(0.94); }
 /* Unread: still has the paperclip on it. */
 .memo--new::before {
   content: "";

@@ -48,7 +48,7 @@ export default function MovieActions({ movieId, title }: { movieId: number; titl
           className="stamp-btn"
           style={{ color: "var(--color-ticket)" }}
         >
-          ♥ Loved it
+          ♥ Loved
         </button>
         <button onClick={() => setReacting(true)} className="stamp-btn">
           Seen it
