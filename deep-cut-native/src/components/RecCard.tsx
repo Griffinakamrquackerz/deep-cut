@@ -91,13 +91,6 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.cream, fontFamily: fonts.display, fontSize: 24, letterSpacing: 0.5 },
   year: { color: colors.dim, fontFamily: fonts.mono, fontSize: 12 },
-  reason: {
-    color: colors.cream,
-    fontFamily: fonts.bodyItalic,
-    fontSize: 14,
-    marginTop: 6,
-    lineHeight: 20,
-  },
   services: { color: colors.avail, fontFamily: fonts.mono, fontSize: 11, marginTop: 6 },
   actions: { flexDirection: "row", gap: 8, paddingBottom: 12 },
 });

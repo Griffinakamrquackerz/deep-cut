@@ -21,7 +21,8 @@ import { pushPermissionGranted, registerForPush, unregisterForPush } from "@/lib
 import { supabase } from "@/lib/supabase";
 import { colors, fonts, mono, PROFILE_THEMES } from "@/lib/theme";
 import { SERVICES, SERVICE_LABELS, type SearchHit, type Service } from "@/lib/types";
-import { Button, Chip, Eyebrow, Marquee } from "@/components/ui";
+import { Button, Chip, Marquee } from "@/components/ui";
+import { BoothPlate, Dymo } from "@/components/rooms";
 import { resetStudioTour } from "@/components/UsherTour";
 import { ReelEnd, Slate } from "@/components/house";
 
@@ -300,8 +301,8 @@ export default function Settings() {
         </View>
 
         {/* ── Your marquee look ── */}
-        <View style={styles.lookCard}>
-          <Eyebrow style={{ color: colors.ticket, marginBottom: 12 }}>Your marquee look</Eyebrow>
+        <BoothPlate style={styles.lookCard}>
+          <Dymo tone="red" style={{ marginBottom: 12 }}>Your marquee look</Dymo>
 
           <View style={styles.headshotRow}>
             {avatar ? (
@@ -399,11 +400,12 @@ export default function Settings() {
             </View>
           )}
           {styleMsg && <Text style={styles.errorLine}>{styleMsg}</Text>}
-        </View>
+        </BoothPlate>
 
+        <BoothPlate style={{ gap: 18 }}>
         {/* ── Handle ── */}
         <View>
-          <Eyebrow style={{ marginBottom: 6 }}>Handle</Eyebrow>
+          <Dymo style={{ marginBottom: 8 }}>Handle</Dymo>
           <TextInput
             value={handle}
             onChangeText={setHandle}
@@ -423,7 +425,7 @@ export default function Settings() {
             and a stale copy shipped inside an app binary can't be corrected
             without a release. */}
         <View>
-          <Eyebrow style={{ marginBottom: 8 }}>Where you watch</Eyebrow>
+          <Dymo style={{ marginBottom: 8 }}>Where you watch</Dymo>
           <Pressable onPress={() => setRegionOpen((o) => !o)} style={styles.regionRow}>
             <Text style={styles.regionValue}>{regionLabel}</Text>
             <Text style={styles.regionChange}>{regionOpen ? "Done" : "Change"}</Text>
@@ -448,7 +450,7 @@ export default function Settings() {
 
         {/* ── Streaming services ── */}
         <View>
-          <Eyebrow style={{ marginBottom: 8 }}>Streaming services</Eyebrow>
+          <Dymo style={{ marginBottom: 8 }}>Streaming services</Dymo>
           <Text style={styles.regionNote}>The ones that operate where you are.</Text>
           <View style={[styles.chips, { marginTop: 8 }]}>
             {SERVICES.filter((s) => availableHere.length === 0 || availableHere.includes(s)).map((s) => (
@@ -468,13 +470,14 @@ export default function Settings() {
             ))}
           </View>
         </View>
+        </BoothPlate>
 
         <Button title={saving ? "Saving…" : "Save settings"} onPress={() => void save()} busy={saving} />
         {status && <Text style={styles.status}>{status}</Text>}
 
         {/* ── Push notifications ── */}
-        <View style={styles.card}>
-          <Eyebrow style={{ marginBottom: 6 }}>Notifications</Eyebrow>
+        <BoothPlate>
+          <Dymo style={{ marginBottom: 8 }}>Notifications</Dymo>
           <Text style={styles.line}>
             A fresh deep cut every Friday, plus tags and films people send you.
           </Text>
@@ -487,11 +490,11 @@ export default function Settings() {
             />
           </View>
           {notifyMsg && <Text style={styles.status}>{notifyMsg}</Text>}
-        </View>
+        </BoothPlate>
 
         {/* ── Password ── */}
-        <View style={styles.card}>
-          <Eyebrow style={{ marginBottom: 6 }}>Password</Eyebrow>
+        <BoothPlate>
+          <Dymo style={{ marginBottom: 8 }}>Password</Dymo>
           <Text style={styles.line}>Sign in without an email link.</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
             <TextInput
@@ -506,12 +509,12 @@ export default function Settings() {
             <Button title="Set" kind="outline" disabled={newPassword.length < 8} onPress={() => void savePassword()} />
           </View>
           {pwStatus && <Text style={styles.status}>{pwStatus}</Text>}
-        </View>
+        </BoothPlate>
 
         {/* ── The door (owners only) ── */}
         {doorCount !== null && (
-          <View style={styles.doorCard}>
-            <Eyebrow style={{ color: colors.amber, marginBottom: 4 }}>The door</Eyebrow>
+          <BoothPlate style={styles.doorCard}>
+            <Dymo tone="amber" style={{ marginBottom: 8 }}>The door</Dymo>
             <Text style={styles.line}>
               {doorCount === 0
                 ? "Nobody waiting."
@@ -520,12 +523,12 @@ export default function Settings() {
             <View style={{ marginTop: 10, alignSelf: "flex-start" }}>
               <Button title="🚪 Work the line" kind="outline" onPress={() => router.push("/door")} />
             </View>
-          </View>
+          </BoothPlate>
         )}
 
         {/* ── The studio tour ── */}
-        <View style={styles.card}>
-          <Eyebrow style={{ marginBottom: 6 }}>The studio tour</Eyebrow>
+        <BoothPlate>
+          <Dymo style={{ marginBottom: 8 }}>The studio tour</Dymo>
           <Text style={styles.line}>The nine-stop walk through the house.</Text>
           <View style={{ marginTop: 10, alignSelf: "flex-start" }}>
             <Button
@@ -536,16 +539,16 @@ export default function Settings() {
               }}
             />
           </View>
-        </View>
+        </BoothPlate>
 
         {/* ── Account ── */}
-        <View style={styles.card}>
-          <Eyebrow style={{ marginBottom: 6 }}>Account</Eyebrow>
+        <BoothPlate>
+          <Dymo style={{ marginBottom: 8 }}>Account</Dymo>
           <Text style={styles.line}>{session?.user.email}</Text>
           <View style={{ marginTop: 10 }}>
             <Button title="🚪 Sign out" kind="outline" onPress={() => void signOut()} />
           </View>
-        </View>
+        </BoothPlate>
 
         <Text style={styles.legal}>
           <Text style={styles.legalLink} onPress={() => void WebBrowser.openBrowserAsync(`${CONFIG.apiBaseUrl}/terms`)}>
@@ -558,14 +561,14 @@ export default function Settings() {
         </Text>
 
         {/* ── Danger zone ── */}
-        <View style={styles.dangerCard}>
-          <Eyebrow style={{ color: colors.ticket, marginBottom: 4 }}>Leave the theater</Eyebrow>
+        <BoothPlate style={styles.dangerCard}>
+          <Dymo tone="red" style={{ marginBottom: 8 }}>Leave the theater</Dymo>
           {/* The confirm dialog spells out what's lost — no need to say it twice. */}
           <Text style={styles.line}>Permanent. Everything goes.</Text>
           <View style={{ marginTop: 10, alignSelf: "flex-start" }}>
             <Button title="Delete account" kind="outline" onPress={confirmDelete} />
           </View>
-        </View>
+        </BoothPlate>
         <ReelEnd />
       </ScrollView>
     </SafeAreaView>
@@ -574,22 +577,8 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  card: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: 10, padding: 14 },
-  doorCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.amber,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
-  },
-  lookCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.ticket,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: 10,
-    padding: 14,
-  },
+  doorCard: { borderColor: colors.amber },
+  lookCard: { borderColor: "rgba(228,87,61,0.55)" },
   headshotRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.bg },
   avatarFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line },
@@ -677,5 +666,5 @@ const styles = StyleSheet.create({
   line: { color: colors.cream, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   legal: { textAlign: "center", marginTop: 4 },
   legalLink: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11, textDecorationLine: "underline" },
-  dangerCard: { borderWidth: 1, borderColor: "rgba(228,87,61,0.5)", borderRadius: 10, padding: 14, marginTop: 4 },
+  dangerCard: { borderColor: "rgba(228,87,61,0.5)", marginTop: 4 },
 });

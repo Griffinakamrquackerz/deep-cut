@@ -129,16 +129,6 @@ const styles = StyleSheet.create({
   },
   rankTitle: { fontFamily: fonts.display, fontSize: 30, lineHeight: 32, marginTop: 4 },
   rankLine: { color: colors.dim, fontFamily: fonts.bodyItalic, fontSize: 11 },
-  track: {
-    height: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bg,
-    overflow: "hidden",
-  },
-  fill: { height: "100%" },
-  nextLine: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 4, textAlign: "right" },
   topLadder: {
     color: colors.ticket,
     fontFamily: fonts.mono,

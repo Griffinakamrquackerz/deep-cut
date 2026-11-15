@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
-import { colors, fonts, glowAmber, mono } from "@/lib/theme";
+import { colors, mono } from "@/lib/theme";
 import {
   SERVICES,
   SERVICE_LABELS,
@@ -19,7 +19,9 @@ import {
   type StarterFilm,
   type Service,
 } from "@/lib/types";
-import { Button, Chip, Eyebrow, Poster } from "@/components/ui";
+import { Button, Chip, Poster } from "@/components/ui";
+import { TitleCard } from "@/components/house";
+import { ApplicationStrip } from "@/components/rooms";
 
 // Onboarding, same contract as the web: pick 8+ films you love, your streaming
 // services, a REQUIRED signature film, and a handle. Ends at the Tonight tab.
@@ -114,8 +116,8 @@ export default function Onboarding() {
     <SafeAreaView style={styles.screen}>
       {step === "films" && (
         <View style={styles.body}>
-          <Eyebrow>Take 1 of 4 · Rip your ticket</Eyebrow>
-          <Text style={styles.h1}>PICK 8+ FILMS YOU LOVE</Text>
+          <ApplicationStrip part={1} />
+          <TitleCard size={40} accent="love">Pick films you love</TitleCard>
           <FlatList
             data={grid}
             numColumns={cols}
@@ -145,8 +147,8 @@ export default function Onboarding() {
 
       {step === "services" && (
         <View style={styles.body}>
-          <Eyebrow>Take 2 of 4 · Your screens</Eyebrow>
-          <Text style={styles.h1}>WHAT DO YOU PAY FOR?</Text>
+          <ApplicationStrip part={2} />
+          <TitleCard size={40} accent="watch?">Where do you watch?</TitleCard>
           <View style={styles.chips}>
             {SERVICES.map((s) => (
               <Chip
@@ -173,8 +175,8 @@ export default function Onboarding() {
 
       {step === "signature" && (
         <View style={styles.body}>
-          <Eyebrow>Take 3 of 4 · Signature film</Eyebrow>
-          <Text style={styles.h1}>YOUR FAVORITE FILM, EVER</Text>
+          <ApplicationStrip part={3} />
+          <TitleCard size={40} accent="signature">Your signature film</TitleCard>
           <Text style={styles.hint}>It fronts your member card as a stills collage.</Text>
           <TextInput
             value={query}
@@ -216,8 +218,8 @@ export default function Onboarding() {
 
       {step === "handle" && (
         <View style={styles.body}>
-          <Eyebrow>Take 4 of 4 · The marquee</Eyebrow>
-          <Text style={styles.h1}>PICK YOUR HANDLE</Text>
+          <ApplicationStrip part={4} />
+          <TitleCard size={40} accent="marquee">Pick your marquee name</TitleCard>
           <TextInput
             value={handle}
             onChangeText={(t) => setHandle(t.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24))}
@@ -245,7 +247,6 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { flex: 1, padding: 24, gap: 12 },
-  h1: { color: colors.amber, fontFamily: fonts.display, fontSize: 34, letterSpacing: 1.5, ...glowAmber },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   hint: { color: colors.dim, fontFamily: mono, fontSize: 11, lineHeight: 17 },
   input: {

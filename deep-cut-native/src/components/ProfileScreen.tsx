@@ -24,8 +24,8 @@ import { Eyebrow, Poster } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
 import { colors, fonts, profilePalette, type ProfilePalette } from "@/lib/theme";
-import { CreditRoll, ReelEnd, Slate, Tape } from "@/components/house";
-import { Cork, MemberCard, Pinned } from "@/components/rooms";
+import { CreditRoll, ReelEnd, Tape } from "@/components/house";
+import { MemberCard } from "@/components/rooms";
 
 // The member card — the single source of truth for how a profile looks, native
 // port of the web ProfileView. Both the You tab (your own key) and /u/[key]
@@ -507,20 +507,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   body: { padding: 20, paddingBottom: 112, gap: 18 },
   dim: { color: colors.dim, fontFamily: fonts.body, fontSize: 14 },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginTop: 2 },
-  idRow: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1, minWidth: 0 },
   avatar: { borderWidth: 2, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   avatarInitial: { fontFamily: fonts.display, fontSize: 26 },
-  name: {
-    fontFamily: fonts.display,
-    fontSize: 34,
-    lineHeight: 36,
-    letterSpacing: 1,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  handle: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11 },
-  follows: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, marginTop: 3 },
   styleBtn: { borderWidth: 1, borderColor: colors.line, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
   styleBtnText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase" },
   followBtn: { borderWidth: 1, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14 },
@@ -577,22 +565,6 @@ const styles = StyleSheet.create({
   watchTitle: { color: colors.cream, textDecorationLine: "underline" },
   watchYear: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11 },
   watchNote: { color: "rgba(243,233,215,0.8)", fontFamily: fonts.bodyItalic, fontSize: 12, marginTop: 4 },
-  tapeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    padding: 12,
-  },
-  tapeName: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 },
-  tapeTitle: { color: colors.cream, fontFamily: fonts.display, fontSize: 18, letterSpacing: 0.5, flexShrink: 1 },
-  privateBadge: { borderWidth: 1, borderColor: colors.line, borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2 },
-  privateBadgeText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 7.5, letterSpacing: 1.5, textTransform: "uppercase" },
-  tapeCount: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10 },
   safetyRow: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: 8 },
   safetyText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1 },
 });

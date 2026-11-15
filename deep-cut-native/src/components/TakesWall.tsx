@@ -414,14 +414,6 @@ const styles = StyleSheet.create({
   hit: { paddingVertical: 8, borderBottomWidth: 1, borderColor: colors.line },
   hitText: { color: colors.cream, fontFamily: fonts.body, fontSize: 14 },
   counter: { color: colors.dim, fontFamily: mono, fontSize: 11 },
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
   scorching: {
     position: "absolute",
     right: 8,

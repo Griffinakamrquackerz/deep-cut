@@ -19,6 +19,7 @@ import { CONFIG } from "@/lib/config";
 import { colors, fonts } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
 import { ReelEnd, Slate, Tape } from "@/components/house";
+import { tapeStripes } from "@/lib/tape";
 
 // The Mixtapes room — native port of the web PlaylistsScreen. Three inline
 // states, same as web: the list (Sent / Received), the create flow, and the
@@ -171,20 +172,43 @@ export default function Mixtapes() {
           <Slate>New mixtape</Slate>
           <Marquee size={38} accent="playlist">MAKE A PLAYLIST</Marquee>
 
-          <TextInput
-            value={name}
-            onChangeText={(t) => setName(t.slice(0, 80))}
-            placeholder="Name it — “movies to fix your October”"
-            placeholderTextColor="rgba(183,164,145,0.6)"
-            style={styles.input}
-          />
-          <TextInput
-            value={recipient}
-            onChangeText={(t) => setRecipient(t.slice(0, 60))}
-            placeholder="For… (optional)"
-            placeholderTextColor="rgba(183,164,145,0.6)"
-            style={styles.input}
-          />
+          {/* A blank tape. You write its name on the label, in pen. */}
+          <View style={styles.blank}>
+            <View style={styles.blankLabel}>
+              <View style={styles.blankTop}>
+                <Text style={styles.blankSmall}>DEEP CUT VIDEO</Text>
+                <Text style={styles.blankSmall}>
+                  SIDE A · {count} FILM{count === 1 ? "" : "S"}
+                </Text>
+              </View>
+              <TextInput
+                value={name}
+                onChangeText={(t) => setName(t.slice(0, 80))}
+                placeholder="Name this tape…"
+                placeholderTextColor="rgba(42,28,21,0.38)"
+                accessibilityLabel="Mixtape name"
+                style={styles.write}
+              />
+              <TextInput
+                value={recipient}
+                onChangeText={(t) => setRecipient(t.slice(0, 60))}
+                placeholder="For… (optional)"
+                placeholderTextColor="rgba(42,28,21,0.38)"
+                accessibilityLabel="Who it's for"
+                style={[styles.write, styles.writeSmall]}
+              />
+              <View style={styles.blankStripes}>
+                {tapeStripes(name || "blank").map((c, i) => (
+                  <View key={i} style={{ flex: 1, backgroundColor: c }} />
+                ))}
+              </View>
+            </View>
+            <View style={styles.blankWindow}>
+              <View style={styles.blankSpool} />
+              <View style={styles.blankTapeRun} />
+              <View style={styles.blankSpool} />
+            </View>
+          </View>
           <TextInput
             value={query}
             onChangeText={search}
@@ -354,35 +378,38 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   dim: { color: colors.dim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  tapeCard: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    padding: 12,
-  },
-  tapeTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  tapeNameRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 },
-  tapeName: { color: colors.cream, fontFamily: fonts.display, fontSize: 18, letterSpacing: 0.5, flexShrink: 1 },
-  privateBadge: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 3,
+  // create — a blank tape (web: .tape-face / .tape-write)
+  blank: { borderRadius: 10, backgroundColor: "#14100e", borderWidth: 1, borderColor: "#000", padding: 10 },
+  blankLabel: { backgroundColor: colors.paper, borderRadius: 3, overflow: "hidden", padding: 12, paddingBottom: 22 },
+  blankTop: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+  blankSmall: { color: colors.paperDim, fontFamily: fonts.mono, fontSize: 8.5, letterSpacing: 1.8 },
+  write: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: "rgba(42,28,21,0.55)",
+    color: "#1d2a5c",
+    fontFamily: fonts.serif,
+    fontSize: 30,
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    marginTop: 8,
   },
-  privateBadgeText: {
-    color: colors.dim,
-    fontFamily: fonts.mono,
-    fontSize: 7.5,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
+  writeSmall: { fontSize: 20 },
+  blankStripes: { position: "absolute", left: 0, right: 0, bottom: 0, height: 8, flexDirection: "row" },
+  blankWindow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    alignSelf: "center",
+    width: "62%",
+    marginTop: 10,
+    borderRadius: 999,
+    backgroundColor: "#0a0807",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
-  forName: { color: colors.dim, fontFamily: fonts.mono, fontSize: 10 },
-  track: { height: 6, width: "100%", borderRadius: 999, backgroundColor: colors.bg, overflow: "hidden" },
-  fill: { height: "100%", borderRadius: 999, backgroundColor: colors.avail },
-  progressText: { color: colors.dim, fontFamily: fonts.mono, fontSize: 9.5, marginTop: 4 },
-  // create
+  blankSpool: { width: 30, height: 30, borderRadius: 15, borderWidth: 6, borderColor: "#3d2a1e", backgroundColor: "#0a0807" },
+  blankTapeRun: { flex: 1, height: 2, marginHorizontal: 6, backgroundColor: "rgba(61,42,30,0.7)" },
   input: {
     borderWidth: 1,
     borderColor: colors.line,
