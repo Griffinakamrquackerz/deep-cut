@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { colors, fonts } from "@/lib/theme";
 import { useAuth } from "../_layout";
 import { Slate, TitleCard } from "@/components/house";
+import { FeltBoard } from "@/components/rooms";
 
 // The Lobby — native port of the web LobbyScreen (../src/app/(tabs)/
 // lobby/LobbyScreen.tsx). Three views under one marquee: the feed of what
@@ -128,6 +129,14 @@ const HEADLINE: Record<ViewKey, string> = {
   people: "FIND YOUR PEOPLE",
   inbox: "YOUR PIGEONHOLE",
 };
+/** The rooms off the lobby, as they read on the felt board. */
+const FELT = [
+  { key: "feed", label: "Marquee", sub: "who's watching" },
+  { key: "takes", label: "Takes", sub: "the wall" },
+  { key: "people", label: "People", sub: "find them" },
+  { key: "inbox", label: "Inbox", sub: "for you" },
+] as const;
+
 /** The word of each headline set in amber. */
 const ACCENT: Record<ViewKey, string> = { feed: "watching", takes: "hot takes", people: "people", inbox: "pigeonhole" };
 
@@ -461,25 +470,19 @@ export default function Community() {
           — the right place to ask for a script. */}
       <HouseCall style={{ marginTop: 14 }} />
 
-      <View style={styles.viewChips}>
-        {VIEWS.map((t) => (
-          <Pressable
-            key={t.key}
-            onPress={() => {
-              void Haptics.selectionAsync();
-              setView(t.key);
-              if (t.key === "inbox") setUnread(0);
-            }}
-            style={[styles.viewChip, view === t.key && styles.viewChipOn]}
-          >
-            <Text style={[styles.viewChipText, view === t.key && { color: colors.amber }]}>{t.label}</Text>
-            {t.key === "inbox" && unread > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        ))}
+      {/* The felt letterboard over the concession stand: four rooms off the
+          lobby, in white letters on black. */}
+      <View style={{ marginTop: 12 }}>
+        <FeltBoard
+          items={FELT}
+          value={view}
+          badges={{ inbox: unread }}
+          onChange={(k) => {
+            void Haptics.selectionAsync();
+            setView(k);
+            if (k === "inbox") setUnread(0);
+          }}
+        />
       </View>
 
       <Pressable style={styles.settleCard} onPress={() => router.push("/settle")}>

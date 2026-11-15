@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { colors, fonts, mono } from "@/lib/theme";
 import type { SearchHit } from "@/lib/types";
 import { Button, Poster } from "./ui";
+import { Cork, Pinned } from "./rooms";
 
 // The Hot Takes wall — native port of the web HotTakesWall: 250 characters of
 // nitrate-burning opinion pinned to a film. 🔥 to agree, 🥊 to demand pistols
@@ -280,10 +281,11 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
       ) : takes.length === 0 ? (
         <Text style={styles.dimLine}>No takes yet — first spark lights the wall.</Text>
       ) : (
-        takes.map((t) => {
+        <Cork>
+        {takes.map((t, ti) => {
           const scorching = t.fires >= 3;
           return (
-            <View key={t.id} style={styles.card}>
+            <Pinned key={t.id} index={ti}>
               {scorching && <Text style={styles.scorching}>SCORCHING</Text>}
               <View style={{ flexDirection: "row", gap: 10 }}>
                 {t.movie?.posterPath ? (
@@ -291,8 +293,8 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
                 ) : null}
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.byline}>
-                    <Text style={{ color: colors.amber }}>{authorName(t.author)}</Text> on{" "}
-                    <Text style={{ color: colors.cream }}>
+                    <Text style={{ color: "#a8371d" }}>{authorName(t.author)}</Text> on{" "}
+                    <Text style={{ color: colors.paperInk }}>
                       {t.movie ? `${t.movie.title} ${t.movie.year ?? ""}` : "a film"}
                     </Text>{" "}
                     · {ago(t.createdAt)}
@@ -380,9 +382,10 @@ export default function TakesWall({ movieId, movieTitle }: { movieId?: number; m
                   </View>
                 </View>
               )}
-            </View>
+            </Pinned>
           );
-        })
+        })}
+        </Cork>
       )}
     </View>
   );
@@ -435,9 +438,9 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "8deg" }],
     zIndex: 2,
   },
-  byline: { color: colors.dim, fontFamily: mono, fontSize: 10.5 },
-  takeBody: { color: colors.cream, fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, marginTop: 4 },
-  banterBody: { color: colors.cream, fontFamily: fonts.body, fontSize: 13.5, lineHeight: 19, marginTop: 2 },
+  byline: { color: colors.paperDim, fontFamily: mono, fontSize: 10.5 },
+  takeBody: { color: colors.paperInk, fontFamily: fonts.serif, fontSize: 18, lineHeight: 23, marginTop: 4 },
+  banterBody: { color: colors.paperInk, fontFamily: fonts.body, fontSize: 13.5, lineHeight: 19, marginTop: 2 },
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
   pill: {
     borderWidth: 1,

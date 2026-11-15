@@ -25,6 +25,7 @@ import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
 import { colors, fonts, profilePalette, type ProfilePalette } from "@/lib/theme";
 import { CreditRoll, ReelEnd, Slate, Tape } from "@/components/house";
+import { Cork, MemberCard, Pinned } from "@/components/rooms";
 
 // The member card — the single source of truth for how a profile looks, native
 // port of the web ProfileView. Both the You tab (your own key) and /u/[key]
@@ -246,28 +247,20 @@ export default function ProfileScreen({
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.body}>
         {standalone && <BackButton style={{ marginBottom: 12 }} />}
-        {/* Header */}
-        <View>
-          <Slate>Member card</Slate>
-          <View style={styles.headerRow}>
-            <View style={styles.idRow}>
-              <Avatar url={person.avatar_url} name={name} accent={palette.amber} />
-              <View style={{ minWidth: 0, flexShrink: 1 }}>
-                <Text style={[styles.name, { color: palette.amber, textShadowColor: palette.amber }]}>
-                  {name.toUpperCase()}
-                </Text>
-                {person.handle && person.display_name ? (
-                  <Text style={styles.handle}>@{person.handle}</Text>
-                ) : null}
-                <Text style={styles.follows}>
-                  {data.followerCount} follower{data.followerCount === 1 ? "" : "s"} · following{" "}
-                  {data.followingCount}
-                </Text>
-              </View>
-            </View>
-            {data.isMe ? (
+        {/* The membership card: laminated, a photo window, a number, a
+            signature strip. The accents read the profile theme, so a noir
+            member carries a noir card. */}
+        <MemberCard
+          id={person.id}
+          name={name}
+          handle={person.handle && person.display_name ? person.handle : null}
+          accent={palette.amber}
+          photo={<Avatar url={person.avatar_url} name={name} accent={palette.amber} />}
+          footnote={`${data.followerCount} follower${data.followerCount === 1 ? "" : "s"} · following ${data.followingCount} · not transferable`}
+          action={
+            data.isMe ? (
               <Pressable style={styles.styleBtn} onPress={() => router.push("/(tabs)/settings")}>
-                <Text style={styles.styleBtnText}>Style it ✨</Text>
+                <Text style={styles.styleBtnText}>Style it</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -283,9 +276,9 @@ export default function ProfileScreen({
                   {following ? "following ✓" : "+ follow"}
                 </Text>
               </Pressable>
-            )}
-          </View>
-        </View>
+            )
+          }
+        />
 
         {/* What they're putting on tonight */}
         <TonightStatus
