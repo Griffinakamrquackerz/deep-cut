@@ -174,18 +174,31 @@ export default function PlaylistsScreen({
       <section className="flex flex-col gap-4">
         <p className="slate"><b>New mixtape</b></p>
         <h1 className="title-card rack-in mt-2.5 text-4xl">Make a <em>playlist</em></h1>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, 80))}
-          placeholder="Name it — “movies to fix your October”"
-          className="rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
-        />
-        <input
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value.slice(0, 60))}
-          placeholder="For… (optional)"
-          className="rounded border border-line bg-surface px-3 py-2.5 text-cream placeholder:text-dim/60"
-        />
+        {/* A blank tape. You write its name on the label, in pen. */}
+        <div className="tape-face" style={{ "--hue": tapeHue(name || "blank") } as React.CSSProperties}>
+          <div className="tape-face-label">
+            <p className="tape-face-top">
+              <span>Deep Cut Video</span>
+              <span>
+                Side A · {picks.size} film{picks.size === 1 ? "" : "s"}
+              </span>
+            </p>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 80))}
+              placeholder="Name this tape…"
+              aria-label="Mixtape name"
+              className="tape-write mt-2"
+            />
+            <input
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value.slice(0, 60))}
+              placeholder="For… (optional)"
+              aria-label="Who it's for"
+              className="tape-write tape-write--small mt-2"
+            />
+          </div>
+        </div>
 
         <input
           type="search"

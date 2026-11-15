@@ -798,3 +798,126 @@
   .mq::before,
   .mq-board { animation: none !important; }
 }
+
+/* ── Paper ─────────────────────────────────────────────────────────────
+   Anything you fill in is paper: the comment card after a film, the label
+   on a blank tape, the membership application. The house tokens are re-inked
+   so whatever is inside restyles itself. */
+.paper-sheet {
+  --color-cream: #2a1c15;
+  --color-dim: #6b5545;
+  --color-line: #cdb999;
+  --color-amber: #a8371d;
+  --color-surface: #efe2c6;
+  --color-bg: #fbf5e8;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(60, 40, 25, 0.07) 27px 28px),
+    linear-gradient(175deg, #f8efdd, #ebdcc0);
+  color: #2a1c15;
+}
+.paper-sheet .border-line.bg-surface { box-shadow: none; background-image: none; }
+.paper-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #2a1c15;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.paper-head b { font-weight: 500; color: #2a1c15; }
+
+/* Writing on a blank tape's label. */
+.tape-write {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1.5px solid rgba(42, 28, 21, 0.55);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.2rem 0 0.15rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.7rem;
+  line-height: 1.15;
+  color: #1d2a5c; /* ballpoint */
+}
+.tape-write::placeholder { color: rgba(42, 28, 21, 0.38); }
+.tape-write:focus { outline: none; border-bottom-color: #a8371d; }
+.tape-write--small { font-size: 1.15rem; }
+
+/* ── The membership application (onboarding) ───────────────────────────
+   Four parts of one form. The strip across the top is the form's own
+   header, with a box ticked for each part that's done. */
+.app-form {
+  border-radius: 3px;
+  padding: 0.6rem 0.75rem 0.65rem;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, rgba(60, 40, 25, 0.07) 21px 22px),
+    linear-gradient(175deg, #f8efdd, #ebdcc0);
+  color: #2a1c15;
+  box-shadow: 0 12px 18px -12px rgba(0, 0, 0, 0.9);
+  rotate: -0.4deg;
+}
+.app-form-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid #2a1c15;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.app-form-top b { font-weight: 600; color: #2a1c15; }
+.app-form-parts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.app-form-parts li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5545;
+}
+.app-form-parts li::before {
+  content: "";
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1.5px solid #2a1c15;
+}
+.app-form-parts li.is-done::before {
+  /* ticked, in ballpoint */
+  background: linear-gradient(135deg, transparent 43%, #1d2a5c 43% 57%, transparent 57%), linear-gradient(45deg, transparent 43%, #1d2a5c 43% 57%, transparent 57%);
+}
+.app-form-parts li.is-now { color: #2a1c15; font-weight: 600; }
+.app-form-parts li.is-now::before { box-shadow: 0 0 0 2px rgba(168, 55, 29, 0.55); }
+
+/* A festival line, between two sprigs. */
+.pedigree {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--color-amber);
+}
+.pedigree svg { flex: none; width: 1.05rem; height: 1.75rem; }
+.pedigree span { min-width: 0; }

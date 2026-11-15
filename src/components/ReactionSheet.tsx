@@ -44,11 +44,15 @@ export default function ReactionSheet({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-xl border-t border-line bg-surface p-5 pb-8"
+        // The comment card a cinema hands you on the way out.
+        className="paper-sheet w-full max-w-md rounded-t-lg p-5 pb-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="eyebrow mb-1">You watched</p>
-        <h2 className="font-display text-2xl text-cream">{title}</h2>
+        <p className="paper-head">
+          <b>Comment card</b>
+          <span>You watched</span>
+        </p>
+        <h2 className="font-display text-3xl leading-none text-cream">{title}</h2>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {REACTIONS.map((r) => (

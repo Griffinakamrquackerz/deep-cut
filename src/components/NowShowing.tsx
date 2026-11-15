@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Sprig } from "@/components/house/Laurel";
 
 // Now Showing — the television, cropped out of the basement photograph and set
 // on Tonight where the morning-after card used to sit.
@@ -142,8 +143,9 @@ export default function NowShowing() {
           <p className="font-mono text-[0.65rem] text-dim">
             {film.director} · {film.year} · {Math.round(film.runtimeSec / 60)} MIN
           </p>
-          <p className="line-clamp-2 font-mono text-[0.6rem] leading-relaxed text-avail">
-            🏆 {film.pedigree}
+          <p className="pedigree">
+            <Sprig />
+            <span className="line-clamp-2">{film.pedigree}</span>
           </p>
           <p className="mt-1 font-mono text-[0.65rem] tracking-wide text-ticket">
             Pull up a beanbag →

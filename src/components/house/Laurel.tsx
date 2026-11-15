@@ -31,6 +31,15 @@ function Branch({ flip = false }: { flip?: boolean }) {
   return <g transform={flip ? "translate(100 0) scale(-1 1)" : undefined}>{leaves}</g>;
 }
 
+/** One sprig, for the start of a festival line. */
+export function Sprig() {
+  return (
+    <svg viewBox="0 0 50 82" fill="currentColor" aria-hidden>
+      <Branch />
+    </svg>
+  );
+}
+
 export default function Laurel({
   top,
   big,
