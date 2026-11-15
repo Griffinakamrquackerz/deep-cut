@@ -115,7 +115,7 @@ export default function VerdictMedia({
             onClick={() => setUnmuted(true)}
             className="absolute bottom-2 right-2 rounded-full border border-amber bg-bg/80 px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-amber backdrop-blur"
           >
-            🔇 Tap for sound
+            Tap for sound
           </button>
         )}
       </div>

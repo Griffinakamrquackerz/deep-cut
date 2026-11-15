@@ -157,31 +157,28 @@ export default function RollChannel({
               mineOnly ? "border-amber bg-amber/15 text-amber" : "border-line text-dim"
             }`}
           >
-            📺 {mineOnly ? "Only on my platforms ✓" : "Only on my platforms"}
+            {mineOnly ? "Only on my platforms ✓" : "Only on my platforms"}
           </button>
         )}
-        <div className="mx-auto grid w-full max-w-sm grid-cols-1 gap-2">
+        {/* The tuner: the bank of push-buttons down the front of the set.
+            The number is engraved on the key, so the label doesn't have to
+            carry a channel marker as well. */}
+        <div className="tuner mx-auto w-full max-w-sm">
           {VIBES.map((v, i) => (
             <button
               key={v.key}
               onClick={() => void tune(v)}
               disabled={loading}
-              className="flex items-center justify-between rounded border border-line bg-surface px-4 py-3.5 text-left disabled:opacity-60"
+              className="tuner-key"
             >
-              <span className="flex items-center gap-3">
-                <span className="font-mono text-[0.6rem] text-dim">CH {String(i + 1).padStart(2, "0")}</span>
-                <span className="font-display text-xl text-cream">
-                  {v.emoji} {v.label.toUpperCase()}
-                </span>
-              </span>
-              <span className="font-mono text-[0.6rem] uppercase tracking-widest text-amber">
-                {loading ? "…" : "Tune in ▸"}
-              </span>
+              <span className="tuner-no">{String(i + 1).padStart(2, "0")}</span>
+              <b>{v.label}</b>
+              <small>{loading ? "…" : "Tune in"}</small>
             </button>
           ))}
         </div>
         <Link href="/" className="mt-2 text-center font-mono text-[0.65rem] uppercase tracking-widest text-dim underline">
-          ← Back to the theater
+          Back to the lobby
         </Link>
       </main>
     );
@@ -194,60 +191,62 @@ export default function RollChannel({
   // ── On air ─────────────────────────────────────────────────────────
   return (
     <main className="flex min-h-dvh flex-col gap-4 px-5 py-8">
-      <header className="flex items-center justify-between">
-        <p className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
-          CH {chNum} · {channel.emoji} {channel.label}
-        </p>
-        <p className="font-mono text-[0.6rem] uppercase tracking-widest text-ticket">
-          <span className="blink">●</span> ON AIR
-        </p>
-      </header>
-
-      {/* The screen */}
-      <div key={film.id} className="deal-in">
-        {trailerKey ? (
-          <div className="poster-frame relative aspect-video w-full overflow-hidden rounded">
-            <iframe
-              key={`${film.id}-${muted ? "m" : "s"}`}
-              src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${muted ? 1 : 0}&rel=0&playsinline=1&controls=0&modestbranding=1`}
-              title={`${film.title} — trailer`}
-              allow="autoplay; encrypted-media"
-              className="absolute inset-0 h-full w-full border-0"
-            />
-            {muted && (
-              <button
-                onClick={() => {
-                  sfxPop();
-                  setMuted(false);
-                }}
-                className="absolute bottom-2 right-2 rounded bg-bg/85 px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-amber"
-              >
-                🔊 Tap for sound
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="poster-frame relative aspect-video w-full overflow-hidden rounded bg-surface">
-            {film.poster_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`https://image.tmdb.org/t/p/w500${film.poster_path}`}
-                alt={film.title}
-                className="absolute inset-0 h-full w-full object-cover opacity-70"
+      {/* The set. The tube, the tally lamp and the counter are one cabinet,
+          so the channel strip reads off the equipment rather than floating
+          above it as a page header. */}
+      <div className="set">
+        <div key={film.id} className="set-tube deal-in aspect-video w-full">
+          {trailerKey ? (
+            <>
+              <iframe
+                key={`${film.id}-${muted ? "m" : "s"}`}
+                src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${muted ? 1 : 0}&rel=0&playsinline=1&controls=0&modestbranding=1`}
+                title={`${film.title} — trailer`}
+                allow="autoplay; encrypted-media"
+                className="absolute inset-0 h-full w-full border-0"
               />
-            ) : null}
-            <span className="absolute inset-0 flex items-center justify-center font-mono text-[0.65rem] uppercase tracking-widest text-cream">
-              {trailerKey === undefined ? "Tuning…" : "No trailer on file — intermission card"}
-            </span>
-          </div>
-        )}
-        {/* Segment progress — the channel's pulse */}
-        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface">
-          <div
-            className="h-full rounded-full bg-ticket transition-[width] duration-1000 ease-linear"
-            style={{ width: `${Math.min(100, (elapsed / limit) * 100)}%` }}
-          />
+              {muted && (
+                <button
+                  onClick={() => {
+                    sfxPop();
+                    setMuted(false);
+                  }}
+                  className="set-over absolute bottom-2 right-2 rounded bg-bg/85 px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-amber"
+                >
+                  Tap for sound
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {film.poster_path ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${film.poster_path}`}
+                  alt={film.title}
+                  className="absolute inset-0 h-full w-full object-cover opacity-70"
+                />
+              ) : null}
+              {/* The poster is behind the card, so the card needs its own
+                  ground to be legible against a bright one. */}
+              <span className="absolute inset-0 flex items-center justify-center bg-bg/55 px-5 text-center">
+                <span className="max-w-[15rem] rounded border border-line/80 bg-bg/85 px-3 py-2 font-mono text-[0.6rem] uppercase leading-relaxed tracking-widest text-cream">
+                  {trailerKey === undefined ? "Tuning…" : "No trailer on file — the poster stands in"}
+                </span>
+              </span>
+            </>
+          )}
         </div>
+        {/* the counter on the front of the deck */}
+        <div className="set-counter">
+          <i style={{ width: `${Math.min(100, (elapsed / limit) * 100)}%` }} />
+        </div>
+        <p className="set-tally">
+          <span>
+            CH {chNum} · <b>{channel.label}</b>
+          </span>
+          <em>On air</em>
+        </p>
       </div>
 
       <div>
@@ -256,7 +255,7 @@ export default function RollChannel({
         </p>
         {film.canon && (
           <span className="mt-1 inline-block rounded-sm border border-amber bg-amber/10 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.2em] text-amber">
-            🎞 House pick — programmer&apos;s shelf
+            House pick — programmer&apos;s shelf
           </span>
         )}
         {film.overview && <p className="mt-1 line-clamp-2 text-sm text-dim">{film.overview}</p>}
@@ -276,7 +275,7 @@ export default function RollChannel({
           }}
           className="pulse-cta block w-full rounded bg-ticket px-4 py-3 text-center font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
         >
-          🎟 That&apos;s the one
+          That&apos;s the one
         </Link>
         <div className="flex gap-2">
           <button
@@ -288,7 +287,7 @@ export default function RollChannel({
             aria-label="Previous trailer"
             className="flex-1 rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-dim disabled:opacity-40"
           >
-            ◂ Back
+            Back
           </button>
           <button
             onClick={() => {
@@ -297,7 +296,7 @@ export default function RollChannel({
             }}
             className="flex-1 rounded border border-amber px-4 py-3 font-mono text-xs uppercase tracking-widest text-amber"
           >
-            Keep rolling ▸
+            Keep rolling
           </button>
         </div>
       </div>

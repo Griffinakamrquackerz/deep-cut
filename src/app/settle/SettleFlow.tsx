@@ -254,7 +254,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
     if (p2?.name) params.set("p2", p2.name);
     const imageUrl = `${origin}/api/settle/verdict-image?${params.toString()}`;
     const link = `${origin}/settle`;
-    const text = `⚖️ The house says we're watching ${film.title} (${film.year}). Settle yours:`;
+    const text = `The house rules for ${film.title} (${film.year}). Settle yours:`;
 
     // Best case: share the actual verdict card (Web Share Level 2 — iOS/Android).
     try {
@@ -316,23 +316,32 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
           </p>
         </header>
         <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-          <input
-            value={p1Name}
-            onChange={(e) => setP1Name(e.target.value)}
-            placeholder="Player 1"
-            maxLength={20}
-            aria-label="Player 1 name"
-            className="rounded border border-line bg-surface px-3 py-3 text-center text-cream placeholder:text-dim/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
-          />
-          <p className="text-center font-mono text-xs uppercase tracking-[0.3em] text-ticket">vs</p>
-          <input
-            value={p2Name}
-            onChange={(e) => setP2Name(e.target.value)}
-            placeholder="Player 2"
-            maxLength={20}
-            aria-label="Player 2 name"
-            className="rounded border border-line bg-surface px-3 py-3 text-center text-cream placeholder:text-dim/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
-          />
+          {/* The case sheet. Both parties go on the record before anything
+              is dealt, so the names are filled in on ruled lines rather than
+              typed into boxes. */}
+          <div className="docket paper-sheet">
+            <p className="paper-head">
+              <span>Deep Cut · house docket</span>
+              <b>In the matter of</b>
+            </p>
+            <input
+              value={p1Name}
+              onChange={(e) => setP1Name(e.target.value)}
+              placeholder="First party"
+              maxLength={20}
+              aria-label="Player 1 name"
+              className="docket-line"
+            />
+            <p className="mt-2 mb-1 text-center docket-v">v.</p>
+            <input
+              value={p2Name}
+              onChange={(e) => setP2Name(e.target.value)}
+              placeholder="Second party"
+              maxLength={20}
+              aria-label="Player 2 name"
+              className="docket-line"
+            />
+          </div>
           <button
             onClick={() => {
               sfxPop();
@@ -345,7 +354,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
           >
             <span className="text-left">
               <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-                ⚖️ Best of 3
+                Best of 3
               </span>
               <span className="font-mono text-[0.6rem] text-dim">
                 the house deals 3, you keep the keepers
@@ -372,7 +381,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
             >
               <span className="text-left">
                 <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-                  📺 Only on my platforms
+                  Only on my platforms
                 </span>
                 <span className="font-mono text-[0.6rem] text-dim">
                   the verdict only rules on films you can stream
@@ -394,7 +403,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
             }}
             className="pulse-cta mt-1 rounded bg-ticket px-6 py-4 font-mono text-sm font-medium uppercase tracking-[0.25em] text-cream"
           >
-            ★ Start the standoff ★
+            Open the case
           </button>
         </div>
         <div className="film-strip" aria-hidden />
@@ -421,11 +430,21 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
         <div>
           <p className="slate slate--center"><b>Intermission</b></p>
           <h1 className="title-card rack-in mt-2.5 text-5xl leading-[0.95]">Pass the <em>phone</em></h1>
-          <p className="mt-3 text-sm text-dim">
-            {name1}, your testimony is sealed. 🤐
-            <br />
-            No peeking over shoulders.
-          </p>
+          {/* Sealed is the whole point of the pass, so it is stamped on
+              paper rather than stated in a line of grey text. */}
+          <div className="docket paper-sheet mx-auto mt-4 w-full max-w-[17rem] text-left">
+            <p className="paper-head">
+              <span>Testimony</span>
+              <b>{name1}</b>
+            </p>
+            <p className="text-sm leading-relaxed">
+              Five answers, taken and closed. {name2} answers the same five,
+              without seeing these.
+            </p>
+            <p className="mt-3 text-center">
+              <span className="stamp-mark stamp-mark--sealed">Sealed</span>
+            </p>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -459,7 +478,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
       <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-5 text-center">
         <p className="font-display text-5xl text-amber">ENJOY THE SHOW</p>
         <p className="font-mono text-xs uppercase tracking-widest text-dim">
-          🍿 case closed · the house thanks you
+          Case closed · the house thanks you
         </p>
         <button
           onClick={reset}
@@ -468,7 +487,7 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
           Settle another
         </button>
         <Link href="/" className="font-mono text-[0.65rem] uppercase tracking-widest text-dim">
-          ← back to Deep Cut
+          Back to the lobby
         </Link>
       </main>
     );
@@ -546,22 +565,19 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
             </span>
           )}
         </div>
-        <div className="ticket-edge mx-auto w-full max-w-sm rounded bg-surface p-4">
+        <div className="mx-auto w-full max-w-sm">
+          <span className="exhibit-tab">Exhibit {["A", "B", "C"][exhibitIdx]}</span>
+        </div>
+        <div className="ticket-edge mx-auto -mt-5 w-full max-w-sm rounded bg-surface p-4">
           <p className="eyebrow mb-1 text-ticket">The house submits</p>
           <p className="text-sm leading-relaxed text-cream">{current.why}</p>
         </div>
         <div className="mx-auto flex w-full max-w-sm gap-2.5">
-          <button
-            onClick={() => voteExhibit(false)}
-            className="flex-1 rounded border border-line px-5 py-3.5 font-mono text-xs uppercase tracking-widest text-dim active:bg-line"
-          >
-            👎 Toss it
+          <button onClick={() => voteExhibit(false)} className="stamp-btn !flex-1 !text-dim py-3.5">
+            Toss it
           </button>
-          <button
-            onClick={() => voteExhibit(true)}
-            className="flex-1 rounded bg-amber px-5 py-3.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
-          >
-            👍 Keep it
+          <button onClick={() => voteExhibit(true)} className="stamp-btn !flex-1 !text-amber py-3.5">
+            Keep it
           </button>
         </div>
       </main>
@@ -648,13 +664,13 @@ export default function SettleFlow({ myServices = [] }: { myServices?: Service[]
           }}
           className="pulse-cta rounded bg-ticket px-5 py-3.5 font-mono text-sm font-medium uppercase tracking-[0.2em] text-cream"
         >
-          ★ That&apos;ll do ★
+          That&apos;ll do
         </button>
         <button
           onClick={() => void shareRuling(film, isRuling && !finalists.length)}
           className="rounded border border-amber px-5 py-3 font-mono text-xs uppercase tracking-widest text-amber"
         >
-          📸 Share the ruling
+          Share the ruling
         </button>
         {!isRuling && (
           <button

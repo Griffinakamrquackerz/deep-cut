@@ -310,62 +310,57 @@ export default function BlendGame() {
         </p>
       </header>
 
-      {/* The bench. Always three slots, filled or waiting — the shape of the
-          game is visible before you've done anything, and the next slot to
-          fill breathes so it reads as the live one. */}
-      <div className="rounded border border-line bg-surface/40 px-3 py-4">
-        <div className="flex items-end justify-center gap-1.5">
+      {/* The bench. Always three strips of film, clamped and waiting — the
+          shape of the game is visible before you've done anything, and the
+          next gate to fill is the lit one. The joins between the strips are
+          where the splice happens, so that is where "meets" is taped. */}
+      <div className="bench">
+        <div className="flex items-stretch justify-center gap-1.5">
           {Array.from({ length: MAX_PARENTS }).map((_, i) => {
             const p = parents[i];
             const isNext = !p && i === parents.length;
             return (
-              <div key={p?.id ?? `slot-${i}`} className="flex items-end gap-1.5">
+              <div key={p?.id ?? `slot-${i}`} className="flex items-center gap-1.5">
                 {i > 0 && (
-                  <span
-                    className={`pb-8 font-display text-xs ${
-                      p || isNext ? "text-amber" : "text-dim/40"
-                    }`}
-                  >
-                    meets
+                  <span className={`splice-join mb-[1.15rem] ${p || isNext ? "splice-join--live" : ""}`}>
+                    <span>meets</span>
                   </span>
                 )}
                 {p ? (
-                  <button
-                    onClick={() => removeParent(p.id)}
-                    aria-label={`Remove ${p.title}`}
-                    className="group relative w-[4.5rem] shrink-0 text-left"
-                  >
-                    {/* The button owns the width; Poster fills it (it applies
-                        w-full), so never pass a width class here. */}
-                    <span className={`block ${busy ? "specimen relative overflow-hidden rounded" : ""}`}>
-                      <Poster
-                        posterPath={p.poster_path}
-                        title={p.title}
-                        year={p.year}
-                        className="rounded ring-1 ring-amber/40"
-                      />
-                    </span>
-                    {!busy && (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-line bg-bg text-[0.6rem] text-cream transition group-hover:border-ticket group-hover:text-ticket">
-                        ✕
+                  <span className="block w-[4.9rem] shrink-0">
+                    <button
+                      onClick={() => removeParent(p.id)}
+                      aria-label={`Remove ${p.title}`}
+                      className="strip group relative block w-full text-left"
+                    >
+                      {/* The button owns the width; Poster fills it (it applies
+                          w-full), so never pass a width class here. */}
+                      <span className={`strip-frame block ${busy ? "specimen relative overflow-hidden" : ""}`}>
+                        <Poster posterPath={p.poster_path} title={p.title} year={p.year} />
                       </span>
-                    )}
-                    <span className="mt-1 block truncate font-mono text-[0.55rem] text-dim">
+                      {!busy && (
+                        <span className="absolute -right-1.5 top-0 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-line bg-bg text-[0.6rem] text-cream transition group-hover:border-ticket group-hover:text-ticket">
+                          ✕
+                        </span>
+                      )}
+                    </button>
+                    {/* Edge print: what is actually clamped in that gate. */}
+                    <span className="mt-1 block truncate text-center font-mono text-[0.55rem] text-dim">
                       {p.title}
                     </span>
-                  </button>
+                  </span>
                 ) : (
-                  <span className="w-[4.5rem] shrink-0">
-                    <span
-                      className={`flex aspect-[2/3] w-full items-center justify-center rounded border border-dashed text-xl ${
-                        isNext ? "slot-live text-amber" : "border-line/50 text-dim/40"
-                      }`}
-                    >
-                      ＋
+                  <span className="block w-[4.9rem] shrink-0">
+                    <span className={`strip strip--empty block ${isNext ? "strip--next" : ""}`}>
+                      <span className="strip-frame">
+                        {isNext
+                          ? "Clamp a film here"
+                          : i === MAX_PARENTS - 1
+                            ? "Third strip, optional"
+                            : "Empty gate"}
+                      </span>
                     </span>
-                    <span className="mt-1 block text-center font-mono text-[0.55rem] text-dim/50">
-                      {i === MAX_PARENTS - 1 ? "optional" : " "}
-                    </span>
+                    <span className="mt-1 block font-mono text-[0.55rem] text-dim">&nbsp;</span>
                   </span>
                 )}
               </div>
@@ -374,10 +369,10 @@ export default function BlendGame() {
         </div>
 
         {/* The wait is 10-20s of a model thinking. Narrate it rather than
-            leaving a dead button — the lab doing work is half the fun. */}
+            leaving a dead button — the bench working is half the fun. */}
         {busy && (
           <p className="mt-3 text-center font-mono text-[0.65rem] uppercase tracking-[0.2em] text-amber">
-            <span className="helix">🧬</span> {stage}
+            {stage}
           </p>
         )}
       </div>
@@ -440,17 +435,11 @@ export default function BlendGame() {
               : "cursor-not-allowed border border-line bg-surface text-dim"
           }`}
         >
-          {busy ? (
-            <>
-              <span className="helix">🧬</span> Splicing…
-            </>
-          ) : (
-            "🧬 Splice them 🧬"
-          )}
+          {busy ? "Splicing…" : "Make the splice"}
         </button>
         {!canSplice && (
           <p className="text-center font-mono text-[0.65rem] text-dim">
-            {parents.length === 0 ? "Pick two films to begin." : "One more."}
+            {parents.length === 0 ? "Clamp two films on the bench." : "One more."}
           </p>
         )}
         {parents.length > 0 && !busy && (
@@ -528,7 +517,7 @@ export default function BlendGame() {
               “{example.line}”
             </span>
             <span className="mt-2 block font-mono text-[0.6rem] uppercase tracking-widest text-amber">
-              Try this one ▸
+              Try this one
             </span>
           </button>
         </section>
@@ -536,10 +525,10 @@ export default function BlendGame() {
 
       {picks && (
         <section className="mx-auto w-full max-w-sm">
-          <p className="eyebrow mb-2">What came out</p>
+          <p className="eyebrow mb-2">Off the bench</p>
           <ul className="flex flex-col gap-3">
             {picks.map((p, i) => (
-              <li key={p.id} className="deal-in rounded border border-line bg-surface p-3">
+              <li key={p.id} className="spliced deal-in">
                 <Link href={`/m/${p.id}`} className="flex gap-3">
                   {/* Fixed-width wrapper, so Poster's own w-full resolves
                       against 5rem instead of the whole row. */}
@@ -558,7 +547,7 @@ export default function BlendGame() {
                     </p>
                     {i === 0 && (
                       <p className="font-mono text-[0.55rem] uppercase tracking-[0.2em] text-amber">
-                        ★ Closest match
+                        Closest match
                       </p>
                     )}
                     <RatingsBadges
@@ -580,7 +569,7 @@ export default function BlendGame() {
         href="/"
         className="mt-2 text-center font-mono text-[0.65rem] uppercase tracking-widest text-dim underline"
       >
-        ← Back to the theater
+        Back to the lobby
       </Link>
     </main>
   );
