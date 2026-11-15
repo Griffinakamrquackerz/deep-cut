@@ -34,6 +34,10 @@ error in §7.
    actual platform**" (the signed-in app), plus: *"the 'may contain subtitles'
    line is half-assed and silly"* — fix lines like that wherever they are.
 
+7. Then an audit of the front page: *"way too much noise / text that people
+   won't read"*. Condense it, send the long version to its own page, and
+   make sure a visitor knows what Deep Cut is **in 15 seconds or less**.
+
 ## 2. The rules that came out of that (treat as requirements)
 
 **Copy**
@@ -42,6 +46,12 @@ error in §7.
   *forms*; the words inside them are plain and true. A second joke inside the
   form is what the owner calls corny. No puns, no "no X were harmed", no
   jokey fine print, no meme phrasing, no fire/nitrate/match riffs.
+- **The front page says each thing once.** It ran to 2,187 words because four
+  facts (the fund's share, $1 = 1 vote, every pitch read, credits for
+  backers) were restated in eight sections. The wall carries the whole pitch
+  — headline plus one sentence under each half — and everything below is
+  evidence for it. If a section on `Landing.tsx` wants a second paragraph,
+  it goes to `/deal`, `/fund`, `/vote` or `/about` behind a `.lp-more` link.
 - **No AI/tech language in user-facing copy**: not "recommendation engine",
   "algorithm", "AI", "in plain English". Use rep-cinema words: the house
   *programs*, a *bill*, *repertory programming*, a *programmer's note*, a
@@ -58,7 +68,8 @@ error in §7.
 - Numbers come from code, never typed: `sharePct()`, `goalCents()`,
   `pointCap()`, `CHANNELS.length`, `PERKS`.
 - The founder's note (`FounderNote.tsx`) is Griffin's own words. Present it,
-  don't rewrite it.
+  don't rewrite it. The front page shows its opening (`<FounderNote excerpt />`,
+  the first three paragraphs untouched); `/about` shows all of it.
 - The obscurity dial really runs **3–5: niche / obscure / deep cut**, with a
   hard floor in `/api/recs`. Never describe it as including crowd-pleasers.
 
@@ -98,10 +109,15 @@ error in §7.
 | `src/lib/tape.ts`, `member-no.ts`, `genre-dots.ts` | Stripe colour per tape, card number per member, video-store genre colours. |
 
 ### Web — screens
-- **Landing** (`Landing.tsx`): projector hero → ticker → green band → double
-  feature (The Deal / The Greenlight) → how a film gets made (5 frames + live
-  fund bar) → playable ballot → Theatre channel guide → house picks → founder's
-  note as a director's statement → two doors → Q&A → last call → rolling credits.
+- **Landing** (`Landing.tsx`), condensed: projector hero (headline, a
+  one-sentence gloss under each half, an admission board beside it) → ticker →
+  The Deal beside the dial demo, with the three public games as door plates →
+  The Greenlight beside the playable ballot, then five caption-only frames and
+  the live fund bar → Theatre channel guide → house picks → the opening of the
+  founder's letter → two doors → four-question Q&A → last call → credits.
+  About 1,100 words, down from 2,187; 9.7 desktop screens, down from 13.2.
+- **Detail pages** the front page links to: `/deal` (how the programming
+  works — new), `/about` (the founder's letter, whole — new), `/fund`, `/vote`.
 - **Public pages**: `/fund` (incl. concession-board perks + credit roll),
   `/vote`, `/submit`, legal, and the doorways `/login`, `/reset`, `/seated`,
   `/unsubscribe`.
@@ -221,5 +237,10 @@ NEXT_TELEMETRY_DISABLED=1 npx next build    # stop `next dev` first; rm -rf .nex
 - The live site (thedeepcut.xyz) has lagged the branch — the owner has sent
   screenshots of copy that was already fixed. Check the branch before
   "fixing" something from a screenshot.
+- The $150 lifetime line used to sit in the hero and again under "how a film
+  gets made". It now appears once, under the last call. Where it is shown is
+  the owner's call — it was moved to keep the first screen to the pitch.
+- The rating band (`RatingBand`) is off the front page; it cost a full screen
+  between the hero and the first feature. It is still used inside the app.
 - `SettingsScreen.tsx` contains two different monthly prices ($4.99 in a
   comment, $3.99 on the button). Not touched; no price is quoted in new copy.

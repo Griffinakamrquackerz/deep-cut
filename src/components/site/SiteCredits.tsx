@@ -42,10 +42,12 @@ export default function SiteCredits({ quiet = false }: { quiet?: boolean }) {
         </p>
         {!quiet && (
           <nav aria-label="Footer" className="lp-credits-nav">
+            <Link href="/deal">The Deal</Link>
             <Link href="/tv">The Theatre</Link>
             <Link href="/fund">The Fund</Link>
             <Link href="/vote">The Ballot</Link>
             <Link href="/submit">Submit a film</Link>
+            <Link href="/about">About</Link>
             <Link href="/login">Sign in</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>

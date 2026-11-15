@@ -109,7 +109,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
           disabled={busy}
           className={`${compact ? "" : "pulse-cta"} shrink-0 rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-60`}
         >
-          {busy ? "…" : "🎟 Get in line"}
+          {busy ? "…" : "Get in line"}
         </button>
       </div>
       {/* Honeypot — humans never see it; bots can't resist it. Named `hp`, not

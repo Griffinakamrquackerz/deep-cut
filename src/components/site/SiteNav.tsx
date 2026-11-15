@@ -9,8 +9,8 @@ import NavAuth from "./NavAuth";
 // links nowhere at all.
 
 const LINKS = [
-  { href: "/#deal", label: "The Deal" },
-  { href: "/#greenlight", label: "The Greenlight" },
+  { href: "/deal", label: "The Deal" },
+  { href: "/tv", label: "The Theatre" },
   { href: "/fund", label: "The Fund" },
   { href: "/vote", label: "The Ballot" },
   { href: "/submit", label: "Filmmakers" },
@@ -39,9 +39,9 @@ export default function SiteNav({
           <>
             <div className="lp-nav-links">
               {LINKS.map((l) => (
-                <a key={l.href} href={l.href}>
+                <Link key={l.href} href={l.href}>
                   {l.label}
-                </a>
+                </Link>
               ))}
             </div>
             <NavAuth cta={cta} />

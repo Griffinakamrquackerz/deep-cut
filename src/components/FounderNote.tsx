@@ -12,7 +12,7 @@ import { CHANNELS } from "@/lib/shorts";
 // Kept in Griffin's own words and his own order. The edits are grammar,
 // rhythm, and one added clause naming the Theatre — everything else is his.
 
-export default function FounderNote() {
+export default function FounderNote({ excerpt = false }: { excerpt?: boolean }) {
   return (
     <div className="mt-6 text-left">
       <div className="flex flex-col gap-3.5 border-l-2 border-ticket/50 pl-5">
@@ -41,6 +41,12 @@ export default function FounderNote() {
           <span className="text-amber">It&apos;s been proving me wrong ever since.</span>
         </p>
 
+        {/* The front page stops here. What follows is how the house and the
+            fund work, which that page says in its own sections; the whole
+            letter is at /about. Nothing above is cut or reworded for the
+            excerpt — it is the opening, as written. */}
+        {!excerpt && (
+          <>
         <p className="text-[1.02rem] leading-relaxed text-cream/90">
           Deep Cut is two things at once. It&apos;s an independent streaming
           platform — {CHANNELS.length} channels of award-winning short films, free,
@@ -77,6 +83,8 @@ export default function FounderNote() {
           counts toward the fund&apos;s perk tiers, including film credits at
           qualifying levels.
         </p>
+          </>
+        )}
       </div>
 
       {/* Signed. A letter without a name at the bottom is a press release. */}

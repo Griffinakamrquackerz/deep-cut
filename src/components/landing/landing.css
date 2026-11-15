@@ -80,13 +80,12 @@
 .lp-h2,
 .lp-bill-row b,
 .lp-ticker-track p,
-.lp-onesheet-title,
 .lp-stats dt,
 .lp-card h4,
 .lp-card-spine,
 .lp-frame-big,
 .lp-frame h3,
-.lp-rules b,
+.lp-frame h4,
 .lp-ch-name,
 .lp-door h3,
 .lp-faq summary,
@@ -619,15 +618,6 @@
     0 0 70px rgba(255, 150, 60, 0.35);
 }
 .lp-title .lp-title-gap { margin-top: 0.14em; }
-.lp-sub {
-  max-width: 37rem;
-  margin-top: clamp(1rem, 3.2cqi, 1.75rem);
-  font-size: clamp(0.98rem, 2.25cqi, 1.2rem);
-  line-height: 1.55;
-  color: rgba(255, 241, 214, 0.9);
-  text-shadow: 0 0 18px rgba(255, 214, 150, 0.22);
-}
-.lp-sub strong { font-weight: 600; color: var(--lp-light); }
 
 /* ── Box office ───────────────────────────────────────────────────────── */
 .lp-cta {
@@ -995,26 +985,16 @@
   }
   .lp-double-head .lp-lede { margin-top: 0; }
 }
-.lp-bills {
-  position: relative;
-  display: grid;
-  gap: 1.5rem;
-  margin-top: clamp(2.5rem, 5vw, 4rem);
-}
-@media (min-width: 900px) {
-  .lp-bills { grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 3vw, 2.75rem); }
-}
-/* "PLUS!" — the starburst between two halves of a double bill. */
+/* "PLUS!" — the starburst between two halves of a double bill. It sits on
+   the seam between the two feature sections, at every width. */
 .lp-plus {
-  position: absolute;
-  left: 50%;
-  top: 15.5rem;
+  position: relative;
   z-index: 3;
-  display: none;
+  display: grid;
   width: 6.4rem;
+  margin: -3.2rem auto;
   aspect-ratio: 1;
   place-items: center;
-  translate: -50% -50%;
   rotate: -10deg;
   background: var(--color-amber);
   color: var(--color-bg);
@@ -1032,40 +1012,6 @@
   font-size: 0.42rem;
   letter-spacing: 0.14em;
 }
-@media (min-width: 900px) { .lp-plus { display: grid; } }
-
-.lp-onesheet {
-  --tone: var(--color-amber);
-  --tone-rgb: 255, 180, 84;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid rgba(var(--tone-rgb), 0.32);
-  border-radius: 4px;
-  background: #130e0c;
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9), 0 0 0 6px #0f0b0a, 0 0 0 7px rgba(243, 233, 215, 0.08);
-  scroll-margin-top: calc(var(--lp-nav-h) + 1.5rem);
-}
-.lp-onesheet--green {
-  --tone: var(--color-ticket);
-  --tone-rgb: 228, 87, 61;
-}
-.lp-onesheet-art {
-  position: relative;
-  min-height: 15rem;
-  overflow: hidden;
-  padding: 1.4rem clamp(1.25rem, 3vw, 2.25rem) 1.6rem;
-  background: radial-gradient(120% 90% at 20% 0%, rgba(var(--tone-rgb), 0.28), transparent 65%), #17100d;
-  isolation: isolate;
-}
-.lp-onesheet-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(180deg, rgba(19, 14, 12, 0.35), rgba(19, 14, 12, 0.72) 55%, #130e0c);
-}
 .lp-wall {
   position: absolute;
   inset: -12% -8%;
@@ -1082,84 +1028,6 @@
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 2px;
-}
-.lp-onesheet-tag {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--tone);
-}
-.lp-onesheet-tag span:last-child {
-  border: 1px solid currentColor;
-  padding: 0.2rem 0.45rem;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-}
-.lp-onesheet-name {
-  margin-top: clamp(2.2rem, 5vw, 3.6rem);
-  font-family: var(--lp-serif);
-  font-style: italic;
-  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
-  line-height: 1;
-  color: var(--color-cream);
-}
-.lp-onesheet-title {
-  margin-top: 0.5rem;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(2.5rem, 5.4vw, 4.4rem);
-  line-height: 0.88;
-  letter-spacing: 0.01em;
-  color: var(--tone);
-  text-shadow: 0 0 34px rgba(var(--tone-rgb), 0.35);
-  text-wrap: balance;
-}
-.lp-onesheet-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: 0.25rem clamp(1.25rem, 3vw, 2.25rem) clamp(1.5rem, 3vw, 2.25rem);
-}
-.lp-onesheet-body > p {
-  font-size: 1.03rem;
-  line-height: 1.62;
-  color: rgba(243, 233, 215, 0.88);
-}
-.lp-onesheet-body > p strong { font-weight: 600; color: var(--color-cream); }
-.lp-points {
-  display: grid;
-  gap: 0.85rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--color-line);
-}
-.lp-points li {
-  display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--color-dim);
-}
-.lp-points li::before {
-  content: "✳";
-  font-family: var(--font-mono);
-  color: var(--tone);
-}
-.lp-points b { font-weight: 600; color: var(--color-cream); }
-.lp-onesheet-demo { margin-top: 1.75rem; }
-.lp-onesheet-foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem 1.6rem;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 1.75rem;
 }
 
 .lp-stats {
@@ -1188,53 +1056,6 @@
   color: var(--color-dim);
 }
 
-/* How the credits will read. */
-.lp-credit {
-  margin-top: 0.9rem;
-  border-radius: 6px;
-  padding: 1.6rem 1rem 1.7rem;
-  background: radial-gradient(90% 100% at 50% 0%, rgba(255, 236, 205, 0.07), transparent 70%), #080605;
-  text-align: center;
-  box-shadow: inset 0 0 0 1px rgba(243, 233, 215, 0.08);
-}
-.lp-credit-top {
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--color-dim);
-}
-.lp-credit dl { display: grid; gap: 0.95rem; margin-top: 1.2rem; }
-.lp-credit dt {
-  font-family: var(--lp-serif);
-  font-style: italic;
-  font-size: 0.98rem;
-  line-height: 1;
-  color: var(--color-dim);
-}
-.lp-credit dd {
-  margin-top: 0.25rem;
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--lp-light);
-  text-shadow: 0 0 18px rgba(255, 214, 150, 0.3);
-}
-.lp-credit dd.is-you {
-  color: var(--color-amber);
-  text-shadow: 0 0 20px rgba(255, 180, 84, 0.55);
-}
-.lp-credit dd.is-you::after {
-  content: "";
-  display: inline-block;
-  width: 0.5em;
-  height: 0.08em;
-  margin-left: 0.2em;
-  background: currentColor;
-  animation: blink 1s steps(1) infinite;
-}
 
 /* The dial demo */
 .lp-deal {
@@ -1414,7 +1235,8 @@
   color: var(--color-amber);
   text-shadow: 0 0 24px rgba(255, 180, 84, 0.3);
 }
-.lp-frame h3 {
+.lp-frame h3,
+.lp-frame h4 {
   margin-top: 0.35rem;
   font-family: var(--font-display);
   font-weight: 400;
@@ -1469,30 +1291,6 @@
   .lp-ballot { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: clamp(3rem, 6vw, 6rem); align-items: start; }
   .lp-ballot-copy { position: sticky; top: calc(var(--lp-nav-h) + 2rem); }
 }
-.lp-rules {
-  display: grid;
-  gap: 1.1rem;
-  margin-top: 2rem;
-}
-.lp-rules li {
-  display: grid;
-  grid-template-columns: 5.2rem minmax(0, 1fr);
-  gap: 1rem;
-  align-items: baseline;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--color-line);
-  font-size: 0.98rem;
-  line-height: 1.55;
-  color: var(--color-dim);
-}
-.lp-rules b {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.9rem;
-  line-height: 0.9;
-  color: var(--color-amber);
-}
-.lp-rules strong { font-weight: 600; color: var(--color-cream); }
 .lp-ballot-demo {
   position: relative;
   padding: 0.6rem;
@@ -1626,25 +1424,6 @@
 @media (min-width: 1000px) {
   .lp-founder-grid { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: clamp(3rem, 6vw, 6rem); align-items: start; }
   .lp-founder-copy { position: sticky; top: calc(var(--lp-nav-h) + 2rem); }
-}
-.lp-pull {
-  margin-top: 2rem;
-  font-family: var(--lp-serif);
-  font-style: italic;
-  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
-  line-height: 1.12;
-  color: var(--color-cream);
-  text-wrap: balance;
-}
-.lp-pull cite {
-  display: block;
-  margin-top: 1rem;
-  font-family: var(--font-mono);
-  font-style: normal;
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-dim);
 }
 /* A typed page, clipped to the press kit. The app's tokens are re-inked for
    paper so the note inside restyles itself — same trick as profile themes. */
@@ -2235,11 +2014,240 @@
 }
 
 /* The green band, sized for the wall, and the credit roll in the footer. */
-.lp-band {
-  max-width: 52rem;
-  margin: 0 auto clamp(3rem, 7vw, 5.5rem);
-}
 .lp-credits-roll {
   max-width: 34rem;
   margin: 0 auto clamp(2rem, 5vw, 3.5rem);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   The condensed front door.
+
+   The page says each thing once and sends the long version to its own page,
+   so what's here is layout for short copy next to something you can touch:
+   a headline with its own gloss, two features that each sit beside a working
+   demo, and a film strip whose frames are captions.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── The gloss: one sentence under each half of the headline ───────────
+   Projected, like the title above it. Two columns when the wall is wide
+   enough to hold them, so "Find" and "Fund" read as a pair. */
+.lp-gloss {
+  display: grid;
+  gap: 0.85rem 2rem;
+  max-width: 46rem;
+  margin-top: clamp(1.1rem, 3.6cqi, 2.1rem);
+}
+@container (min-width: 36rem) {
+  .lp-gloss { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.lp-gloss a {
+  display: block;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(255, 214, 150, 0.3);
+  text-decoration: none;
+  font-size: clamp(0.98rem, 2.3cqi, 1.18rem);
+  line-height: 1.5;
+  color: rgba(255, 241, 214, 0.92);
+  text-shadow: 0 0 18px rgba(255, 214, 150, 0.22);
+  transition: border-color 0.18s ease;
+}
+.lp-gloss a:hover { border-top-color: var(--color-amber); }
+.lp-gloss b {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+  text-shadow: 0 0 14px rgba(255, 180, 84, 0.5);
+}
+
+/* ── The admission board ───────────────────────────────────────────────
+   Same letterboard, new job: figure on the left, what it buys on the right. */
+.lp-bill-row--adm {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.lp-bill-row--adm b { display: block; color: var(--color-amber); font-size: 1.75rem; }
+.lp-bill-row--adm em { margin-top: 0; }
+.lp-bill-row--adm:hover b { color: var(--lp-light); }
+/* The board and the proof line say the same three things. Whenever the
+   board is up, the line stands down. */
+@media (min-width: 1000px) and (min-height: 760px) {
+  .lp-cta-proof { display: none; }
+}
+
+/* ── "More" — the way to the long version ──────────────────────────────
+   One look for every link that leaves the front page for a detail page, so
+   a reader learns once what it means. */
+.lp-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-cream);
+  border-bottom: 1px solid rgba(243, 233, 215, 0.35);
+  padding-bottom: 0.3rem;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.lp-more::after {
+  content: "→";
+  color: var(--color-amber);
+  transition: translate 0.18s ease;
+}
+.lp-more:hover { color: var(--color-amber); border-bottom-color: var(--color-amber); }
+.lp-more:hover::after { translate: 3px 0; }
+.lp-paper .lp-more { color: #2a1c15; border-bottom-color: rgba(42, 28, 21, 0.4); }
+.lp-paper .lp-more::after { color: #a8371d; }
+.lp-paper .lp-more:hover { color: #a8371d; border-bottom-color: #a8371d; }
+.lp-paper-more { margin-top: 1.5rem; padding-left: 1.25rem; }
+
+/* ── A feature: copy on one side, the thing itself on the other ──────── */
+.lp-feature {
+  --tone: var(--color-amber);
+  --tone-rgb: 255, 180, 84;
+}
+.lp-feature--green {
+  --tone: var(--color-ticket);
+  --tone-rgb: 228, 87, 61;
+}
+.lp-feature .lp-h2 em { color: var(--tone); }
+.lp-feature .lp-slate b { color: var(--tone); }
+.lp-feature-grid {
+  display: grid;
+  gap: 2.25rem;
+  align-items: center;
+}
+@media (min-width: 1000px) {
+  .lp-feature-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 5vw, 5.5rem);
+  }
+  .lp-feature-grid--flip > :first-child { order: 2; }
+}
+.lp-feature .lp-h2 { font-size: clamp(2.6rem, 6.4vw, 4.9rem); }
+.lp-feature .lp-stats { margin-top: 1.6rem; max-width: 34rem; }
+.lp-feature-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem 1.75rem;
+  margin-top: 1.9rem;
+}
+/* The demo's frame: a one-sheet's worth of border, with the poster wall
+   behind the glass. */
+.lp-feature-demo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(0.9rem, 2.4vw, 1.6rem);
+  border: 1px solid rgba(var(--tone-rgb), 0.32);
+  border-radius: 4px;
+  background: #130e0c;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9), 0 0 0 6px #0f0b0a, 0 0 0 7px rgba(243, 233, 215, 0.08);
+}
+.lp-feature-demo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 90% at 20% 0%, rgba(var(--tone-rgb), 0.2), transparent 60%), rgba(19, 14, 12, 0.74);
+}
+.lp-feature-demo .lp-deal { background: rgba(23, 18, 16, 0.94); }
+.lp-feature-demo--bare {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.lp-feature-demo--bare::after { content: none; }
+
+/* The three doors, as the plates they are on Tonight. */
+.lp-plates { margin-top: 1.75rem; max-width: 33rem; }
+.lp-plates-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.lp-plates-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.lp-plates .door-plate {
+  min-height: 3.9rem;
+  padding: 0.55rem 0.35rem;
+  font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+  text-decoration: none;
+  color: var(--color-cream);
+}
+.lp-plates .door-plate small { font-size: 0.46rem; letter-spacing: 0.14em; }
+@media (max-width: 420px) {
+  .lp-plates .door-plate small { display: none; }
+}
+
+/* ── The strip, with captions for frames ───────────────────────────── */
+.lp-how-block { margin-top: clamp(3.5rem, 8vw, 6rem); }
+.lp-how-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+.lp-how-block .lp-strip { margin-top: clamp(1.5rem, 3vw, 2.25rem); }
+.lp-frames--slim .lp-frame {
+  display: grid;
+  grid-template-columns: 6.4rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.75rem;
+  padding: 0.9rem 1.1rem 1rem;
+}
+.lp-frames--slim .lp-frame-no { display: none; }
+.lp-frames--slim .lp-frame-big { margin-top: 0; font-size: 2.1rem; }
+.lp-frames--slim .lp-frame h4 { margin-top: 0; font-size: 1.3rem; }
+@media (min-width: 1000px) {
+  .lp-frames--slim .lp-frame {
+    display: block;
+    min-height: 0;
+    padding: 1.1rem 1.15rem 1.5rem;
+  }
+  .lp-frames--slim .lp-frame-no { display: flex; }
+  .lp-frames--slim .lp-frame-big { margin-top: 0.9rem; font-size: clamp(2.4rem, 4vw, 3.1rem); }
+  .lp-frames--slim .lp-frame h4 { margin-top: 0.35rem; font-size: 1.45rem; }
+}
+
+/* ── The channel guide on a phone: a grid of names ─────────────────────
+   Fourteen two-line rows is a long way to thumb. The names are the guide;
+   the blurbs come back when there's a wall to put them on. */
+@media (max-width: 639px) {
+  .lp-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-ch { padding: 0.75rem 0.8rem 0.8rem; gap: 0.15rem 0.5rem; }
+  .lp-ch-name { font-size: 1.15rem; }
+  .lp-ch-blurb { display: none; }
+  .lp-ch-no { grid-row: auto; padding-top: 0.2rem; }
+  .lp-ch--cta { grid-column: span 2; padding-block: 1.1rem; }
+}
+
+/* Three across, for the detail page's doors. */
+@media (min-width: 900px) { .lp-doors--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lp-doors--3 .lp-door h3 { font-size: clamp(1.9rem, 3.2vw, 2.6rem); }
+
+/* Between a phone and a desk the projector stands beside the box office,
+   so the row wraps before it reaches the crate. */
+@media (min-width: 640px) and (max-width: 999px) {
+  .lp-cta-row { flex-wrap: wrap; max-width: min(26rem, 100% - 13rem); }
+  .lp-cta-row form { flex: 1 1 100%; }
 }

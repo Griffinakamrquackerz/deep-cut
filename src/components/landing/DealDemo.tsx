@@ -99,8 +99,7 @@ export default function DealDemo() {
       </div>
 
       <p className="lp-deal-note">
-        Drag the dial. This hand belongs to somebody else &mdash; yours is programmed from the films you
-        mark, with a note on every card.
+        Drag the dial. Your own hand is programmed from the films you mark.
       </p>
     </div>
   );
