@@ -168,7 +168,7 @@ export const PERKS: Perk[] = [
 ];
 
 
-/** The highest tier a total unlocks. Never null — a dollar clears the floor. */
+/** The highest tier a total unlocks, or null below the first tier. */
 export function tierFor(totalCents: number): Perk | null {
   let found: Perk | null = null;
   for (const p of PERKS) {

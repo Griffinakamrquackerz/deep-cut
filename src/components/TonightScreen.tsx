@@ -20,6 +20,7 @@ import { SERVICES, type Service } from "@/lib/services";
 import { VIBES, vibeByKey } from "@/lib/vibes";
 import { gemLabel } from "@/lib/gem";
 import { byRecommendationPreference } from "@/lib/recommendation-quality";
+import { FREE_DEALS_PER_WINDOW, FREE_DEAL_WINDOW_HOURS, PREMIUM_DEALS_PER_DAY } from "@/lib/deal-limits";
 import RatingBand from "@/components/house/RatingBand";
 
 interface RecRow {
@@ -124,11 +125,11 @@ export default function TonightScreen({
       });
       if (res.status === 429) {
         const data = await res.json().catch(() => null);
-        setMessage(
-          data?.premium === false
-            ? "That's your 10 free deals today. 🥂 Balcony Seats gets 30 a day and zero ads — 30 days free in Settings."
-            : "You've hit today's deal limit — back tomorrow.",
-        );
+        const reset = typeof data?.resetsAt === "string" ? new Date(data.resetsAt) : null;
+        const resetText = reset && Number.isFinite(reset.getTime()) ? ` Your next window starts ${reset.toLocaleString()}.` : "";
+        setMessage(data?.premium === false
+          ? `That's your ${FREE_DEALS_PER_WINDOW} free deals for this ${FREE_DEAL_WINDOW_HOURS}-hour window.${resetText} 🥂 Balcony Seats gets ${PREMIUM_DEALS_PER_DAY} a day and zero ads — 30 days free in Settings.`
+          : "You've hit today's deal limit — back tomorrow.");
       } else if (!res.ok) {
         const data = await res.json().catch(() => null);
         const detail = data?.error ? `: ${String(data.error).slice(0, 200)}` : "";
@@ -147,8 +148,8 @@ export default function TonightScreen({
           ].filter(Boolean);
           setMessage(
             tight.length
-              ? `No qualifying films matched ${tight.join(" + ")} on this pass. This attempt didn't count against your daily limit.`
-              : "The house came up empty on this pass. Untouched picks can return; try again in a moment (this attempt didn't count against your daily limit).",
+              ? `No qualifying films matched ${tight.join(" + ")} on this pass. This attempt didn't count against your deal limit.`
+              : "The house came up empty on this pass. Untouched picks can return; try again in a moment (this attempt didn't count against your deal limit).",
           );
           setWidenable(useMine);
         } else {

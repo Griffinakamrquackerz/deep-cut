@@ -69,17 +69,17 @@ export default function FundPage() {
                 {
                   big: "$1+",
                   t: "You support",
-                  d: `Optional points purchases start at $1. Paid subscriptions count too. ${share}% goes into the fund; the other ${100 - share}% keeps the lights on, licenses shorts, and covers post and delivery.`,
+                  d: `Points purchases start at $1, including to skip the waitlist. Paid subscriptions count too. ${share}% is allocated to the fund, rounded down to the cent; the rest supports the house.`,
                 },
                 {
                   big: money(goal),
                   t: "The fund fills",
-                  d: `The bar above is live. Nothing gets commissioned until it clears $${(goal / 100).toLocaleString("en-US")}, because half a film is no film.`,
+                  d: `The bar above is live. The goal before commissioning is $${(goal / 100).toLocaleString("en-US")}.`,
                 },
                 {
                   big: "Ballot",
                   t: "We read, you choose",
-                  d: "Every pitch gets read and every reel gets watched. Only films that can actually be made reach the ballot. You spend your votes across the slate; most votes takes the money.",
+                  d: "Every pitch gets read and every reel gets watched. Members spend votes across the slate; the house confirms the winner after voting.",
                 },
               ].map((s, i) => (
                 <li key={s.t} className="lp-frame" data-reveal="rise" style={{ "--i": i } as React.CSSProperties}>
@@ -109,7 +109,7 @@ export default function FundPage() {
               <p>Put in $40, you hold 40 votes.</p>
               <p>
                 Your votes are a <strong>budget</strong>. Put all of them behind one pitch, or split them
-                across three. Splitting them says which one you&apos;d take if your first choice loses.
+                across the slate. Votes aren&apos;t automatically transferred between films.
               </p>
               <p>
                 Paid subscription charges and optional points purchases both count toward your current-round
@@ -238,7 +238,7 @@ export default function FundPage() {
               },
               {
                 q: "What if the fund never fills?",
-                a: "Then nothing gets commissioned and the fund keeps growing. Subscriptions pay for membership; points purchases are optional. The fund is an allocation, not money held in escrow against a film that might not happen.",
+                a: "The fund keeps growing toward its commissioning goal. Subscriptions pay for membership; points purchases are optional. The fund is an allocation, not money held in escrow against a film that might not happen.",
               },
               {
                 q: "Who decides which pitches make the ballot?",
@@ -250,7 +250,7 @@ export default function FundPage() {
               },
               {
                 q: `Does ${money(goal)} actually finish a film?`,
-                a: "It shoots one — roughly fifteen to eighteen days with a real crew, a modest cast and controlled locations. Post is separate, and it's where crowd-funded films usually die: sound mix, colour, music clearance, E&O insurance and delivery all cost money after the wrap party, and a film without them legally cannot be shown anywhere. So the goal covers production, and the house covers post and delivery out of its 40%. Nobody gets handed a finished film they can't release.",
+                a: `The plan is to shoot with a real crew, a modest cast and controlled locations. Post is separate: sound mix, colour, music clearance, E&O insurance and delivery all cost money after the wrap party. The goal covers production, and the house plans to cover post and delivery from the remaining ${100 - share}%.`,
               },
               {
                 q: "Where does the other 40% go?",

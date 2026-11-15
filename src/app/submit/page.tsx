@@ -95,8 +95,8 @@ export default async function SubmitPage({
                 </li>
                 <li>
                   <span>
-                    Members vote on those {slots}. The one with the most votes gets financed — {goal} and
-                    up — and premieres here as a Deep Cut Original.
+                    Members vote on those {slots}. The house confirms the winner, with a funding goal of
+                    {" "}{goal} and up for a Deep Cut Original.
                   </span>
                 </li>
               </ol>
@@ -118,16 +118,16 @@ export default async function SubmitPage({
                 <p>
                   {raised ? (
                     <>
-                      The fund holds <strong className="lp-amber">{raised}</strong> of {goal} right now.
-                      Nothing gets commissioned until it clears that.
+                      The fund has allocated <strong className="lp-amber">{raised}</strong> toward
+                      the {goal} commissioning goal.
                     </>
                   ) : (
-                    <>The fund is still filling, and nothing gets commissioned until it clears {goal}.</>
+                    <>The fund is still filling toward its {goal} commissioning goal.</>
                   )}
                 </p>
                 <p>
                   So: we read everything as it arrives, and if yours makes the slate you&apos;ll know. But{" "}
-                  <strong>the film doesn&apos;t get made until the fund fills</strong>, and that could be a
+                  <strong>the fund has a goal to reach before commissioning</strong>, and that could be a
                   long wait. We&apos;d rather you knew that now than after.
                 </p>
                 <p style={{ color: "var(--color-dim)" }}>

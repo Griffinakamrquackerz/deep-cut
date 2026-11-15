@@ -60,7 +60,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
           <>
             <p className="font-display text-2xl text-amber">YOU&apos;RE ALREADY ON THE LIST ★</p>
             <p className="mt-1 text-sm text-cream">
-              Check your inbox — your ticket&apos;s been sent (peek in spam if it&apos;s hiding).
+              You&apos;ve been approved. Check your inbox for your ticket, including spam.
             </p>
           </>
         ) : (
@@ -77,7 +77,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
                   : "You were already in line — this is your spot, unchanged."}
             </p>
             <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-widest text-dim">
-              We seat a new row daily · your ticket arrives by email when it&apos;s your turn
+              Your ticket arrives by email when it&apos;s your turn
             </p>
           </>
         )}
@@ -126,7 +126,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
       />
       {error && <p className="text-center font-mono text-[0.65rem] text-ticket">{error}</p>}
       <p className="text-center font-mono text-[0.6rem] uppercase tracking-widest text-dim">
-        Invite-only · a new row is seated daily
+        Join the waitlist free · or skip it by buying points
       </p>
     </form>
   );

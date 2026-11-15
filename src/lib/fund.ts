@@ -166,6 +166,32 @@ export interface FundProgress {
   backers: number;
 }
 
+type ContributionRow = { gross_cents: number; fund_cents: number; user_id: string };
+
+async function contributionRows(db: SupabaseClient, cycle: string, userId?: string): Promise<ContributionRow[]> {
+  async function read(scoped: boolean): Promise<ContributionRow[]> {
+    const rows: ContributionRow[] = [];
+    for (;;) {
+      let query = db.from("fund_contributions")
+        .select("id, gross_cents, fund_cents, user_id", { count: "exact" })
+        .eq("cycle", cycle);
+      if (userId) query = query.eq("user_id", userId);
+      if (scoped) query = query.eq("currency", fundCurrency());
+      const { data, error, count } = await query.order("id").range(rows.length, rows.length + 499);
+      if (error) {
+        if (scoped && error.code === "42703") return read(false);
+        throw new Error(`fund ledger unreadable: ${error.message}`);
+      }
+      if (!data || count == null || (data.length === 0 && rows.length < count)) {
+        throw new Error("fund ledger read incomplete");
+      }
+      rows.push(...data);
+      if (rows.length >= count) return rows;
+    }
+  }
+  return read(true);
+}
+
 /**
  * Throws when the ledger can't be read, and that matters.
  *
@@ -179,28 +205,7 @@ export async function fundProgress(db: SupabaseClient): Promise<FundProgress> {
   const cycle = currentCycle();
   const goal = goalCents();
 
-  // Two attempts, and the fallback is deliberate rather than lazy: selecting a
-  // column migration 0024 hasn't added yet is an error, and the first read
-  // failing must not take the bar off a public page during the window between
-  // deploy and somebody running SQL. Every existing row is in the fund's
-  // currency anyway, so the fallback total is correct — it just can't prove it.
-  let rows: Array<{ fund_cents: number; user_id: string }>;
-  const scoped = await db
-    .from("fund_contributions")
-    .select("fund_cents, user_id")
-    .eq("cycle", cycle)
-    .eq("currency", fundCurrency());
-
-  if (scoped.error) {
-    const all = await db
-      .from("fund_contributions")
-      .select("fund_cents, user_id")
-      .eq("cycle", cycle);
-    if (all.error) throw new Error(`fund ledger unreadable: ${all.error.message}`);
-    rows = (all.data ?? []) as Array<{ fund_cents: number; user_id: string }>;
-  } else {
-    rows = (scoped.data ?? []) as Array<{ fund_cents: number; user_id: string }>;
-  }
+  const rows = await contributionRows(db, cycle);
 
   const raised = rows.reduce((sum, r) => sum + (Number(r.fund_cents) || 0), 0);
 
@@ -223,29 +228,7 @@ export interface MyStanding {
 
 export async function myStanding(db: SupabaseClient, userId: string): Promise<MyStanding> {
   const cycle = currentCycle();
-  // Same two-attempt shape as fundProgress, and for the same reason. Votes
-  // must not be earned by a foreign-currency contribution counted as if it
-  // were dollars — a €25 payment is more money than $25 and would otherwise
-  // buy the same 25 votes.
-  let paid: Array<{ gross_cents: number }>;
-  const scoped = await db
-    .from("fund_contributions")
-    .select("gross_cents")
-    .eq("user_id", userId)
-    .eq("cycle", cycle)
-    .eq("currency", fundCurrency());
-
-  if (scoped.error) {
-    const all = await db
-      .from("fund_contributions")
-      .select("gross_cents")
-      .eq("user_id", userId)
-      .eq("cycle", cycle);
-    if (all.error) throw new Error(`fund ledger unreadable: ${all.error.message}`);
-    paid = (all.data ?? []) as Array<{ gross_cents: number }>;
-  } else {
-    paid = (scoped.data ?? []) as Array<{ gross_cents: number }>;
-  }
+  const paid = await contributionRows(db, cycle, userId);
 
   const given = paid.reduce((sum, r) => sum + (Number(r.gross_cents) || 0), 0);
   const points = pointsFor(given);

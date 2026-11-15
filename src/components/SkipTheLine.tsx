@@ -20,16 +20,14 @@ import { haptic } from "@/lib/sfx";
 // has actually arrived. So mashing this button costs nothing and grants
 // nothing.
 
-/** The rungs on offer. Chosen to line up with the credit tiers, not invented
- *  for this widget — the third one is where your name goes on the picture. */
-const AMOUNTS = [500, 2_500, 10_000];
+const AMOUNTS = [100, 500, 2_500, 10_000];
 
 const money = (cents: number) => `$${Math.floor(cents / 100)}`;
 
 export default function SkipTheLine({ email: initialEmail = "" }: { email?: string }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(initialEmail);
-  const [cents, setCents] = useState(2_500);
+  const [cents, setCents] = useState(100);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,8 +81,8 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
     >
       <p className="eyebrow text-ticket">Skip the line</p>
       <p className="mt-1.5 text-[0.8rem] leading-relaxed text-cream">
-        Buy points and we&apos;ll seat you tonight. Your ticket email
-        lands within a minute of paying.
+        Buy points from $1 to skip the waitlist. Your ticket email and votes
+        follow after payment is confirmed. Purchases over $5 also add 30 days of premium.
       </p>
 
       <div className="mt-3 flex gap-1.5" role="group" aria-label="Amount">
@@ -109,11 +107,11 @@ export default function SkipTheLine({ email: initialEmail = "" }: { email?: stri
           name and the vote count are both real — this is the same ledger the
           Fund page describes, not a separate "queue fee". */}
       <p className="mt-2 font-mono text-[0.6rem] leading-relaxed text-dim">
-        {tier ? <span className="text-amber">{tier.name}</span> : null}
+        {tier ? <span className="text-amber">{tier.name}</span> : <span>Perk tiers start at $5</span>}
         {tier?.credit ? ` · credited as ${tier.credit}` : null}
         <br />
         {Math.floor(cents / 100)} points · {Math.floor(cents / 100)} votes ·{" "}
-        {premiumMonthsFor(cents) ? "30 days of premium · " : ""}60% into the Fund
+        {premiumMonthsFor(cents) ? "30 days of premium · " : ""}supports the Fund
       </p>
 
       <input

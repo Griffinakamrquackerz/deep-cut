@@ -40,10 +40,10 @@ subdirectory as the Vercel root.
 
 `LLM_API_KEY` (Groq), `TMDB_API_KEY`, `OMDB_API_KEY`,
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-`NEXT_PUBLIC_APP_URL`, `DAILY_REC_BATCHES`, `DAILY_PROFILE_REGENS`,
+`NEXT_PUBLIC_APP_URL`, `DAILY_PROFILE_REGENS`,
 `NEXT_PUBLIC_ADSENSE_CLIENT` (unset → house ads), `NEXT_PUBLIC_ENABLE_GOOGLE` (unset → no Google button),
 `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` (unset → premium storefront hidden),
-`DAILY_REC_BATCHES_FREE` (free-tier deal cap, default 10; premium uses `DAILY_REC_BATCHES`, default 30).
+Deal limits are fixed at 8 per 48-hour window for free members and 30 per day for premium; legacy `DAILY_REC_BATCHES` and `DAILY_REC_BATCHES_FREE` environment variables are ignored. A free window starts on the first deal attempt; empty or failed deals are refunded. Migration 0031 must be applied before deploying this limit.
 
 > **Rotate every key at handoff** (Supabase, Groq, TMDB, OMDb). At least one Groq key was
 > pasted in a chat once. Keys live in Vercel → deepcut → Settings → Environment Variables.
@@ -103,7 +103,7 @@ Migrations in `supabase/migrations/` (run by hand in the Supabase SQL editor):
 - **Premium ("Balcony Seats"):** monthly price is set by `STRIPE_PRICE_ID` in Stripe. Set `STRIPE_PRICE_ID_ANNUAL` to an active USD $39.99 yearly recurring price, plus applicable tax. New subscriptions have a 30-day trial, then renew until canceled; existing trials are unchanged. The optional $150 one-time lifetime offer is limited to 1,000 purchases, including recorded legacy purchases. Apply migrations 0026–0029 before deploying; configure an active one-time USD $150 `STRIPE_PRICE_ID_LIFETIME` and subscribe the webhook to `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, subscription lifecycle and invoice events. Reservations remain occupied until an expiry event is received; reconcile failed/missing events in Stripe before releasing a pending reservation. Buying lifetime does not cancel a subscription. Points are separate one-time purchases and paid support earns one vote per whole USD in the current round. Subscription invoices are credited when paid, not during the free trial. Each points purchase over $5 grants 30 days of premium, independently of subscription and lifetime access. Existing donation checkout sessions retain their original terms. Points and skip-line checkout use standard Stripe payments, not Managed Payments; the business is the merchant of record. Automatic tax calculation is not enabled for these purchases. Stripe payment eligibility and the tax classification for the mixed points/perks bundle remain unconfirmed; the business is responsible for determining applicable collection and remittance obligations. The annual membership product uses a personal-use SaaS category, which also needs review for the accompanying perks.
   (raw REST, no SDK; hand-rolled webhook signature verification), `src/lib/premium.ts`
   (users.premium_until with events fallback pre-0005), routes `/api/stripe/{checkout,webhook,portal}`,
-  storefront in Settings. Free = 10 deals/day + ads; premium = 30 deals/day, ad-free. Stripe
+  storefront in Settings. Free = 8 deals per 48-hour window + ads; premium = 30 deals/day, ad-free. Apply migration 0030 before deploying the wider vote-allocation limit. Stripe
   setup: create product/price, add the three env vars, point a webhook at
   `/api/stripe/webhook` with events `checkout.session.completed`,
   `customer.subscription.updated`, `customer.subscription.deleted`.

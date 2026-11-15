@@ -30,8 +30,7 @@ export default function SeatedPage() {
       }
       lede={
         <>
-          Payment went through and your seat is held. Your ticket link is on its way by email —
-          usually within a minute.
+          If your payment went through, we&apos;ll email your ticket link after Stripe confirms it.
         </>
       }
     >
@@ -62,8 +61,7 @@ export default function SeatedPage() {
               3
             </span>
             <span>
-              What you put in is already on the Fund&apos;s ledger, and the votes
-              it earned are waiting in your account.
+              Your payment and votes are added to your account after confirmation.
             </span>
           </li>
         </ul>

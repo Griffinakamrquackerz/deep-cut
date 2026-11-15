@@ -57,7 +57,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
   const ticker = [
     "Movies you haven't seen yet",
     `${channels} channels of award-winning shorts`,
-    `${share}% of every dollar funds an indie feature`,
+    `${share}% of paid support is allocated to the film fund`,
     "$1 = 1 vote",
     "Members pick what gets made",
     "Every pitch gets read",
@@ -100,7 +100,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               {lifetimeConfigured() && (
                 <p className="lp-cta-proof" style={{ marginTop: "0.9rem" }}>
                   <Link href="/settings" className="lp-link">
-                    $150 lifetime premium · first 1,000 lifetime buyers · plus applicable tax ↗
+                    $150 lifetime premium · first 1,000 lifetime buyers, when available · plus applicable tax ↗
                   </Link>
                 </p>
               )}
@@ -288,14 +288,14 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   <p>
                     Deep Cut is also an independent streaming platform: {channels} channels of award-winning
                     short films, free, running all night. And it works like a studio run by its audience.{" "}
-                    <strong>{share}% of every dollar members put in</strong> goes into a fund for an independent
+                    <strong>{share}% of paid support</strong> is allocated to a fund for an independent
                     filmmaker&apos;s feature.
                   </p>
                   <div className="lp-onesheet-demo">
                     <dl className="lp-stats">
                       <div>
                         <dt>{share}%</dt>
-                        <dd>of every dollar goes to the fund</dd>
+                        <dd>of paid support is allocated to the fund</dd>
                       </div>
                       <div>
                         <dt>$1 = 1</dt>
@@ -376,7 +376,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
             </p>
             {lifetimeConfigured() && (
               <p className="lp-lede" data-reveal="rise">
-                The first 1,000 lifetime buyers get premium access for a one-time $150 payment plus applicable tax.{" "}
+                When available, the first 1,000 lifetime buyers get premium access for a one-time $150 payment plus applicable tax.{" "}
                 <Link href="/settings" className="lp-link">See the lifetime offer</Link>
               </p>
             )}
@@ -387,12 +387,12 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   {
                     big: "Free",
                     t: "Take a seat",
-                    d: "Joining costs nothing. Supporting the house is optional, starts at a dollar, and is what earns you a say.",
+                    d: "Join the waitlist free, or buy points from $1 to skip it. Paid support earns you a say.",
                   },
                   {
                     big: `${share}%`,
                     t: "The pot fills",
-                    d: `${share}% of every dollar goes straight into the Indie Film Fund. Nothing is commissioned until it clears ${goal}, because half a film is no film.`,
+                    d: `${share}% of paid support is allocated to the Indie Film Fund, rounded down to the cent. The goal before commissioning is ${goal}.`,
                   },
                   {
                     big: "Pitch",
@@ -407,7 +407,7 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                   {
                     big: "Action",
                     t: "It gets shot",
-                    d: "Most votes takes the money. The film shoots, then premieres here as a Deep Cut Original, with its backers in the credits.",
+                    d: "After voting, the house confirms the winning pitch and plans its production once the fund reaches its goal.",
                   },
                 ].map((f, i) => (
                   <li key={f.t} className="lp-frame" data-reveal="rise" style={{ "--i": i } as React.CSSProperties}>
@@ -448,8 +448,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
                 A dollar is a vote. <span className="lp-serif">That&apos;s the whole rule.</span>
               </h2>
               <p className="lp-lede" data-reveal="rise">
-                Your votes are a budget. Go all in on the one you&apos;d fight for, or split them across three.
-                Splitting says which you&apos;d take if your first choice loses.
+                Your votes are a budget. Put them all on one pitch or split them across the slate.
+                Votes aren&apos;t automatically transferred between films.
               </p>
               <ul className="lp-rules">
                 <li>
@@ -668,9 +668,8 @@ export default function Landing({ posters, open = false }: { posters: string[]; 
               <details>
                 <summary>What if the fund never fills?</summary>
                 <p>
-                  Then nothing gets commissioned and the fund keeps growing. What you paid for is a membership
-                  &mdash; the Theatre, the recommendations, the whole house. Nothing is held in escrow against a
-                  film that might not happen.
+                  The fund keeps growing toward its goal. Subscriptions pay for membership; points purchases
+                  buy voting points. Nothing is held in escrow against a film that might not happen.
                 </p>
               </details>
               <details>

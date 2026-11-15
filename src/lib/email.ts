@@ -237,7 +237,7 @@ export function waitlistConfirmationHtml(position: number): string {
           </td></tr>
           <tr><td style="padding:18px 28px 4px;text-align:center;">
             <p style="margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#f3ead9;">
-              Your seat is saved. We seat a new row every day — when it's your turn,
+              Your place in line is saved. When it's your turn,
               a second email lands with your way in.
             </p>
             <p style="margin:14px 0 0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#b8ad9c;">

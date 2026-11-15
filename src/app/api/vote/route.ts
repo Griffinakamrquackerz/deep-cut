@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 const Input = z.object({
   // pitch id → votes. Anything at 0 or missing is a withdrawal.
-  allocation: z.record(z.string().uuid(), z.number().int().min(0).max(100_000)),
+  allocation: z.record(z.string().uuid(), z.number().int().min(0).safe()),
 });
 
 export async function POST(request: Request) {

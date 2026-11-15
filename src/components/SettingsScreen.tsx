@@ -11,6 +11,7 @@ import NotificationsToggle from "@/components/NotificationsToggle";
 import ProgrammeEmailToggle from "@/components/ProgrammeEmailToggle";
 import DeliveryAddress from "@/components/DeliveryAddress";
 import { isMuted, setMuted, sfxChime, sfxPop } from "@/lib/sfx";
+import { FREE_DEALS_PER_WINDOW, FREE_DEAL_WINDOW_HOURS, PREMIUM_DEALS_PER_DAY } from "@/lib/deal-limits";
 
 interface SignatureMovie {
   id: number;
@@ -672,7 +673,7 @@ function BalconySeats({
         <div className="mt-3 rounded border border-amber p-3">
           <p className="font-display text-xl text-amber">LIFETIME BALCONY — $150 ONCE</p>
           <p className="mt-1 font-mono text-[0.65rem] text-cream/90">
-            Premium access for the first 1,000 lifetime buyers · at least 150 votes in the current round.
+            When available: premium access for the first 1,000 lifetime buyers · at least 150 votes in the current round.
             Plus applicable tax.
             {hasCustomer ? " Buying lifetime does not cancel an existing subscription; manage it separately." : ""}
           </p>
@@ -691,7 +692,7 @@ function BalconySeats({
             {lifetime ? "🏛 LIFETIME BALCONY" : "🥂 YOU'RE IN THE BALCONY"}
           </p>
           <p className="font-mono text-[0.65rem] text-dim">
-            30 deals a day · zero ads
+            {PREMIUM_DEALS_PER_DAY} deals a day · zero ads
             {lifetime
               ? " · yours forever"
               : until
@@ -726,7 +727,8 @@ function BalconySeats({
         <>
           <p className="mt-1 font-display text-2xl text-amber">MOVE UP TO THE BALCONY</p>
           <ul className="mt-1 flex flex-col gap-0.5 font-mono text-[0.65rem] text-cream/90">
-            <li>🎟 30 deals a day (general admission gets 10)</li>
+            <li>🎟 {PREMIUM_DEALS_PER_DAY} deals a day (general admission gets {FREE_DEALS_PER_WINDOW} per {FREE_DEAL_WINDOW_HOURS} hours)</li>
+            <li>Free window starts with your first deal and resets {FREE_DEAL_WINDOW_HOURS} hours later.</li>
             <li>🚫 Zero ads, anywhere</li>
             <li>🥂 Member stamp on your card</li>
           </ul>

@@ -102,7 +102,7 @@ export default function LoginPage() {
           // people at the waitlist instead of showing a raw auth error.
           setError(
             /not allowed|disabled|signups/i.test(error.message)
-              ? "The house is invite-only right now. Join the waitlist on the front page — we seat a new row every day. 🎟"
+              ? "The house is invite-only right now. Join the waitlist on the front page, or buy points to skip it. 🎟"
               : friendly(error),
           );
         }

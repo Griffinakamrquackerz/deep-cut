@@ -3,7 +3,8 @@ import { currentUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dealRecs } from "@/lib/engine";
 import { regionFromRequest } from "@/lib/region";
-import { checkAndIncrement, refund, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib/rate-limit";
+import { checkAndIncrement, refund, reserveFreeDeal, refundFreeDeal, DAILY_LIMITS, FREE_REC_BATCHES } from "@/lib/rate-limit";
+import { FREE_DEAL_WINDOW_HOURS } from "@/lib/deal-limits";
 import { isPremium } from "@/lib/premium";
 import { RecBatchInput } from "@/lib/schemas";
 import { effectiveObscurity, MIN_LESS_SEEN_OBSCURITY } from "@/lib/obscurity";
@@ -143,6 +144,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const userId = user.id;
 
   const body = await request.json().catch(() => ({}));
   const parsed = RecBatchInput.safeParse(body ?? {});
@@ -153,32 +155,64 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
 
-  // General Admission gets FREE_REC_BATCHES/day; Balcony Seats gets the full
-  // house; the projectionist (admin) is never cut off — unlimited spins for
-  // testing the engine.
+  let reservation: { kind: "free"; windowStart: string } | { kind: "premium" } | null = null;
   if (!isAdminEmail(user.email)) {
     const premium = await isPremium(user.id);
-    const limit = premium ? DAILY_LIMITS.rec_batch : FREE_REC_BATCHES;
-    const allowed = await checkAndIncrement(user.id, "rec_batch", limit);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "rate_limited", limit: `${limit} deals/day`, premium },
-        { status: 429 },
-      );
+    if (premium) {
+      const allowed = await checkAndIncrement(user.id, "rec_batch", DAILY_LIMITS.rec_batch);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "rate_limited", limit: `${DAILY_LIMITS.rec_batch} deals/day`, premium },
+          { status: 429 },
+        );
+      }
+      reservation = { kind: "premium" };
+    } else {
+      try {
+        const free = await reserveFreeDeal(user.id);
+        if (!free.allowed) {
+          return NextResponse.json(
+            { error: "rate_limited", limit: `${FREE_REC_BATCHES} deals/${FREE_DEAL_WINDOW_HOURS} hours`, premium, resetsAt: free.resetsAt },
+            { status: 429 },
+          );
+        }
+        reservation = { kind: "free", windowStart: free.windowStart };
+      } catch (error) {
+        console.error("free deal quota unavailable", error);
+        return NextResponse.json({ error: "deal_limit_unavailable" }, { status: 503 });
+      }
     }
   }
 
+  async function refundReservation() {
+    if (reservation?.kind === "free") await refundFreeDeal(userId, reservation.windowStart);
+    if (reservation?.kind === "premium") await refund(userId, "rec_batch");
+  }
+
+  let recs;
   try {
     // Geo as the fallback region, so a member who has never opened Settings
     // still gets their own country's catalogue rather than America's.
-    const recs = await dealRecs(user.id, {
+    recs = await dealRecs(user.id, {
       ...parsed.data,
       region: regionFromRequest(request) ?? undefined,
     });
-    if (recs.length === 0) await refund(user.id, "rec_batch"); // empty deal = free
-    return NextResponse.json({ dealt: recs.length, recs });
   } catch (err) {
-    await refund(user.id, "rec_batch"); // errors shouldn't burn quota
+    try {
+      await refundReservation();
+    } catch (refundError) {
+      console.error("deal quota refund failed", refundError);
+      return NextResponse.json({ error: "deal_refund_failed" }, { status: 503 });
+    }
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
+  if (recs.length === 0) {
+    try {
+      await refundReservation();
+    } catch (error) {
+      console.error("deal quota refund failed", error);
+      return NextResponse.json({ error: "deal_refund_failed" }, { status: 503 });
+    }
+  }
+  return NextResponse.json({ dealt: recs.length, recs });
 }

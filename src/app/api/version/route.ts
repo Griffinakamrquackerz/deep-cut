@@ -12,7 +12,7 @@ import {
 
 // Deploy marker — bump BUILD when shipping a fix so the live version is
 // verifiable from outside (no more guessing whether a deploy has landed).
-const BUILD = "lifetime-1000-trial-30-v1";
+const BUILD = "free-48h-uncapped-votes-v1";
 
 export const dynamic = "force-dynamic";
 

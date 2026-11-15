@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SKIP_LINE_MIN_CENTS } from "../src/lib/stripe";
-import { PERKS, tierFor } from "../src/lib/perks";
+import { tierFor } from "../src/lib/perks";
 import { pointsFor, premiumMonthsFor } from "../src/lib/fund";
 
 // Skipping the line is a donation that happens to seat you, not a queue fee.
@@ -9,13 +9,11 @@ import { pointsFor, premiumMonthsFor } from "../src/lib/fund";
 // SkipTheLine widget starts lying to people at the moment they hand over money.
 
 describe("skip the line", () => {
-  it("cannot cost less than the lowest perk tier", () => {
-    // The widget prints a tier name next to whatever amount is selected. If the
-    // minimum dropped below the first rung, tierFor would return null and the
-    // smallest donation would silently be worth no tier at all.
-    const lowest = Math.min(...PERKS.map((p) => p.minCents));
-    expect(SKIP_LINE_MIN_CENTS).toBeGreaterThanOrEqual(lowest);
-    expect(tierFor(SKIP_LINE_MIN_CENTS)).not.toBeNull();
+  it("starts at $1 without claiming a perk tier below $5", () => {
+    expect(SKIP_LINE_MIN_CENTS).toBe(100);
+    expect(tierFor(SKIP_LINE_MIN_CENTS)).toBeNull();
+    expect(tierFor(499)).toBeNull();
+    expect(tierFor(500)).not.toBeNull();
   });
 
   it("earns the same votes as any other donation of the same size", () => {

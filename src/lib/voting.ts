@@ -97,20 +97,27 @@ export interface Tally {
 
 /** Where the round stands. Totals only — never who voted for what. */
 export async function tallies(db: SupabaseClient, roundId: string): Promise<Tally[]> {
-  const { data, error } = await db
-    .from("film_votes")
-    .select("pitch_id, votes, user_id")
-    .eq("round_id", roundId);
-
-  if (error) throw new Error(`votes unreadable: ${error.message}`);
-
   const byPitch = new Map<string, { votes: number; voters: Set<string> }>();
-  for (const r of (data ?? []) as Array<{ pitch_id: string; votes: number; user_id: string }>) {
-    const key = String(r.pitch_id);
-    const entry = byPitch.get(key) ?? { votes: 0, voters: new Set<string>() };
-    entry.votes += Number(r.votes) || 0;
-    entry.voters.add(String(r.user_id));
-    byPitch.set(key, entry);
+  let offset = 0;
+  for (;;) {
+    const { data, error, count } = await db.from("film_votes")
+      .select("pitch_id, votes, user_id", { count: "exact" })
+      .eq("round_id", roundId)
+      .order("user_id").order("pitch_id")
+      .range(offset, offset + 499);
+    if (error) throw new Error(`votes unreadable: ${error.message}`);
+    if (!data || count == null || (data.length === 0 && offset < count)) {
+      throw new Error("vote tally read incomplete");
+    }
+    for (const r of data) {
+      const key = String(r.pitch_id);
+      const entry = byPitch.get(key) ?? { votes: 0, voters: new Set<string>() };
+      entry.votes += Number(r.votes) || 0;
+      entry.voters.add(String(r.user_id));
+      byPitch.set(key, entry);
+    }
+    offset += data.length;
+    if (offset >= count) break;
   }
 
   return [...byPitch.entries()]
@@ -161,8 +168,13 @@ export async function castBallot(
   if (round.status !== "voting") return { ok: false, reason: "not_voting" };
 
   // The budget comes from the ledger, never from the request.
-  const standing = await myStanding(db, userId).catch(() => null);
-  const budget = standing?.points ?? 0;
+  let budget: number;
+  try {
+    budget = (await myStanding(db, userId)).points;
+  } catch (error) {
+    console.error("castBallot ledger read failed", error);
+    return { ok: false, reason: "failed" };
+  }
 
   const pitches = await pitchesFor(db, round.id).catch(() => []);
   const valid = new Set(pitches.map((p) => p.id));

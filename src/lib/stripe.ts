@@ -57,10 +57,9 @@ export const SUPPORT_MAX_CENTS = 99_999_999;
 /**
  * Floor for buying your way past the waitlist.
  *
- * Set to the Ticket Holder tier, so the cheapest thing you can do is also the
- * thing that gets you in tonight — one number to explain instead of two.
+ * The same minimum as a signed-in points purchase.
  */
-export const SKIP_LINE_MIN_CENTS = 500;
+export const SKIP_LINE_MIN_CENTS = SUPPORT_MIN_CENTS;
 
 /**
  * The currency every charge is created in.
@@ -107,7 +106,7 @@ export async function createSkipLineSession(opts: {
     "line_items[0][price_data][currency]": CHECKOUT_CURRENCY,
     "line_items[0][price_data][unit_amount]": String(cents),
     "line_items[0][price_data][product_data][name]":
-      "Deep Cut — digital voting points (seated tonight)",
+      "Deep Cut — digital voting points (skip the waitlist)",
     "line_items[0][price_data][product_data][description]":
       "Points for the current film ballot, with applicable perk tiers and premium access on qualifying purchases.",
     // The webhook keys off skip_line; email is how it knows who to seat, since

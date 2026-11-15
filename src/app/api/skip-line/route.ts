@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSkipLineSession, SKIP_LINE_MIN_CENTS } from "@/lib/stripe";
+import { createSkipLineSession, SKIP_LINE_MIN_CENTS, SUPPORT_MAX_CENTS } from "@/lib/stripe";
 
-// Donate and get seated tonight, without an account.
+// Buy points and skip the waitlist, without an account.
 //
 // Deliberately unauthenticated — needing to be signed in would defeat the
 // entire point, since being signed in is what this buys. Nothing is created
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 const Input = z.object({
   email: z.string().email().max(200),
-  amountCents: z.number().int().min(SKIP_LINE_MIN_CENTS).max(2_500_000),
+  amountCents: z.number().int().min(SKIP_LINE_MIN_CENTS).max(SUPPORT_MAX_CENTS),
 });
 
 export async function POST(request: Request) {

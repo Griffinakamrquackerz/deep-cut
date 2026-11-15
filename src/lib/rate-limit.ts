@@ -1,9 +1,8 @@
 import { supabaseAdmin } from "./supabase/admin";
+import { FREE_DEALS_PER_WINDOW, PREMIUM_DEALS_PER_DAY } from "./deal-limits";
 
 // Per-user daily caps. These are product guardrails, NOT cost limits — on the
 // free Groq/TMDB/OMDb tiers there's no dollar spend. Tune via env:
-//   DAILY_REC_BATCHES         (default 30) — premium "Deal me more" batches/day
-//   DAILY_REC_BATCHES_FREE    (default 10) — free-tier batches/day
 //   DAILY_PROFILE_REGENS      (default 10) — manual "refresh my profile"/day
 // Set a big number (e.g. 9999) for effectively unlimited on a personal instance.
 function envInt(name: string, fallback: number): number {
@@ -13,7 +12,7 @@ function envInt(name: string, fallback: number): number {
 
 export const DAILY_LIMITS = {
   profile_regen: envInt("DAILY_PROFILE_REGENS", 10),
-  rec_batch: envInt("DAILY_REC_BATCHES", 30), // Balcony Seats (premium)
+  rec_batch: PREMIUM_DEALS_PER_DAY,
   hot_take: envInt("DAILY_HOT_TAKES", 15),
   take_comment: envInt("DAILY_TAKE_COMMENTS", 60),
   taste_signal: envInt("DAILY_TASTE_SIGNALS", 200),
@@ -23,7 +22,28 @@ export const DAILY_LIMITS = {
 };
 
 /** Free-tier (General Admission) deal cap. */
-export const FREE_REC_BATCHES = envInt("DAILY_REC_BATCHES_FREE", 10);
+export const FREE_REC_BATCHES = FREE_DEALS_PER_WINDOW;
+
+export async function reserveFreeDeal(userId: string): Promise<{ allowed: boolean; windowStart: string; resetsAt: string }> {
+  const { data, error } = await supabaseAdmin().rpc("reserve_free_deal", {
+    p_user_id: userId,
+    p_limit: FREE_REC_BATCHES,
+  });
+  if (error || !Array.isArray(data) || data.length !== 1 ||
+      typeof data[0].allowed !== "boolean" || typeof data[0].window_start !== "string" ||
+      typeof data[0].resets_at !== "string") {
+    throw new Error(`free deal reservation failed: ${error?.message ?? "invalid response"}`);
+  }
+  return { allowed: data[0].allowed, windowStart: data[0].window_start, resetsAt: data[0].resets_at };
+}
+
+export async function refundFreeDeal(userId: string, windowStart: string): Promise<void> {
+  const { error } = await supabaseAdmin().rpc("refund_free_deal", {
+    p_user_id: userId,
+    p_window_start: windowStart,
+  });
+  if (error) throw new Error(`free deal refund failed: ${error.message}`);
+}
 
 export type LimitKind = keyof typeof DAILY_LIMITS;
 

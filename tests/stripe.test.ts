@@ -48,7 +48,7 @@ describe("verifyWebhookSignature", () => {
         userId: "user-1", email: "member@example.test", appUrl: "https://example.test",
         plan: "points", amountCents: 501,
       });
-      await createSkipLineSession({ email: "member@example.test", amountCents: 500, appUrl: "https://example.test" });
+      await createSkipLineSession({ email: "member@example.test", amountCents: 100, appUrl: "https://example.test" });
       const points = new URLSearchParams(fetchMock.mock.calls[0][1].body);
       const skip = new URLSearchParams(fetchMock.mock.calls[1][1].body);
       expect(points.get("metadata[plan]")).toBe("points");
@@ -58,6 +58,7 @@ describe("verifyWebhookSignature", () => {
       expect(points.get("managed_payments[enabled]")).toBe("false");
       expect(points.has("allow_promotion_codes")).toBe(false);
       expect(skip.get("metadata[points_purchase]")).toBe("1");
+      expect(skip.get("line_items[0][price_data][unit_amount]")).toBe("100");
       expect(skip.get("managed_payments[enabled]")).toBe("false");
     });
 
