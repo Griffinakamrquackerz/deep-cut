@@ -120,30 +120,45 @@ piece of work is mid-flight: the native port of "the rooms" (see §4).
 
 ## 4. In flight — do this first
 
-**`deep-cut-native/src/components/rooms.tsx` is written, typechecks, and is
-not imported anywhere yet.** It is the native port of `platform.css`:
+`deep-cut-native/src/components/rooms.tsx` is the native port of
+`platform.css`. It exports `MarqueeBoard`, `BoxOffice`, `Grille`, `VhsCase`,
+`CaseSticker`, `GenreDots`, `StampButton`, `ShelfLip`, `MemberCard`,
+`memberNo`, `PunchCard`, `FeltBoard`, `Cork`, `Pinned`, `PaperHead`,
+`ApplicationStrip`, `Dymo`, `BoothPlate`.
 
-`MarqueeBoard`, `BoxOffice`, `Grille`, `VhsCase`, `CaseSticker`, `GenreDots`,
-`StampButton`, `ShelfLip`, `MemberCard`, `memberNo`, `PunchCard`, `FeltBoard`,
-`Cork`, `Pinned`, `PaperHead`, `ApplicationStrip`, `Dymo`, `BoothPlate`.
+**Six screens are wired (commit `6267944`), four are not.** All of it
+typechecks. **None of the six has been looked at since being wired** — not on
+a device, not even in the web export. Screenshot them before trusting them,
+especially the box office's expanded state, the rental case at narrow
+widths, and the cream-on-cork takes.
 
-Wire it in, screen by screen, matching what the web now does:
+Done:
+
+| Native file | What landed |
+|---|---|
+| `src/app/(tabs)/tonight.tsx` | `<MarqueeBoard>`; the controls inside `<BoxOffice glass={…}>` with `<Grille />` beside the summary and the deal button in the slot; the three games as door plates (Bebas, no emoji, tour refs intact). `message` / `dealDiagnostic` now sit *below* the booth. |
+| `src/components/RecCard.tsx` | `<VhsCase>`, `<CaseSticker>` for the gem label, `<GenreDots>` (genres no longer passed to `RatingLine`), three `<StampButton>`s, `<ShelfLip />`. |
+| `src/components/ProfileScreen.tsx` | `<MemberCard>` replaces the header row. |
+| `src/components/ProjectionistCard.tsx` | `<PunchCard>` replaces the track/fill bar. |
+| `src/app/(tabs)/community.tsx` | `<FeltBoard>`, fed by a new `FELT` const. |
+| `src/components/TakesWall.tsx` | `<Cork>` + `<Pinned index={i}>`; byline, take body and banter re-inked to `paperInk` / `paperDim`, take body set in the serif. |
+
+Still to do:
 
 | Native file | Change |
 |---|---|
-| `src/app/(tabs)/tonight.tsx` | Replace `<Slate>Tonight</Slate>` + `<Marquee>` with `<MarqueeBoard title="Movies you haven't seen yet" red="haven't seen" />`. Wrap the `wantCard` controls in `<BoxOffice glass={…tuner + expanded controls…}>{deal button}</BoxOffice>` with `<Grille />` beside the summary. Restyle the three `styles.chip` Pressables as door plates (keep their refs — the tour measures them): drop the emoji, Bebas label, the "★ GRIFF'S FAVORITE" badge stays. |
-| `src/components/RecCard.tsx` | Poster inside `<VhsCase>`; gem label as `<CaseSticker>` instead of `styles.stamp`; add `<GenreDots genres={m.genres} />` (and stop passing genres to `RatingLine` if that duplicates them); replace the three `Button`s with `<StampButton>` (amber/cream/dim, tilts −1.2 / 0.8 / −0.6, flex 1.25 / 1 / 0.95); `<ShelfLip />` as the card's last child, with the card's bottom padding removed. |
-| `src/components/ProfileScreen.tsx` | Replace the header row (avatar + name + handle + follows + action) with `<MemberCard id name handle accent={palette.amber} photo={<Avatar…/>} action={…} footnote={"N followers · following N · not transferable"} />`. |
-| `src/components/ProjectionistCard.tsx` | Replace the `track`/`fill` bar with `<PunchCard progress={stats.progress} note={"next: … at N reels"} />`. |
-| `src/app/(tabs)/community.tsx` | Replace `styles.viewChips` with `<FeltBoard items=[{feed,"Marquee","who's watching"},{takes,"Takes","the wall"},{people,"People","find them"},{inbox,"Inbox","for you"}] value={view} onChange={…} badges={{ inbox: unread }} />` — keep whatever the current `onPress` does (it clears unread on inbox). |
-| `src/components/TakesWall.tsx` | Wrap the list in `<Cork>` and each take in `<Pinned index={i}>`. Text inside must switch to `colors.paperInk` / `colors.paperDim` — the cards are cream. |
-| `src/app/(tabs)/settings.tsx` | Section `<Eyebrow>`s → `<Dymo>` (`tone="red"` where the eyebrow was ticket-coloured, `"amber"` where amber); bordered section cards → `<BoothPlate>`. |
-| `src/components/ReactionSheet.tsx` | Sheet background `colors.paper`, `<PaperHead left="Comment card" right="You watched" />`, text in paper ink. |
-| `src/app/(tabs)/mixtapes.tsx` (create view) | Name + recipient inputs sit on a cassette label (see web `.tape-face` / `.tape-write`; `CassetteFace` in `house.tsx` is the read-only version to copy the look from). Placeholder: "Name this tape…". |
-| `src/app/onboarding.tsx` | `<Eyebrow>Take N of 4 · …</Eyebrow>` → `<ApplicationStrip part={N} />`. |
-| `src/app/m/[id].tsx` | Optional: poster in a lit "NOW SHOWING" frame (plain Views; no laurels without SVG) + `<GenreDots>`. |
+| `src/app/(tabs)/settings.tsx` | The 10 section `<Eyebrow>`s → `<Dymo>` (`tone="red"` where the eyebrow was ticket-coloured, `"amber"` where amber); the `styles.card` sections → `<BoothPlate>`. |
+| `src/components/ReactionSheet.tsx` | `styles.sheet` background → `colors.paper`; `<Eyebrow>You saw {title}</Eyebrow>` → `<PaperHead left="Comment card" right="You watched" />` with the title in Bebas; chips and note text to paper ink. |
+| `src/app/(tabs)/mixtapes.tsx` (create view) | Name + recipient inputs on a cassette label (web: `.tape-face` / `.tape-write`; `CassetteFace` in `house.tsx` is the read-only version to copy). Placeholder: "Name this tape…". |
+| `src/app/onboarding.tsx` | `<Eyebrow>Take N of 4 · …</Eyebrow>` → `<ApplicationStrip part={N} />` (×4). |
 
-Then verify (recipe in §6), commit, push.
+Then verify (recipe in §6), commit, push. Afterwards run
+`npx tsc --noEmit --noUnusedLocals` and clear the styles the rewiring
+orphaned (`headerRow`, `idRow`, `name`, `handle`, `follows` in
+ProfileScreen; `track`, `fill`, `nextLine` in ProjectionistCard;
+`viewChip*` in community). Ignore the pre-existing `'React' is declared but
+never read` noise — that predates all of this.
+
 
 ## 5. After that — ideas not started
 
