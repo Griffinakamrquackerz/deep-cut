@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 
-// Fires a ticket-stub confetti burst whenever `trigger` changes.
-const BITS = ["🎟️", "🍿", "★", "◆", "🎬"];
+// Fires a burst of ticket stubs whenever `trigger` changes. The stubs are
+// drawn (see .confetti-bit) in the house's own three colours, so a member's
+// profile theme re-tints the celebration along with everything else.
+const BITS = ["amber", "ticket", "cream", "amber", "avail"];
 
 export default function Confetti({ trigger }: { trigger: number }) {
   const [burst, setBurst] = useState<number | null>(null);
@@ -26,15 +28,14 @@ export default function Confetti({ trigger }: { trigger: number }) {
         return (
           <span
             key={`${burst}-${i}`}
-            className="confetti-bit"
+            className={`confetti-bit confetti-bit--${bit}`}
             style={{
               left: `${left}%`,
               animationDelay: `${delay}s`,
               animationDuration: `${dur}s`,
+              rotate: `${(i * 47) % 360}deg`,
             }}
-          >
-            {bit}
-          </span>
+          />
         );
       })}
     </div>

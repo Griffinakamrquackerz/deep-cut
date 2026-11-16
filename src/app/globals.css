@@ -430,28 +430,6 @@ html {
     radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
 }
 
-/* Slot-machine reels — a vertical strip of symbols spun behind a fixed
-   window. Three at staggered speeds = a one-armed-bandit deal. */
-.reel-window {
-  display: inline-block;
-  height: 1em;
-  line-height: 1em;
-  overflow: hidden;
-  vertical-align: -0.12em;
-}
-.reel-strip {
-  display: flex;
-  flex-direction: column;
-  will-change: transform;
-  animation: reel-spin-v 0.42s linear infinite;
-}
-.reel-window:nth-child(2) .reel-strip { animation-duration: 0.53s; }
-.reel-window:nth-child(3) .reel-strip { animation-duration: 0.47s; }
-@keyframes reel-spin-v {
-  from { transform: translateY(0); }
-  to { transform: translateY(-50%); }
-}
-
 /* Lobby-card treatment: soft depth + amber footlights on hover. */
 .film-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%),
@@ -610,12 +588,23 @@ html {
   pointer-events: none;
   overflow: hidden;
 }
+/* A ticket stub: a short strip with a bite out of each end. */
 .confetti-bit {
   position: absolute;
   top: -8%;
-  font-size: 1.4rem;
+  width: 1.5rem;
+  height: 0.85rem;
+  border-radius: 2px;
+  background: var(--stub, var(--color-amber));
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent 0.2rem, #000 0.22rem) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 0.2rem, #000 0.22rem) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle at 0 50%, transparent 0.2rem, #000 0.22rem) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 0.2rem, #000 0.22rem) right / 51% 100% no-repeat;
   animation: confetti-fall 1.6s cubic-bezier(0.3, 0.5, 0.5, 1) forwards;
 }
+.confetti-bit--ticket { --stub: var(--color-ticket); }
+.confetti-bit--cream { --stub: var(--color-cream); }
+.confetti-bit--avail { --stub: var(--color-avail); }
 @keyframes confetti-fall {
   0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(112vh) rotate(720deg); opacity: 0.9; }
@@ -813,7 +802,6 @@ html {
   .reel-scratch,
   .cue-mark,
   .bulb-frame::before,
-  .reel-strip,
   .print-in,
   .reel-spin,
   .marquee-toast,
@@ -1081,45 +1069,6 @@ html {
     transparent 1px,
     transparent 3px
   );
-}
-
-/* ── The console's projector ───────────────────────────────────────────
-   The camera standing in the beam is drawn rather than photographed, because
-   a photograph of a hologram doesn't turn. Slow: a hologram spinning like a
-   rotisserie chicken reads as a toy, one turning like it's being examined
-   reads like a message someone left you. */
-.holo-spin {
-  animation: holo-spin 9s linear infinite;
-  transform-style: preserve-3d;
-}
-@keyframes holo-spin {
-  to { transform: rotateY(360deg); }
-}
-
-/* Unstable on purpose — the real ones never hold still. Steps rather than
-   eases: a hologram that fades smoothly in and out is a dimmer switch, one
-   that drops a frame and snaps back is a projection struggling to hold. */
-.holo-flicker { animation: holo-flicker 4.1s steps(1, end) infinite; }
-@keyframes holo-flicker {
-  0%, 5%, 9%, 26%, 30%, 48%, 53%, 71%, 76%, 100% { opacity: 0.92; }
-  6%, 8% { opacity: 0.34; }
-  7% { opacity: 0.72; }
-  27%, 29% { opacity: 0.55; }
-  49%, 52% { opacity: 0.28; }
-  50% { opacity: 0.8; }
-  72%, 75% { opacity: 0.6; }
-}
-
-/* The beam breathes on its own clock, so the two never sync into a pulse. */
-.holo-beam { animation: holo-beam 2.7s ease-in-out infinite; }
-@keyframes holo-beam {
-  0%, 100% { opacity: 0.85; }
-  50% { opacity: 0.5; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .holo-spin, .holo-flicker, .holo-beam { animation: none; }
-  .holo-flicker { opacity: 0.85; }
 }
 
 /* The tube's glass isn't flat — a soft vignette sells the curve. */

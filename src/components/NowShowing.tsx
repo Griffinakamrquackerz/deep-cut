@@ -101,56 +101,56 @@ export default function NowShowing() {
       href="/tv"
       data-usher="tv"
       aria-label={`Now showing ${film.title}. Open Deep Cut Theatre.`}
-      className="block rounded border border-line bg-surface p-3"
+      className="now-set"
     >
-      <p className="eyebrow text-amber">
-        📺 Now showing · CH {chNo} {ch ? ch.label : ""}
-      </p>
-
-      <div className="mt-2 flex gap-3">
-        {/* Crop by oversizing the photograph and sliding it: the box shows the
-            television and nothing else. */}
+      {/* Crop by oversizing the photograph and sliding it: the box shows the
+          television and nothing else. */}
+      <div
+        className="now-set-tube"
+        style={{
+          backgroundImage: `url(${scene.image})`,
+          backgroundSize: `${100 / card.w}% ${100 / card.h}%`,
+          backgroundPosition: `${(card.x / (1 - card.w)) * 100}% ${(card.y / (1 - card.h)) * 100}%`,
+        }}
+      >
+        {/* The film's own frame, over the photograph's blue screen. */}
         <div
-          className="relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-md bg-[#100c09]"
+          key={film.id}
+          className="deal-in absolute overflow-hidden bg-[#04050a]"
           style={{
-            backgroundImage: `url(${scene.image})`,
-            backgroundSize: `${100 / card.w}% ${100 / card.h}%`,
-            backgroundPosition: `${(card.x / (1 - card.w)) * 100}% ${(card.y / (1 - card.h)) * 100}%`,
+            left: `${inCard.x * 100}%`,
+            top: `${inCard.y * 100}%`,
+            width: `${inCard.w * 100}%`,
+            height: `${inCard.h * 100}%`,
+            backgroundImage: film.thumb ? `url(${film.thumb})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
           }}
         >
-          {/* The film's own frame, over the photograph's blue screen. */}
-          <div
-            key={film.id}
-            className="deal-in absolute overflow-hidden bg-[#04050a]"
-            style={{
-              left: `${inCard.x * 100}%`,
-              top: `${inCard.y * 100}%`,
-              width: `${inCard.w * 100}%`,
-              height: `${inCard.h * 100}%`,
-              backgroundImage: `url(${film.thumb})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            <span className="crt-scanlines absolute inset-0" />
-          </div>
+          <span className="crt-scanlines absolute inset-0" />
         </div>
+      </div>
 
-        <div className="flex min-w-0 flex-col justify-center gap-0.5">
-          <p className="font-display text-2xl leading-tight text-cream">
-            {film.title.toUpperCase()}
-          </p>
-          <p className="font-mono text-[0.65rem] text-dim">
-            {film.director} · {film.year} · {Math.round(film.runtimeSec / 60)} MIN
-          </p>
-          <p className="pedigree">
-            <Sprig />
-            <span className="line-clamp-2">{film.pedigree}</span>
-          </p>
-          <p className="mt-1 font-mono text-[0.65rem] tracking-wide text-ticket">
-            Pull up a beanbag →
-          </p>
-        </div>
+      <div className="now-set-body">
+        <p className="now-set-top">
+          <span>Now showing</span>
+          <em>On air</em>
+        </p>
+        <p className="now-set-title">{film.title}</p>
+        <p className="now-set-meta">
+          {film.director} · {film.year} · {Math.round(film.runtimeSec / 60)} MIN
+        </p>
+        <p className="pedigree">
+          <Sprig />
+          <span className="line-clamp-2">{film.pedigree}</span>
+        </p>
+        <p className="now-set-foot">
+          <b>
+            CH {chNo}
+            {ch ? ` · ${ch.label}` : ""}
+          </b>
+          <i>Pull up a beanbag</i>
+        </p>
       </div>
     </Link>
   );

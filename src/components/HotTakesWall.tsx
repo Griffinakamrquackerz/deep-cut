@@ -235,7 +235,7 @@ export default function HotTakesWall({
       {/* Composer */}
       {signedIn && (
         <div className="ticket-edge rounded bg-surface p-3">
-          <p className="eyebrow mb-2 text-ticket">🔥 Drop a take</p>
+          <p className="eyebrow mb-2 text-ticket">Drop a take</p>
           {!movieId &&
             (film ? (
               <button
@@ -245,7 +245,7 @@ export default function HotTakesWall({
                 }}
                 className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-amber"
               >
-                🎬 {film.title} {film.year ?? ""} <span className="text-dim">✕</span>
+                {film.title} {film.year ?? ""} <span className="text-dim">✕</span>
               </button>
             ) : (
               <div className="mb-2">
@@ -301,7 +301,7 @@ export default function HotTakesWall({
               disabled={!film || body.trim().length < 2 || posting}
               className="rounded bg-ticket px-4 py-2 font-mono text-xs font-medium uppercase tracking-widest text-cream disabled:opacity-40"
             >
-              {posting ? "Posting…" : "🔥 Post it"}
+              {posting ? "Posting…" : "Post it"}
             </button>
           </div>
         </div>

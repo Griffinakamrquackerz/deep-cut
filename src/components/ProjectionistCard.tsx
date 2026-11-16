@@ -62,7 +62,7 @@ export default function ProjectionistCard({
         </div>
       ) : (
         <p className="mt-3 font-mono text-[0.65rem] uppercase tracking-widest text-ticket">
-          ★ Top of the ladder — the archive is yours ★
+          Top of the ladder — the archive is yours
         </p>
       )}
 
@@ -92,7 +92,7 @@ export default function ProjectionistCard({
 
       {isMe && stats.next && (
         <p className="mt-2 text-center font-mono text-[0.6rem] text-dim">
-          deep cuts count double — crank the obscurity dial 🎚
+          deep cuts count double — turn the obscurity dial up
         </p>
       )}
     </div>

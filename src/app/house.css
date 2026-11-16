@@ -329,7 +329,9 @@
   font-size: 1.12rem;
   line-height: 1.22;
 }
-li:nth-child(even) > div > .shelf-talker { rotate: 0.7deg; }
+li:nth-child(even) > .shelf-talker,
+li:nth-child(even) > div > .shelf-talker { rotate: 0.5deg; }
+li:nth-child(even) > .shelf-talker:hover,
 li:nth-child(even) > div > .shelf-talker:hover { rotate: 0deg; }
 
 /* ── The tape ──────────────────────────────────────────────────────────

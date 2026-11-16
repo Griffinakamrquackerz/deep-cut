@@ -1,0 +1,599 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Deep Cut Theatre.
+
+   A television in a basement, and the things you'd have in your hand or
+   within reach while watching it: the remote, the listings card, and the
+   sleeve of whatever tape is in the machine. The room is a photograph and
+   stays one; everything else here is drawn, in the house's own materials.
+
+   The app is a phone-width column. On a desk this room steps out of it —
+   a film wants the width — and lays out as a set with the remote beside it.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.th {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.1rem 1rem 4rem;
+}
+.th-head { position: relative; }
+.th-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.th-back::before { content: "←"; color: var(--color-amber); }
+.th-back:hover { color: var(--color-cream); }
+.th-lede {
+  max-width: 36rem;
+  margin-top: 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-dim);
+}
+
+/* One tree, two layouts. On a phone the four pieces stack in the order a
+   thumb wants them — set, remote, card, guide — whichever column they were
+   written in. */
+.th-stage { display: flex; flex-direction: column; gap: 1rem; }
+.th-main,
+.th-side { display: contents; }
+.th-window,
+.th-main > [class*="rounded-2xl"] { order: 1; }
+.remote,
+.th-status { order: 2; }
+/* A handset, not a control desk: on a tablet's single column it keeps its
+   size and sits in the middle rather than stretching to the frame. */
+.remote { width: 100%; max-width: 30rem; align-self: center; }
+.th-now { order: 3; }
+.th-feature { order: 4; }
+.th-guide { order: 5; }
+
+@media (min-width: 1000px) {
+  .app-frame:has(.th) { max-width: 78rem; }
+  .th { gap: 1.75rem; padding: 2rem 2.75rem 5rem; }
+  .th-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(20rem, 1fr);
+    align-items: start;
+    gap: 1.75rem;
+  }
+  .th-main,
+  .th-side { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+  .remote { max-width: none; align-self: stretch; }
+}
+
+/* ── The window you watch through ──────────────────────────────────────
+   How far the room is pushed in belongs here, not in the component: --view
+   is the window's shape and --zoom is how many windows tall the room is
+   drawn. A phone gets a square close on the set; a desk gets a wide one. */
+.th-window {
+  --view: 1;
+  --zoom: 2.4;
+  position: relative;
+  aspect-ratio: var(--view);
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0b0806;
+  box-shadow:
+    0 0 0 1px #4a392f,
+    0 0 0 5px #17110e,
+    0 0 0 6px rgba(243, 233, 215, 0.07),
+    0 30px 50px -28px rgba(0, 0, 0, 0.95);
+}
+@media (min-width: 640px) {
+  .th-window { --view: 1.5; --zoom: 2.7; }
+}
+@media (min-width: 1000px) {
+  .th-window { --view: 1.6; --zoom: 2.9; }
+}
+.th-window-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 80% at 50% 48%, transparent 42%, rgba(0, 0, 0, 0.55) 100%);
+}
+/* Signed out: the same room, standing still, with the door in front of it. */
+.th-window--still {
+  --view: 1.25;
+  display: grid;
+  place-items: center;
+  background: url("/scene/room.jpg?v=3") 50% 52% / cover no-repeat;
+}
+@media (min-width: 640px) { .th-window--still { --view: 1.9; } }
+.th-window--still .th-window-vignette { background: rgba(8, 6, 5, 0.62); }
+.th-gate {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.th-gate-top {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  text-shadow: 0 0 22px rgba(255, 214, 150, 0.35);
+}
+.th-gate-line { margin-bottom: 0.4rem; font-size: 0.95rem; color: var(--color-cream); }
+
+/* Things pinned to the frame. They stay square while the room swings. */
+.th-chip {
+  position: absolute;
+  top: 0.65rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  background: rgba(12, 9, 8, 0.78);
+  border: 1px solid rgba(243, 233, 215, 0.16);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+}
+.th-chip svg { width: 0.85rem; height: 0.85rem; }
+.th-chip--tl { left: 0.65rem; }
+.th-chip--tr { right: 0.65rem; }
+.th-chip--hint { color: var(--color-dim); pointer-events: none; }
+button.th-chip:hover { border-color: var(--color-amber); }
+
+/* ── What the tube shows when there's no film in it ──────────────────── */
+/* The test card: bars, and the station's name on a plate. */
+.th-testcard {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.2em;
+  background:
+    linear-gradient(180deg, transparent 0 72%, #15110f 72% 100%),
+    linear-gradient(
+      90deg,
+      #b9b3a4 0 14.28%,
+      #b9a23c 14.28% 28.57%,
+      #3f9c95 28.57% 42.85%,
+      #4c9a4a 42.85% 57.14%,
+      #9a4a86 57.14% 71.42%,
+      #a8402c 71.42% 85.71%,
+      #2f4a8a 85.71% 100%
+    );
+  container-type: inline-size;
+  text-align: center;
+}
+.th-testcard span,
+.th-testcard small {
+  padding: 0.15em 0.6em;
+  background: #0d0a09;
+  font-family: var(--font-display);
+  font-size: clamp(0.6rem, 9cqi, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-light);
+}
+.th-testcard small {
+  font-family: var(--font-mono);
+  font-size: clamp(0.34rem, 3.6cqi, 0.9rem);
+  letter-spacing: 0.2em;
+  color: var(--color-amber);
+}
+/* A channel with nothing on it. */
+.th-snow {
+  display: grid;
+  place-items: center;
+  background:
+    repeating-radial-gradient(circle at 17% 32%, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 3px),
+    repeating-radial-gradient(circle at 71% 64%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 4px),
+    #1a1a1a;
+  animation: th-snow 0.5s steps(4) infinite;
+}
+@keyframes th-snow {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 37px 19px, -23px 41px, 0 0; }
+}
+.th-snow span {
+  padding: 0.2em 0.6em;
+  background: rgba(8, 8, 8, 0.8);
+  font-family: var(--font-mono);
+  font-size: clamp(0.4rem, 1.4vw, 0.7rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #d8d8d8;
+}
+
+/* ── The remote ────────────────────────────────────────────────────────
+   Graphite plastic, soft keys that sink when pressed, and a window at the
+   top that says where you are. A key for every channel: the lit one is the
+   channel you're on, and a dim one has nothing showing this month. */
+.remote {
+  border-radius: 22px;
+  padding: 0.95rem 0.95rem 0.85rem;
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(170deg, #2e2b29, #1c1a18 55%, #131110);
+  border: 1px solid #3f3a36;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
+    0 22px 34px -22px rgba(0, 0, 0, 0.95);
+}
+.remote-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+}
+.remote-power {
+  display: grid;
+  width: 2.9rem;
+  height: 2.9rem;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ff9a82, var(--color-ticket) 55%, #6e2010);
+  box-shadow: 0 4px 0 #3d120a, inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 0 4px #171514;
+  color: #fff4ea;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+}
+.remote-power svg { width: 1.3rem; height: 1.3rem; }
+.remote-power:active { transform: translateY(3px); box-shadow: 0 1px 0 #3d120a, inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 4px #171514; }
+.remote-power[aria-pressed="false"] { filter: saturate(0.35) brightness(0.7); }
+
+/* the window */
+.remote-lcd {
+  min-width: 0;
+  border-radius: 7px;
+  padding: 0.55rem 0.75rem 0.5rem;
+  background: linear-gradient(180deg, #0a0f0b, #0f1610);
+  box-shadow: inset 0 0 0 1px #000, inset 0 3px 10px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.07);
+  font-family: var(--font-mono);
+  color: #8fe6a2;
+  text-shadow: 0 0 9px rgba(126, 240, 160, 0.45);
+}
+.remote-lcd b {
+  display: block;
+  overflow: hidden;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.remote-lcd small {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  opacity: 0.78;
+}
+.remote-lcd small span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.remote-lcd small i { flex: none; font-style: normal; text-transform: uppercase; letter-spacing: 0.2em; color: var(--color-ticket); text-shadow: none; }
+.remote-lcd.is-off { color: #3c5a44; text-shadow: none; }
+
+.remote-label {
+  margin: 0.95rem 0 0.45rem 0.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #8a827a;
+}
+.remote-keys {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+.remote-key,
+.remote-fn button {
+  border-radius: 10px;
+  background: linear-gradient(180deg, #4a4542, #302c2a);
+  box-shadow: 0 3px 0 #0b0a09, inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: var(--color-cream);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+}
+.remote-key {
+  aspect-ratio: 1 / 0.86;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.remote-key:active,
+.remote-fn button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #0b0a09, inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.remote-key.is-empty { color: #8b837b; }
+.remote-key.is-on {
+  background: linear-gradient(180deg, #ffd08a, var(--color-amber));
+  box-shadow: 0 3px 0 #7c4f14, inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 16px rgba(255, 180, 84, 0.45);
+  color: #1c1307;
+}
+
+.remote-fn {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.42rem;
+  margin-top: 0.7rem;
+}
+.remote-fn button {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.15rem 0.45rem;
+  background: linear-gradient(180deg, #3a3633, #262321);
+  color: #d9d2c6;
+}
+.remote-fn svg { width: 1.15rem; height: 1.15rem; }
+.remote-fn span {
+  font-family: var(--font-mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #a39b91;
+}
+.remote-fn button:disabled { opacity: 0.4; }
+.remote-fn button.is-lit { color: var(--color-ticket); }
+.remote-fn button.is-lit span { color: var(--color-ticket); }
+.remote-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.85rem;
+  padding: 0 0.15rem;
+}
+.remote-brand b {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8f877e;
+}
+.remote-brand span {
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6f6861;
+}
+
+/* ── The card for the tape that's in ──────────────────────────────────── */
+.th-now {
+  border-radius: 6px;
+  padding: 1rem 1.1rem 1.1rem;
+  background: linear-gradient(180deg, rgba(255, 180, 84, 0.07), transparent 55%), var(--color-surface);
+  border: 1px solid #4a392f;
+  border-top: 3px solid var(--color-amber);
+}
+.th-now-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.th-now-top b { font-weight: 500; color: var(--color-ticket); }
+.th-now-title {
+  margin-top: 0.55rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 5vw, 2.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+  text-wrap: balance;
+}
+.th-now-meta {
+  margin-top: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--color-dim);
+}
+.th-now-syn { margin-top: 0.7rem; font-size: 0.93rem; line-height: 1.55; color: var(--color-cream); }
+.th-now-foot { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+.th-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  border-radius: 4px;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid #5b473a;
+  background: rgba(255, 241, 214, 0.03);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-cream);
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+}
+.th-btn:hover { border-color: var(--color-amber); }
+.th-btn:active { transform: translateY(1px); }
+.th-btn--amber { border-color: var(--color-amber); background: var(--color-amber); color: var(--color-bg); font-weight: 500; }
+.th-btn--amber:hover { filter: brightness(1.07); }
+
+/* ── The listings card ─────────────────────────────────────────────────
+   Number, name, a line about it, and how much is on. The channel you're
+   watching is marked the way a listing marks it. */
+.th-guide {
+  border-radius: 6px;
+  padding: 1rem 0.5rem 0.6rem;
+  background: var(--color-surface);
+  border: 1px solid #4a392f;
+}
+.th-guide-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1rem;
+  margin: 0 0.6rem 0.6rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-line);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.th-guide-top b { font-weight: 500; color: var(--color-cream); }
+.th-feature {
+  display: grid;
+  width: 100%;
+  gap: 0.2rem;
+  border-radius: 6px;
+  padding: 0.85rem 1rem 0.9rem;
+  text-align: left;
+  background: linear-gradient(90deg, rgba(228, 87, 61, 0.16), rgba(228, 87, 61, 0.03));
+  border: 1px solid rgba(228, 87, 61, 0.4);
+  transition: border-color 0.15s ease;
+}
+.th-feature:hover { border-color: var(--color-ticket); }
+.th-feature small {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-ticket);
+}
+.th-feature b {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-cream);
+}
+.th-feature span { font-family: var(--font-mono); font-size: 0.6rem; color: var(--color-dim); }
+.th-feature i {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-style: normal;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+}
+.th-feature i::after { content: "  →"; }
+.th-guide ol { display: grid; }
+@media (min-width: 1000px) {
+  .th-guide ol {
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--rows, 7), auto);
+    grid-auto-columns: minmax(0, 1fr);
+    column-gap: 0.5rem;
+  }
+}
+.th-ch {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+.th-ch:hover { background: rgba(255, 241, 214, 0.05); }
+.th-ch-no {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ticket);
+}
+.th-ch-body { display: grid; min-width: 0; gap: 0.1rem; }
+.th-ch-body b {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-cream);
+}
+.th-ch-body i {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: var(--color-dim);
+}
+.th-ch-count {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-dim);
+}
+.th-ch.is-empty .th-ch-body b { color: var(--color-dim); }
+.th-ch.is-empty .th-ch-count { opacity: 0.6; }
+.th-ch.is-on { background: rgba(255, 180, 84, 0.1); box-shadow: inset 3px 0 0 var(--color-amber); }
+.th-ch.is-on .th-ch-body b,
+.th-ch.is-on .th-ch-count { color: var(--color-amber); }
+.th-ch.is-on .th-ch-count::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--color-amber);
+  box-shadow: 0 0 8px var(--color-amber);
+}
+
+.th-status {
+  padding: 1.5rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--color-dim);
+}
+.th-status--bad { color: var(--color-ticket); }
+.th-foot {
+  max-width: 30rem;
+  margin: 0.5rem auto 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  line-height: 1.7;
+  color: var(--color-dim);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .th-snow { animation: none; }
+  .remote-key,
+  .remote-fn button,
+  .remote-power { transition: none; }
+  .remote-key:active,
+  .remote-fn button:active:not(:disabled),
+  .remote-power:active { transform: none; }
+}

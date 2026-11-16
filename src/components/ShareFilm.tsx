@@ -102,7 +102,7 @@ export default function ShareFilm({
             aria-expanded={open}
             className="flex-1 rounded border border-line px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-cream"
           >
-            🎞 Send to…
+            Send to…
           </button>
         )}
       </div>

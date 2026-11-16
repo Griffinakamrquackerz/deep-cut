@@ -90,7 +90,7 @@ export default function InstallPrompt({ compact = false }: { compact?: boolean }
           onClick={nativeInstall}
           className="pulse-cta mt-4 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
         >
-          ★ Install app ★
+          Install app
         </button>
       ) : platform === "ios" ? (
         <ol className="mt-4 flex flex-col gap-3">

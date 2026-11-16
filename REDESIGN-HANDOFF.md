@@ -38,6 +38,10 @@ error in §7.
    won't read"*. Condense it, send the long version to its own page, and
    make sure a visitor knows what Deep Cut is **in 15 seconds or less**.
 
+8. Then the inside of the app: *"a lot of the old look... most of it is out of
+   date"* — upgrade it, the movie deal area and the Theatre especially, and
+   make the remote look cleaner.
+
 ## 2. The rules that came out of that (treat as requirements)
 
 **Copy**
@@ -116,6 +120,22 @@ error in §7.
   the live fund bar → Theatre channel guide → house picks → the opening of the
   founder's letter → two doors → four-question Q&A → last call → credits.
   About 1,100 words, down from 2,187; 9.7 desktop screens, down from 13.2.
+- **The Theatre** (`/tv`, `src/app/tv/LateShow.tsx` + `theatre.css`): you
+  arrive in the chair (the lobby step and its canvas are gone). The room is
+  still the photograph and still pans; it is pushed in on the set, and how
+  far is CSS (`--zoom`, `--view` on `.th-window`). The remote is drawn —
+  `.remote`, a key per channel, an LCD line, five function keys — and sits
+  under the set on a phone, beside it on a desk. Guide (`.th-guide`), tape
+  card (`.th-now`), week's feature (`.th-feature`), test card and static for
+  an idle or empty tube. On a desk the page steps out of the phone column
+  (`.app-frame:has(.th)`). **The API still serves `scene.dash`** (the old
+  console photograph and its key boxes) because the native app reads it; the
+  web no longer does.
+- **Tonight's deal area**: Now Showing is a small set (`.now-set`); the box
+  office's controls are mood keys, a three-stop dial and a switch (`.bo-chip`,
+  `.bo-depth`, `.bo-switch`); the rental case has a bigger one-sheet with the
+  facts beside it and the clerk's card full width beneath. Dealing shows
+  drawn reels; the confetti is drawn ticket stubs.
 - **Detail pages** the front page links to: `/deal` (how the programming
   works — new), `/about` (the founder's letter, whole — new), `/fund`, `/vote`.
 - **Public pages**: `/fund` (incl. concession-board perks + credit roll),
@@ -245,5 +265,12 @@ NEXT_TELEMETRY_DISABLED=1 npx next build    # stop `next dev` first; rm -rf .nex
   the two features. The owner likes the band and found its earlier copy
   cheesy ("people who stay through the credits", "deep cuts only", and
   before that "may contain subtitles") — keep anything written on it plain.
+- Native Theatre still shows the old sci-fi console (`scene.dash` from
+  `/api/shorts`). The web remote is the model for replacing it.
+- The Theatre preview ran on placeholder Vimeo ids, so the frame around a
+  playing film is verified and a real film inside it is not.
+- Emoji were taken off buttons and headings across the signed-in app.
+  Reaction counters on the takes wall, toast icons, the streak badge and the
+  ratings tomato were left: those are icons doing a job, not decoration.
 - `SettingsScreen.tsx` contains two different monthly prices ($4.99 in a
   comment, $3.99 on the button). Not touched; no price is quoted in new copy.

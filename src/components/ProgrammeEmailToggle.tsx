@@ -52,7 +52,7 @@ export default function ProgrammeEmailToggle() {
       >
         <span className="text-left">
           <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-            ✉ Monthly programme
+            Monthly programme
           </span>
           <span className="font-mono text-[0.6rem] text-dim">
             the new bill, once a month — nothing else

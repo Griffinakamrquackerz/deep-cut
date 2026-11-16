@@ -15,10 +15,7 @@ export default function HouseDark({
 }) {
   return (
     <div className="ticket-edge ticket-stub rounded bg-surface/60 px-6 py-8 text-center">
-      <p className="text-3xl" aria-hidden>
-        🍿
-      </p>
-      <p className="neon-flicker mt-2 font-display text-2xl tracking-wide text-amber">{title}</p>
+      <p className="neon-flicker font-display text-2xl tracking-wide text-amber">{title}</p>
       {line && <p className="mt-1 text-sm text-dim">{line}</p>}
       <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-[0.3em] text-ticket">
         <span className="blink">●</span> be right back

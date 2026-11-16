@@ -35,7 +35,7 @@ export default function TrailerPlayer({
             onClick={() => setMuted(false)}
             className="absolute bottom-2 right-2 rounded bg-bg/85 px-2.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-amber"
           >
-            🔊 Tap for sound
+            Tap for sound
           </button>
         )}
       </div>

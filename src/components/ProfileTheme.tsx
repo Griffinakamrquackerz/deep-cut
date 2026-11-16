@@ -238,7 +238,7 @@ export default function ProfileTheme({
   if (!configured) {
     return isMe ? (
       <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-widest text-dim">
-        🎵 Profile music turns on once Spotify is connected.
+        Profile music turns on once Spotify is connected.
       </p>
     ) : null;
   }
@@ -315,7 +315,7 @@ export default function ProfileTheme({
 
           <div className="tt-meta min-w-0 flex-1">
             <span className="block font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
-              🎵 {playing ? "Now spinning" : ready ? "Tap to play the theme" : "Cueing the record…"}
+              {playing ? "Now spinning" : ready ? "Tap to play the theme" : "Cueing the record…"}
             </span>
             <span className="block truncate font-display text-sm text-cream">
               {match.name || `${filmTitle} — theme`}
@@ -397,7 +397,7 @@ function OwnerPicker({
         }}
         className="mt-1.5 font-mono text-[0.58rem] uppercase tracking-widest text-dim underline"
       >
-        {hasMatch ? "🔍 not it? pick your track" : "🔍 pick a theme for your profile"}
+        {hasMatch ? "Not it? Pick your track" : "Pick a theme for your profile"}
       </button>
     );
   }

@@ -243,9 +243,9 @@ export default function TonightScreen({
   const tuneSummary = useMemo(() => {
     const v = vibeByKey(vibe);
     return [
-      v ? `${v.emoji} ${v.label}` : "🎭 Any vibe",
-      "◆".repeat(depth) + "◇".repeat(5 - depth),
-      mineOnly ? "my platforms" : null,
+      v ? v.label : "Any vibe",
+      depth === 3 ? "Niche" : depth === 4 ? "Obscure" : "Deep cut",
+      mineOnly ? "My services" : null,
     ]
       .filter(Boolean)
       .join("  ·  ");
@@ -345,67 +345,71 @@ export default function TonightScreen({
             <small>Tonight I want</small>
             {tuneSummary}
           </span>
-          <span className="bo-toggle">{tuning ? "▴" : "▾"}</span>
+          <span className={`bo-toggle ${tuning ? "is-open" : ""}`} aria-hidden />
         </button>
 
         {tuning && (
         <div className="bo-controls">
-        <div>
-          <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
-            {VIBES.map((v) => {
-              const on = vibe === v.key;
-              return (
+          {/* The mood. One at a time, and tapping the lit one clears it. */}
+          <div>
+            <p className="bo-label">Mood</p>
+            <div className="bo-chips">
+              {VIBES.map((v) => {
+                const on = vibe === v.key;
+                return (
+                  <button
+                    key={v.key}
+                    onClick={() => {
+                      sfxPop();
+                      setVibe(on ? null : v.key);
+                    }}
+                    aria-pressed={on}
+                    className="bo-chip"
+                  >
+                    {v.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {/* The dial has three stops, so it is three keys rather than a
+              slider you have to land on one of three points of. */}
+          <div>
+            <p className="bo-label">How far down the shelf</p>
+            <div className="bo-depth" role="radiogroup" aria-label="Obscurity: niche to deep cut">
+              {([3, 4, 5] as const).map((d) => (
                 <button
-                  key={v.key}
+                  key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={depth === d}
                   onClick={() => {
                     sfxPop();
-                    setVibe(on ? null : v.key);
+                    setDepth(d);
                   }}
-                  aria-pressed={on}
-                  className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider transition-colors ${
-                    on
-                      ? "border-ticket bg-ticket/20 text-cream glow-ticket"
-                      : "border-line bg-surface text-dim"
-                  }`}
                 >
-                  {v.emoji} {v.label}
+                  <b>{d === 3 ? "Niche" : d === 4 ? "Obscure" : "Deep cut"}</b>
+                  <span aria-hidden>
+                    {"◆".repeat(d)}
+                    {"◇".repeat(5 - d)}
+                  </span>
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
-          {vibe && (
-            <p className="mt-1 font-mono text-[0.6rem] text-ticket">
-              Next deal is all “{vibeByKey(vibe)?.label}” — tap the chip again to clear.
-            </p>
-          )}
-        </div>
-        <label className="flex items-center gap-3">
-          <span className="eyebrow shrink-0">Obscurity goal</span>
-          <input
-            type="range"
-            min={3}
-            max={5}
-            value={depth}
-            onChange={(e) => setDepth(Number(e.target.value))}
-            className="w-full accent-amber"
-            aria-label="Obscurity preference: niche to deep cut"
-          />
-          <span className="text-right font-mono text-[0.6rem] uppercase tracking-wider text-amber">
-            {depth === 3 ? "Niche" : depth === 4 ? "Obscure" : "Deep cut"}
-            <br />
-            {"◆".repeat(depth)}
-            {"◇".repeat(5 - depth)}
-          </span>
-        </label>
-        <label className="flex items-center gap-2 font-mono text-xs text-dim">
-          <input
-            type="checkbox"
-            checked={mineOnly}
-            onChange={(e) => setMineOnly(e.target.checked)}
-            className="accent-avail"
-          />
-          my services only
-        </label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={mineOnly}
+            onClick={() => {
+              sfxPop();
+              setMineOnly((m) => !m);
+            }}
+            className="bo-switch"
+          >
+            <span>Only what&apos;s on my services</span>
+            <i aria-hidden />
+          </button>
         </div>
         )}
         </div>
@@ -419,9 +423,9 @@ export default function TonightScreen({
           {dealing ? (
             <DealReels />
           ) : vibe ? (
-            `★ Deal me “${vibeByKey(vibe)?.label}” ★`
+            `Deal me “${vibeByKey(vibe)?.label}”`
           ) : (
-            "★ Deal me more ★"
+            "Deal me more"
           )}
         </button>
         <p className="bo-slot-label" aria-hidden>
@@ -443,7 +447,7 @@ export default function TonightScreen({
           disabled={dealing}
           className="self-start rounded border border-amber px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-amber disabled:opacity-50"
         >
-          {dealing ? "…" : "↔ Open it up and try again"}
+          {dealing ? "…" : "Open it up and try again"}
         </button>
       )}
 
@@ -518,17 +522,15 @@ export default function TonightScreen({
                     <span className="case-sticker">{gemLabel(rec.gem ?? null)}</span>
                   )}
                 </Link>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <Link href={`/m/${m.id}`} className="truncate font-display text-xl text-cream">
-                      {m.title}
-                    </Link>
-                    <ObscurityDots score={rec.obscurity} />
-                  </div>
-                  <p className="font-mono text-[0.65rem] text-dim">
+                <div className="rental-facts">
+                  <Link href={`/m/${m.id}`} className="rental-title">
+                    {m.title}
+                  </Link>
+                  <p className="rental-meta">
                     {m.year ?? "—"}
                     {m.runtime ? ` · ${m.runtime} min` : ""}
                   </p>
+                  <ObscurityDots score={rec.obscurity} />
                   {m.genres.length > 0 && (
                     <div className="genre-dots">
                       {m.genres.slice(0, 3).map((g) => (
@@ -543,23 +545,23 @@ export default function TonightScreen({
                     </div>
                   )}
                   <RatingsBadges
-                    className="mt-1"
+                    className="mt-1.5"
                     ratings={{ tmdb: m.tmdb_rating, imdb: m.imdb_rating, rt: m.rt_rating }}
                   />
-                  {/* The reason, as the card a video-store clerk tapes under
-                      a tape they need you to rent. */}
-                  <button onClick={() => tapReason(rec)} className="shelf-talker">
-                    <span className="shelf-talker-tag">★ Why it&apos;s yours</span>
-                    <span className="shelf-talker-line">{rec.reason}</span>
-                  </button>
-                  {m.overview && (
-                    <p className="mt-1 line-clamp-2 text-xs text-dim">{m.overview}</p>
-                  )}
-                  <div className="mt-1.5">
+                  <div className="mt-auto pt-2">
                     <ServiceBadges available={avail} mine={myServices} />
                   </div>
                 </div>
                 </div>
+                {/* The reason, as the card a video-store clerk tapes under a
+                    tape they need you to rent. It runs the width of the case:
+                    it is the one sentence on here written for you, and it was
+                    being set in a column four words wide. The synopsis is on
+                    the film's own page, a tap on the case away. */}
+                <button onClick={() => tapReason(rec)} className="shelf-talker">
+                  <span className="shelf-talker-tag">Why it&apos;s yours</span>
+                  <span className="shelf-talker-line">{rec.reason}</span>
+                </button>
                 {/* The three things you can do with it, stamped. */}
                 <div className="stamp-row">
                   <button onClick={() => setStatus(rec, "watchlisted")} className="stamp-btn">

@@ -90,7 +90,7 @@ export default function SignatureShrine({
           className="absolute bottom-2 left-4 z-10 block rounded border border-amber/60 bg-bg/85 px-3 py-1.5 backdrop-blur-sm"
         >
           <span className="block font-mono text-[0.55rem] uppercase tracking-[0.25em] text-ticket">
-            🎞 Signature film
+            Signature film
           </span>
           <span className="font-display text-lg leading-tight text-amber">
             {title} <span className="font-mono text-[0.65rem] text-dim">{year ?? ""}</span>

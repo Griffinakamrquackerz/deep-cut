@@ -234,7 +234,7 @@ export default function UsherTour() {
       <div className="absolute left-1/2 w-[88%] max-w-sm -translate-x-1/2" style={captionStyle}>
         <div className="ticket-edge rounded bg-surface p-3.5 shadow-2xl">
           <p className="eyebrow text-amber">
-            🎬 The studio tour · {beat + 1}/{BEATS.length} — {b.eyebrow}
+            The studio tour · {beat + 1}/{BEATS.length} — {b.eyebrow}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-cream">{b.line}</p>
           {/* No skip. Clicking the dim still advances, so the tour can always be

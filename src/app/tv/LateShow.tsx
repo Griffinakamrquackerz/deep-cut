@@ -10,6 +10,8 @@ import {
 } from "react";
 import { playerEmbedUrl } from "@/lib/player-embed";
 import { sfxClick } from "@/lib/sfx";
+import { Sprig } from "@/components/house/Laurel";
+import "./theatre.css";
 
 // Deep Cut Theatre, on the web — the same room as the app's /tv screen, against
 // the same /api/shorts programme.
@@ -31,26 +33,6 @@ interface Short {
   pedigree: string;
   synopsis: string;
 }
-interface DashKey {
-  action: string;
-  n?: number;
-  label: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-interface Dash {
-  image: string;
-  aspect: number;
-  x: number;
-  bottom: number;
-  w: number;
-  /** degrees of tilt toward the viewer, about the console's bottom edge. */
-  tilt: number;
-  dome: { x: number; y: number };
-  keys: DashKey[];
-}
 interface Scene {
   image: string | null;
   aspect: number;
@@ -61,8 +43,6 @@ interface Scene {
   screen: { x: number; y: number; w: number; h: number };
   /** where the eyes rest, as fractions of the room. */
   eye: { x: number; y: number };
-  /** Fractions of the view, not the room: the console is bolted to the chair. */
-  dash: Dash;
 }
 interface Channel {
   key: string;
@@ -93,115 +73,30 @@ function pick(pool: Short[], notId?: string): Short | null {
   return from[Math.floor(Math.random() * from.length)];
 }
 
-/** The camera's outline, drawn once. Stacked at several depths, it's a solid. */
-function CamPlane({ z, dim }: { z: number; dim: number }) {
+/** Where the eyes rest on the web: on the television itself. The room's own
+ *  eye line sits lower, to keep a console on the armrest in shot — and there
+ *  is no console in the window any more. */
+function eyeOf(scene: Scene) {
+  return { x: scene.eye.x, y: scene.screen.y + scene.screen.h / 2 + 0.02 };
+}
+
+/** A key's icon. Drawn, so it inherits the key's colour and never arrives as
+ *  somebody's emoji font. */
+function Glyph({ children }: { children: React.ReactNode }) {
   return (
     <svg
-      viewBox="0 0 100 100"
-      className="absolute inset-0 block h-full w-full text-[#8ff6ff]"
-      style={{ transform: `translateZ(${z}px)`, opacity: dim }}
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.4"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden
     >
-      <g fill="rgba(125,249,255,0.10)">
-        <rect x="27" y="43" width="43" height="30" rx="4" />
-        <circle cx="65" cy="58" r="12.5" />
-        <circle cx="36" cy="33" r="9" />
-      </g>
-      <rect x="27" y="43" width="43" height="30" rx="4" />
-      <circle cx="65" cy="58" r="12.5" />
-      <circle cx="65" cy="58" r="5.5" />
-      <circle cx="36" cy="33" r="9" />
-      <circle cx="36" cy="33" r="2.5" />
-      <path d="M36 42 L36 43 M27 51 L18 47" />
-      <circle cx="15" cy="46" r="3" />
+      {children}
     </svg>
-  );
-}
-
-/**
- * The camera standing in the console's beam — drawn, not photographed, which
- * is the entire point: a photograph of a hologram doesn't turn.
- *
- * It is genuinely three-dimensional rather than a flat drawing spun about its
- * middle. A single plane rotating on Y just squashes and reads as a turning
- * sheet of paper; the same outline stacked at five depths inside a
- * preserve-3d parent has volume, and edge-on at 90 degrees you see the stack
- * itself rather than nothing at all. The tripod legs splay in depth for the
- * same reason.
- */
-function HoloCamera() {
-  const DEPTHS = [-13, -6.5, 0, 6.5, 13];
-  return (
-    <span className="holo-flicker pointer-events-none absolute inset-0 block">
-      {/* the cone of light it stands in */}
-      <span
-        className="holo-beam absolute bottom-0 left-1/2 block -translate-x-1/2"
-        style={{
-          width: "62%",
-          height: "62%",
-          background:
-            "linear-gradient(to top, rgba(125,249,255,0.55), rgba(125,249,255,0.06) 70%, transparent)",
-          clipPath: "polygon(41% 100%, 59% 100%, 100% 0%, 0% 0%)",
-        }}
-      />
-      <span
-        className="absolute inset-0 block"
-        style={{ perspective: "320px", perspectiveOrigin: "50% 45%" }}
-      >
-        <span
-          className="holo-spin absolute inset-0 block"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {DEPTHS.map((z, i) => (
-            <CamPlane
-              key={z}
-              z={z}
-              // The far planes sit back in the haze, the near one carries the
-              // edge — otherwise the stack reads as five drawings rather than
-              // one object.
-              dim={i === DEPTHS.length - 1 ? 1 : 0.34 + i * 0.1}
-            />
-          ))}
-        </span>
-      </span>
-    </span>
-  );
-}
-
-function RKey({
-  label,
-  tone,
-  onClick,
-}: {
-  label: string;
-  tone: "grey" | "orange" | "dead";
-  onClick?: () => void;
-}) {
-  const dead = tone === "dead";
-  return (
-    <span className="flex min-w-0 flex-1 flex-col items-center">
-      <span
-        className={`mb-0.5 truncate font-mono text-[0.4rem] tracking-wide ${
-          dead ? "text-[#6d6a63]" : "text-[#e4e0d6]"
-        }`}
-      >
-        {label}
-      </span>
-      <button
-        type="button"
-        aria-label={label}
-        onClick={dead ? undefined : onClick}
-        className={`h-5 w-full rounded-sm border transition-transform active:translate-y-px active:opacity-75 ${
-          tone === "orange"
-            ? "border-[#a83e13] bg-[#e0551d]"
-            : "border-[#8d887e] bg-[#b4aea3]"
-        }`}
-      />
-    </span>
   );
 }
 
@@ -230,6 +125,11 @@ export default function LateShow() {
   // Which way your head is pointed, and whether it's pointed away from the set.
   const room = useRef<HTMLDivElement>(null);
   const [turned, setTurned] = useState(false);
+  // The same fact, readable from an observer without re-subscribing it.
+  const turnedRef = useRef(false);
+  // The photograph's own box: how big the room is drawn is decided in CSS, so
+  // this is the element whose size says when that decision has changed.
+  const roomInner = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   // A flat photograph slid sideways reads as a flat photograph slid sideways.
   // What makes it read as a room is that the walls swing: the window tilts on a
@@ -245,10 +145,10 @@ export default function LateShow() {
   // Heartache — the labels live on the screen, not on the buttons.
   const [osd, setOsd] = useState<string | null>(null);
   const osdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // MENU on the console scrolls here rather than opening anything: the guide
-  // is already on the page, and every line of it is a channel button.
-  const guideRef = useRef<HTMLDivElement>(null);
   const [gate, setGate] = useState(false); // signed out — the room is members only
+  // "This month's bill — 12 films", and the one pulled out of it this week.
+  const [programme, setProgramme] = useState<string | null>(null);
+  const [featureId, setFeatureId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -268,6 +168,8 @@ export default function LateShow() {
         setChannels(d.channels ?? []);
         setFilms(d.films ?? []);
         setScene(d.scene ?? null);
+        setProgramme(typeof d.programme === "string" ? d.programme : null);
+        setFeatureId(typeof d.featureId === "string" ? d.featureId : null);
       })
       .catch(() => {
         setError("The set won't warm up. Try again in a minute.");
@@ -277,7 +179,6 @@ export default function LateShow() {
       if (timer.current) clearTimeout(timer.current);
       if (osdTimer.current) clearTimeout(osdTimer.current);
       if (settle.current) clearTimeout(settle.current);
-      if (digitTimer.current) clearTimeout(digitTimer.current);
     };
   }, []);
 
@@ -335,6 +236,28 @@ export default function LateShow() {
     if (!channel) return;
     onChannel(channel, true);
   }, [channel, onChannel]);
+
+  // The guide can name one film outright — this week's feature — so there has
+  // to be a way to put that tape in, rather than dealing one off its channel.
+  const playFilm = useCallback(
+    (f: Short) => {
+      const ch = channels.find((c) => f.channels.includes(c.key)) ?? null;
+      sfxClick();
+      setChannel(ch);
+      setFilm(f);
+      setBig(false);
+      setPower(true);
+      setStage("playing");
+      setDeck(null);
+      if (ch) {
+        const n = String(channels.indexOf(ch) + 1).padStart(2, "0");
+        setOsd(`CH ${n}  ${ch.label.toUpperCase()}`);
+        if (osdTimer.current) clearTimeout(osdTimer.current);
+        osdTimer.current = setTimeout(() => setOsd(null), 2400);
+      }
+    },
+    [channels],
+  );
 
   /**
    * Mute the film that's actually playing. On the web the player is a
@@ -406,38 +329,6 @@ export default function LateShow() {
     [channels, channel, onChannel],
   );
 
-  // Two-digit dialing. Fourteen channels means some of them don't fit on a
-  // single key — this is how a real remote's 0-9 pad reaches channel 12
-  // without a button labelled "12" existing anywhere on it: click 1, click 2
-  // within the window, and the two digits become one number. Below ten
-  // channels this never waits at all — the buffer completes on the first
-  // click, so a four-channel guide behaves exactly as it did before.
-  const digits = useRef("");
-  const digitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const maxDigits = channels.length > 9 ? 2 : 1;
-
-  const pressDigit = useCallback(
-    (d: number) => {
-      const typed = (digits.current + String(d)).slice(-maxDigits);
-      digits.current = typed;
-      if (digitTimer.current) clearTimeout(digitTimer.current);
-
-      if (typed.length < maxDigits) {
-        // Still typing — show the digits so far, the way a real set does,
-        // rather than going quiet until the second key lands.
-        setOsd(`CH ${typed}_`);
-        digitTimer.current = setTimeout(() => {
-          digits.current = "";
-          press(Number(typed));
-        }, 900);
-        return;
-      }
-      digits.current = "";
-      press(Number(typed));
-    },
-    [maxDigits, press],
-  );
-
   const togglePower = useCallback(() => {
     setPower((on) => {
       if (on) {
@@ -461,7 +352,7 @@ export default function LateShow() {
     (behavior: ScrollBehavior) => {
       const el = room.current;
       if (!el || !scene) return;
-      const eye = scene.eye;
+      const eye = eyeOf(scene);
       const left = el.scrollWidth * eye.x - el.clientWidth / 2;
       const top = el.scrollHeight * eye.y - el.clientHeight / 2;
       el.scrollTo({
@@ -507,6 +398,22 @@ export default function LateShow() {
     resetTilt();
     faceTheSet("instant");
   }, [sceneOn, faceTheSet, resetTilt]);
+
+  // How far the room is pushed in is the stylesheet's call (--zoom, --view),
+  // and it changes at breakpoints — and, on a cold load, a beat after the
+  // first measurement above. Either way the photograph's box changes size
+  // under a scroll offset that no longer points at the set. So watch the box:
+  // if you were facing the set, you still are. If you had turned to read a
+  // poster, your head is left where you put it.
+  useEffect(() => {
+    const el = roomInner.current;
+    if (!sceneOn || !el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (!turnedRef.current) faceTheSet("instant");
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [sceneOn, faceTheSet]);
 
   // Change the channel and your eyes go back to the set on their own. Nobody
   // presses 3 while facing the Nerf shelf and means to keep facing it. Under
@@ -686,7 +593,7 @@ export default function LateShow() {
   const tube = (
         <div
           className={`crt-glass relative block w-full overflow-hidden bg-[#05060a] ${
-            // In the room the tube takes the screen's own measurements \u2014 the
+            // In the room the tube takes the screen's own measurements — the
             // hole is a 1.27 rectangle, not a 4:3 one, and a 4:3 box inside it
             // leaves the picture short of the glass along the bottom edge.
             sceneOn ? "h-full rounded-none" : big ? "aspect-video rounded" : "aspect-[4/3] rounded-lg"
@@ -709,11 +616,17 @@ export default function LateShow() {
                 className="absolute inset-0 h-full w-full"
               />
             </span>
+          ) : stage === "playing" ? (
+            // A channel with nothing on it. The set still turns to it.
+            <span className="th-snow absolute inset-0">
+              <span>No signal</span>
+            </span>
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center bg-[#141414]">
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-dim">
-                No signal
-              </span>
+            // Switched on and not yet tuned: the station's test card, which is
+            // what a set showed between programmes.
+            <span className="th-testcard absolute inset-0">
+              <span>Deep Cut Theatre</span>
+              <small>Pick a channel</small>
             </span>
           )}
 
@@ -727,474 +640,446 @@ export default function LateShow() {
         </div>
   );
 
-  /**
-   * The console. It replaces a hand-drawn remote that was two keys wide
-   * because a wider one would have covered the television — this is a
-   * photograph of a real-looking dash instead, run flush to the bottom of the
-   * frame with the recliner's own arms still showing either side of it.
-   *
-   * Every key on it is painted into the picture and can't move, so the
-   * controls are transparent hit boxes measured off the image and positioned
-   * as fractions of it. That means the console scales to any width and the
-   * keys stay on their paint, and it means the app and the web read the same
-   * rectangles off the server rather than each guessing at them.
-   */
-  const dashOf = (d: Dash) => {
-    const fire = (k: DashKey) => {
-      switch (k.action) {
-        case "power":
-          return togglePower();
-        case "num":
-          return press(k.n ?? 1);
-        case "ch-up":
-          return step(1);
-        case "ch-down":
-          return step(-1);
-        case "eject":
-          return eject();
-        case "mute":
-          return toggleMute();
-        case "vol-down":
-          setMuted(true);
-          applyMute(true);
-          return flash("MUTE");
-        case "vol-up":
-          setMuted(false);
-          applyMute(false);
-          return flash("VOL  \u25AE\u25AE\u25AE\u25AE");
-        case "guide":
-          return guideRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        case "exit":
-          return big ? setBig(false) : lookBack();
-        // SOURCE has one source. The keys are on the photograph either way, so
-        // they answer rather than doing nothing at all — the same courtesy the
-        // old remote's dead keys got.
-        case "source":
-          return flash(k.label.toUpperCase());
-        default:
-          return;
-      }
-    };
-    return (
-      <div
-        className="absolute"
-        style={{
-          left: pct(d.x),
-          bottom: pct(d.bottom),
-          width: pct(d.w),
-          // Stand its face up a few degrees. The photograph looks steeply down
-          // at the console; hinging it back about its own bottom edge points it
-          // at you without flattening it into a poster. The keys ride the same
-          // transform, so their hit boxes tilt with the paint.
-          perspective: "900px",
-          perspectiveOrigin: "50% 100%",
-        }}
-      >
-        <div
-          className="relative"
-          style={{
-            aspectRatio: String(d.aspect),
-            transform: `rotateX(-${d.tilt}deg)`,
-            transformOrigin: "50% 100%",
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={d.image}
-            alt=""
-            draggable={false}
-            className="pointer-events-none absolute inset-0 h-full w-full select-none"
-          />
-          {/* The hologram stands on the console's own projector lens, sized
-              off the dome so it scales with the picture rather than drifting
-              off it at another width. */}
-          <span
-            className="pointer-events-none absolute block"
-            style={{
-              left: `${(d.dome.x - 0.065) * 100}%`,
-              bottom: `${(1 - d.dome.y) * 100}%`,
-              width: "13%",
-              aspectRatio: "0.82",
-            }}
-          >
-            <HoloCamera />
-          </span>
-          {d.keys.map((k, i) => (
-            <button
-              key={`${k.action}-${k.n ?? i}`}
-              type="button"
-              aria-label={k.label}
-              onClick={() => fire(k)}
-              className="absolute rounded-[3px] active:bg-[#7df9ff]/25"
-              style={{ left: pct(k.x), top: pct(k.y), width: pct(k.w), height: pct(k.h) }}
-            />
-          ))}
-        </div>
-      </div>
-    );
+  const chNo = channel ? String(channels.indexOf(channel) + 1).padStart(2, "0") : null;
+  const feature = featureId ? (films ?? []).find((f) => f.id === featureId) ?? null : null;
+  const toggleBig = () => {
+    flash(big ? "PUTTING IT BACK" : "FULL SCREEN");
+    setBig((v) => !v);
   };
 
+  /**
+   * The remote.
+   *
+   * It used to be a photograph of a console with the keys painted on: ten
+   * numbers for fourteen channels, hit boxes measured off the paint, and a
+   * look that belonged to a different building. This one is drawn, so it has
+   * a key for every channel there actually is, the lit key is the channel
+   * you're on, and the window at the top says in words where you landed —
+   * which is the job the corner of the television was doing alone.
+   */
+  const lcdTop = !power
+    ? "OFF"
+    : osd ?? (channel ? `CH ${chNo}  ${channel.label.toUpperCase()}` : "DEEP CUT THEATRE");
+  const lcdSub = !power
+    ? "Press power"
+    : film && stage === "playing"
+      ? `${film.title} · ${runtime(film.runtimeSec)}`
+      : channel
+        ? "Nothing on this channel yet"
+        : "Pick a channel";
   const remote = (
-          <div className="mx-auto w-full rounded-xl border border-[#2c2c30] bg-[#141416] px-2.5 py-3 shadow-2xl">
-            <div className="flex items-end gap-1.5">
-              <RKey label="POWER" tone="orange" onClick={togglePower} />
-              <RKey
-                label="⛶ FULL"
-                tone="grey"
-                onClick={() => {
-                  flash(big ? "PUTTING IT BACK" : "FULL SCREEN");
-                  setBig((v) => !v);
-                }}
-              />
-              <RKey label="SLEEP" tone="dead" />
-              <span className="mx-1 self-stretch border-l border-[#3a3a3f]" />
-              <span className="shrink-0 font-mono text-[0.4rem] tracking-widest text-[#d6d2c8]">
-                CHANNEL
-              </span>
-            </div>
+    <div className="remote" role="group" aria-label="Remote control">
+      <div className="remote-top">
+        <button
+          type="button"
+          className="remote-power"
+          aria-label={power ? "Power off" : "Power on"}
+          aria-pressed={power}
+          onClick={() => {
+            sfxClick();
+            togglePower();
+          }}
+        >
+          <Glyph>
+            <path d="M12 3.5v8.5" />
+            <path d="M6.6 7.1a7.6 7.6 0 1 0 10.8 0" />
+          </Glyph>
+        </button>
+        <div className={`remote-lcd ${power ? "" : "is-off"}`} aria-live="polite">
+          <b>{lcdTop}</b>
+          <small>
+            <span>{lcdSub}</span>
+            {muted && power ? <i>Mute</i> : null}
+          </small>
+        </div>
+      </div>
 
-            <div className="mt-2.5 flex gap-2">
-              <div className="grid flex-1 grid-cols-3 gap-1.5">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                  <RKey
-                    key={n}
-                    label={String(n)}
-                    // Greyed only by whether n alone is ever meaningful. Past
-                    // nine channels every single digit is also the start of a
-                    // two-digit one, so a key can't be marked dead just for
-                    // failing to name a channel on its own.
-                    tone={channels[n - 1] || maxDigits > 1 ? "grey" : "dead"}
-                    onClick={() => pressDigit(n)}
-                  />
-                ))}
-                <span />
-                <RKey label="0" tone={maxDigits > 1 ? "grey" : "dead"} onClick={() => pressDigit(0)} />
-                <span />
-              </div>
-              <div className="flex w-14 shrink-0 flex-col gap-1.5">
-                <RKey label="CH ▲" tone="grey" onClick={() => step(1)} />
-                <RKey label="CH ▼" tone="grey" onClick={() => step(-1)} />
-                <RKey label="EJECT" tone="orange" onClick={eject} />
-              </div>
-            </div>
+      <p className="remote-label">Channel</p>
+      <div className="remote-keys">
+        {channels.map((ch, i) => {
+          const on = power && channel?.key === ch.key;
+          return (
+            <button
+              key={ch.key}
+              type="button"
+              aria-label={`Channel ${i + 1}: ${ch.label}`}
+              aria-pressed={on}
+              onClick={() => press(i + 1)}
+              className={`remote-key ${on ? "is-on" : ""} ${counts[ch.key] ? "" : "is-empty"}`}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
 
-            <div className="mt-2.5 flex items-end gap-1.5">
-              <RKey label="MENU" tone="orange" />
-              <RKey
-                label="SELECT"
-                tone="orange"
-                onClick={() => channel && press(channels.indexOf(channel) + 1)}
-              />
-              <RKey label="MUTE" tone={muted ? "orange" : "grey"} onClick={toggleMute} />
-            </div>
+      <div className="remote-fn">
+        <button type="button" onClick={() => step(-1)} aria-label="Channel down">
+          <Glyph>
+            <path d="M6 9.5l6 6 6-6" />
+          </Glyph>
+          <span>Ch −</span>
+        </button>
+        <button type="button" onClick={() => step(1)} aria-label="Channel up">
+          <Glyph>
+            <path d="M6 14.5l6-6 6 6" />
+          </Glyph>
+          <span>Ch +</span>
+        </button>
+        <button type="button" onClick={toggleMute} aria-pressed={muted} className={muted ? "is-lit" : ""}>
+          <Glyph>
+            <path d="M4 9.5v5h3.5l5 4v-13l-5 4H4z" />
+            {muted ? <path d="M16.5 9.5l4.5 5M21 9.5l-4.5 5" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7" />}
+          </Glyph>
+          <span>Mute</span>
+        </button>
+        <button type="button" onClick={eject} disabled={!channel} aria-label="Next tape">
+          <Glyph>
+            <path d="M12 5.5l6.5 8h-13l6.5-8z" />
+            <path d="M5.5 18h13" />
+          </Glyph>
+          <span>Next tape</span>
+        </button>
+        <button type="button" onClick={toggleBig} disabled={!film} aria-label="Full screen">
+          <Glyph>
+            <path d="M4.5 9V4.5H9M19.5 9V4.5H15M4.5 15v4.5H9M19.5 15v4.5H15" />
+          </Glyph>
+          <span>Full screen</span>
+        </button>
+      </div>
 
-            <p className="mt-2 font-mono text-[0.45rem] tracking-widest text-[#7c7a74]">8650-EO</p>
-            <p className="font-display text-base tracking-[0.15em] text-[#d6d2c8]">DEEP CUT</p>
-          </div>
-
+      <p className="remote-brand">
+        <b>Deep Cut</b>
+        <span>{channels.length} channels</span>
+      </p>
+    </div>
   );
 
-  return (
-    <section className="mx-auto flex max-w-md flex-col gap-5 px-4 pb-16 pt-6 sm:max-w-lg md:max-w-2xl">
-      <header>
-        <p className="slate"><b>Monthly showcase</b></p>
-        <h1 className="title-card rack-in mt-2.5 text-5xl">
-          Deep Cut <em>Theatre</em>
-        </h1>
-        <p className="mt-1 text-sm text-dim">
-          Award-winning indie films you&apos;ve never seen. New bill every month. Pick a
-          channel, then have a look around the room.
+  // The programme card: what's in the machine right now.
+  const nowPlaying =
+    film && !big ? (
+      <div key={film.id} className="th-now deal-in">
+        <p className="th-now-top">
+          <span>Now playing</span>
+          {channel ? (
+            <b>
+              CH {chNo} · {channel.label}
+            </b>
+          ) : null}
         </p>
-      </header>
-
-      {/* ── The set ─────────────────────────────────────────────────── */}
-      {sceneOn && scene?.image ? (
-        <div
-          key="room"
-          className="relative mx-auto w-full overflow-hidden"
-          style={{ aspectRatio: String(scene.view) }}
-        >
-          {/* Everything that swings goes in here and nothing else: the tilt
-              pivots on this box's own centre, which is exactly the point you
-              are looking at, and the remote and the chip stay square to you
-              because your hand and your eyes don't turn with your head. */}
-          <div ref={tilt} className="absolute inset-0">
-          {/* The head turn. The room is wider than the window, and dragging
-              slides it — the set is against the left wall, so the sweep goes
-              right, across the posters and the shelves and the arsenal. The
-              film keeps playing the whole time you're looking away, which is
-              the entire point of being allowed to look away. */}
-          <div
-            ref={room}
-            tabIndex={0}
-            role="group"
-            aria-label="The theatre. Drag or use the arrow keys to look around."
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              if (!scene) return;
-              const mid = el.scrollWidth * scene.eye.x - el.clientWidth / 2;
-              setTurned(Math.abs(el.scrollLeft - Math.max(0, mid)) > 24);
-              const box = tilt.current;
-              if (!box || reducedMotion()) return;
-              // The swing runs off how fast you're moving rather than where
-              // you've got to: a head turning, not a claim about where the
-              // walls are — and no transform on the player while you watch.
-              // Away from the direction of travel, in both planes: sweeping
-              // right swings the left of the room away from you, and the
-              // ceiling leans back as you raise your eyes to it.
-              const dx = el.scrollLeft - last.current.x;
-              const dy = el.scrollTop - last.current.y;
-              last.current = { x: el.scrollLeft, y: el.scrollTop };
-              const cap = (n: number) => Math.max(-7, Math.min(7, n * -0.5));
-              box.style.transition = "transform 90ms linear";
-              box.style.transform =
-                `perspective(900px) rotateY(${cap(dx)}deg) rotateX(${-cap(dy) * 0.6}deg)`;
-              if (settle.current) clearTimeout(settle.current);
-              settle.current = setTimeout(() => {
-                box.style.transition = "transform 320ms cubic-bezier(0.2,0.7,0.3,1)";
-                box.style.transform = "perspective(900px) rotateY(0deg) rotateX(0deg)";
-              }, 110);
-            }}
-            onPointerDown={grab}
-            onPointerMove={look}
-            onPointerUp={release}
-            onPointerLeave={release}
-            className="no-scrollbar absolute inset-0 cursor-grab overflow-auto overscroll-contain active:cursor-grabbing"
-          >
-            {/* The room itself: wider and taller than the window by exactly the
-                amount you're allowed to look. Percentages of the window, so it
-                lands right at any size without measuring the bitmap. */}
-            <div
-              className="relative"
-              style={{
-                width: pct((scene.aspect * scene.zoom) / scene.view),
-                height: pct(scene.zoom),
-              }}
-            >
-                {/* Photograph first, picture composited on top of it and
-                    clipped to the screen. No alpha channel required anywhere. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={scene.image}
-                  alt=""
-                  draggable={false}
-                  onError={() => setSceneBroken(true)}
-                  className="pointer-events-none absolute inset-0 h-full w-full"
-                />
-                <div
-                  className="absolute overflow-hidden bg-[#04050a]"
-                  style={{
-                    left: pct(scene.screen.x),
-                    top: pct(scene.screen.y),
-                    width: pct(scene.screen.w),
-                    height: pct(scene.screen.h),
-                  }}
-                >
-                  {tube}
-                </div>
-            </div>
-          </div>
-          </div>
-
-          {/* The frame is a hole you look through, not a picture hung on a
-              wall — the edges have to fall off. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 78% 78% at 50% 48%, transparent 40%, rgba(0,0,0,0.5) 100%)",
-            }}
-          />
-
-          {/* Turn far enough and the set is behind you. Nothing here is ever a
-              dead end: one click puts your eyes back on it. */}
-          {turned && (
-            <button
-              type="button"
-              onClick={lookBack}
-              className="absolute left-2.5 top-2.5 rounded-full border border-line bg-[#040810]/80 px-2.5 py-1 font-mono text-[0.55rem] uppercase tracking-widest text-amber"
-            >
-              Back to the set
-            </button>
-          )}
-
-          {/* The way out to a real watch, and where it lives matters: on the
-              frame rather than over the television. A hit box the size of the
-              glass is a hit box over the player's own controls, and a film you
-              can't pause is worse than a film in a small box. */}
-          <button
-            type="button"
-            onClick={() => {
-              flash("FULL SCREEN");
-              setBig(true);
-            }}
-            aria-label="Watch full screen"
-            className="absolute right-2.5 top-2.5 rounded-full border border-line bg-[#040810]/80 px-2.5 py-1 font-mono text-[0.55rem] uppercase tracking-widest text-amber"
-          >
-            ⛶ Full screen
+        <h2 className="th-now-title">{film.title}</h2>
+        <p className="th-now-meta">
+          {film.director} · {film.year} · {runtime(film.runtimeSec)}
+        </p>
+        <p className="th-now-syn">{film.synopsis}</p>
+        {film.pedigree ? (
+          <p className="pedigree mt-2">
+            <Sprig />
+            <span>{film.pedigree}</span>
+          </p>
+        ) : null}
+        <div className="th-now-foot">
+          <button type="button" onClick={eject} className="th-btn">
+            Next tape
           </button>
-
-          {/* The console is bolted to the chair, and the chair doesn't turn —
-              so it stays put while the room slides behind it. Pinned also
-              means the keys can never be looked away from. */}
-          {dashOf(scene.dash)}
-        </div>
-      ) : big ? (
-        /* Full screen. Fixed rather than merely wide: inside the page's own
-           column a 16:9 box is still a box you can scroll away from, and the
-           whole point of this state is to get out of the film's way. On a
-           desktop browser this element is also the thing the real Fullscreen
-           API is asked for; on a phone, where there is no element fullscreen to
-           be had, it is simply the whole window. */
-        <div
-          key="full"
-          ref={bigBox}
-          className="fixed inset-0 z-[80] flex h-dvh w-screen flex-col items-center justify-center gap-4 bg-bg px-2"
-        >
-          <div className="flex w-full max-w-5xl justify-center">{tube}</div>
-          <button
-            type="button"
-            onClick={() => setBig(false)}
-            className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline"
-          >
-            ⏏ put it back in the set
+          <button type="button" onClick={toggleBig} className="th-btn th-btn--amber">
+            Full screen
           </button>
         </div>
-      ) : (
-      <div
-        key="cabinet"
-        className="mx-auto w-full rounded-2xl border-2 border-[#4a3b31] bg-[#2b221c] p-2.5 shadow-2xl"
-      >
-        {tube}
-
-        {!big && (
-          <div className="relative mt-2 overflow-hidden">
-            {/* Paint order IS the illusion: mouth, tape, then face plate. */}
-            <div className="mx-3 h-4 rounded-sm border border-[#0f0d0b] bg-[#08070a]" />
-            {film && deck && (
-              <div
-                className={`absolute left-4 right-4 top-0 rounded-sm border border-[#3b332a] bg-[#17140f] px-2 py-1.5 ${
-                  deck === "swap" ? "tape-swap" : "tape-load"
-                }`}
-              >
-                <div className="flex justify-around">
-                  <span className="block h-[22px] w-[22px] rounded-full border-[3px] border-[#584a3d] bg-[#0d0b08]" />
-                  <span className="block h-[22px] w-[22px] rounded-full border-[3px] border-[#584a3d] bg-[#0d0b08]" />
-                </div>
-                <div className="mt-1 rounded-sm bg-[#e8e0cd] px-1.5 py-1">
-                  <span className="block truncate font-display text-sm leading-none text-[#1a1410]">
-                    {film.title.toUpperCase()}
-                  </span>
-                  <span className="mt-0.5 block truncate font-mono text-[0.5rem] text-[#5a4c3e]">
-                    {film.director} · {film.year}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div className="relative bg-[#2b221c] pt-1.5">
-              <div className="mx-3 h-[3px] rounded-sm bg-[#3d312a]" />
-              <div className="flex items-center gap-2 px-1 pt-1.5">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${stage === "playing" ? "bg-avail" : "bg-ticket"}`}
-                />
-                <span className="flex-1 font-mono text-[0.55rem] uppercase tracking-widest text-[#8d7a68]">
-                  {channel
-                    ? `CH ${String(channels.indexOf(channel) + 1).padStart(2, "0")} \u00b7 ${channel.label}`
-                    : "Deep Cut \u00b7 4-head hi-fi"}
-                </span>
-                <span className="h-3 w-3 rounded-full border border-[#584a3d] bg-[#1d1712]" />
-                <span className="h-3 w-3 rounded-full border border-[#584a3d] bg-[#1d1712]" />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-      )}
+    ) : null;
 
-      {/* ── What's on ───────────────────────────────────────────────── */}
-      {film && !big && (
-        <div className="rounded border border-line bg-surface p-4">
-          <h2 className="font-display text-3xl leading-none text-amber">
-            {film.title.toUpperCase()}
-          </h2>
-          <p className="mt-1 font-mono text-[0.7rem] text-dim">
-            {film.director} · {film.year} · {runtime(film.runtimeSec)}
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-cream">{film.synopsis}</p>
-          <p className="mt-2 font-mono text-[0.6rem] leading-relaxed text-avail">
-            🏆 {film.pedigree}
-          </p>
-          <button
-            type="button"
-            onClick={eject}
-            className="mt-3 rounded-full border border-amber px-3.5 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-amber"
-          >
-            ⏏ Eject · next tape
-          </button>
-        </div>
-      )}
+  // One film pulled out of the bill each week. Not shown while it's the one
+  // playing — the card above it already says so.
+  const featureCard =
+    feature && feature.id !== film?.id && !big ? (
+      <button type="button" className="th-feature" onClick={() => playFilm(feature)}>
+        <small>This week&apos;s feature</small>
+        <b>{feature.title}</b>
+        <span>
+          {feature.director} · {feature.year} · {runtime(feature.runtimeSec)}
+        </span>
+        <i>Put this tape in</i>
+      </button>
+    ) : null;
 
-      {/* ── The remote ───────────────────────────────────────────────
-          Numbered keys, not a list of channel names — a real remote has 0-9 and
-          the television tells you where you landed, which is what the OSD above
-          is for. It also means no button ever has to fit "TRUE STORIES" on it.
-          The card beneath is the paper one taped inside the cabinet door. */}
-      {gate ? (
-        <p className="rounded border border-dashed border-line p-4 text-center text-sm text-dim">
-          The theatre is members only.{" "}
-          <Link href="/login?next=/tv" className="text-amber underline">
-            Sign in
-          </Link>{" "}
-          and pull up a beanbag.
-        </p>
-      ) : error ? (
-        <p className="text-center font-mono text-xs text-ticket">{error}</p>
-      ) : films === null ? (
-        <p className="text-center font-mono text-xs text-dim">Warming up the tube…</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {!sceneOn && <div className="mx-auto w-[82%] max-w-[300px]">{remote}</div>}
-
-          <div ref={guideRef} className="rounded border border-line bg-surface p-4">
-            <p className="eyebrow">What&apos;s on</p>
-            {/* Every line is a button: the compact remote on the armrest only
-                numbers channels 1-4 — growing it to reach all fourteen is what
-                made it too big to see the television in the first place — so
-                the guide is the other way to reach 5 and up, same as pointing
-                at the paper card taped inside a real cabinet and saying
-                "that one." */}
-            {channels.map((ch, i) => (
+  // The guide: the paper card taped inside the cabinet door, set like the
+  // listings page it is. Every line is a channel button.
+  const guide = (
+    <div className="th-guide">
+      <p className="th-guide-top">
+        <b>Channel guide</b>
+        {programme ? <span>{programme}</span> : null}
+      </p>
+      <ol style={{ "--rows": Math.ceil(channels.length / 2) } as React.CSSProperties}>
+        {channels.map((ch, i) => {
+          const n = counts[ch.key] ?? 0;
+          const on = power && channel?.key === ch.key;
+          return (
+            <li key={ch.key}>
               <button
-                key={ch.key}
                 type="button"
                 onClick={() => onChannel(ch)}
                 aria-label={`Watch ${ch.label}`}
-                className="block w-full py-0.5 text-left font-mono text-xs leading-6 text-cream hover:text-amber"
+                aria-current={on ? "true" : undefined}
+                className={`th-ch ${on ? "is-on" : ""} ${n ? "" : "is-empty"}`}
               >
-                <span className="font-medium text-ticket">
-                  {String(i + 1).padStart(2, "0")}
+                <span className="th-ch-no">{String(i + 1).padStart(2, "0")}</span>
+                <span className="th-ch-body">
+                  <b>{ch.label}</b>
+                  <i>{ch.blurb}</i>
                 </span>
-                {"  "}
-                {ch.glyph} {ch.label.toUpperCase()}
-                <span className="text-[0.6rem] text-dim">  ({counts[ch.key] ?? 0})</span>
+                <span className="th-ch-count">{on ? "On now" : n ? `${n} film${n === 1 ? "" : "s"}` : "Off air"}</span>
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
 
-      <p className="text-center font-mono text-[0.55rem] leading-relaxed text-dim/80">
+  return (
+    <section className="th">
+      <header className="th-head">
+        <Link href="/" className="th-back">
+          Back to the lobby
+        </Link>
+        <p className="slate">
+          <b>Monthly showcase</b>
+        </p>
+        <h1 className="title-card rack-in mt-2.5 text-5xl sm:text-6xl">
+          Deep Cut <em>Theatre</em>
+        </h1>
+        <p className="th-lede">
+          Award-winning indie films you&apos;ve never seen. New bill every month. Pick a channel,
+          then have a look around the room.
+        </p>
+      </header>
+
+      <div className="th-stage">
+        <div className="th-main">
+          {/* ── The set ─────────────────────────────────────────────── */}
+          {sceneOn && scene?.image ? (
+            <div key="room" className="th-window">
+              {/* Everything that swings goes in here and nothing else: the tilt
+                  pivots on this box's own centre, which is exactly the point you
+                  are looking at, and the chips stay square to you because your
+                  eyes don't turn with your head. */}
+              <div ref={tilt} className="absolute inset-0">
+                {/* The head turn. The room is wider than the window, and dragging
+                    slides it across the posters and the shelves. The film keeps
+                    playing the whole time you're looking away, which is the
+                    entire point of being allowed to look away. */}
+                <div
+                  ref={room}
+                  tabIndex={0}
+                  role="group"
+                  aria-label="The theatre. Drag or use the arrow keys to look around."
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    if (!scene) return;
+                    const mid = el.scrollWidth * eyeOf(scene).x - el.clientWidth / 2;
+                    const away = Math.abs(el.scrollLeft - Math.max(0, mid)) > 24;
+                    turnedRef.current = away;
+                    setTurned(away);
+                    const box = tilt.current;
+                    if (!box || reducedMotion()) return;
+                    // The swing runs off how fast you're moving rather than where
+                    // you've got to: a head turning, not a claim about where the
+                    // walls are — and no transform on the player while you watch.
+                    const dx = el.scrollLeft - last.current.x;
+                    const dy = el.scrollTop - last.current.y;
+                    last.current = { x: el.scrollLeft, y: el.scrollTop };
+                    const cap = (n: number) => Math.max(-7, Math.min(7, n * -0.5));
+                    box.style.transition = "transform 90ms linear";
+                    box.style.transform =
+                      `perspective(900px) rotateY(${cap(dx)}deg) rotateX(${-cap(dy) * 0.6}deg)`;
+                    if (settle.current) clearTimeout(settle.current);
+                    settle.current = setTimeout(() => {
+                      box.style.transition = "transform 320ms cubic-bezier(0.2,0.7,0.3,1)";
+                      box.style.transform = "perspective(900px) rotateY(0deg) rotateX(0deg)";
+                    }, 110);
+                  }}
+                  onPointerDown={grab}
+                  onPointerMove={look}
+                  onPointerUp={release}
+                  onPointerLeave={release}
+                  className="no-scrollbar absolute inset-0 cursor-grab overflow-auto overscroll-contain active:cursor-grabbing"
+                >
+                  {/* The room itself: wider and taller than the window by exactly
+                      the amount you're allowed to look. How far it is pushed in
+                      is the window's business (--zoom and --view, in
+                      theatre.css), so a phone and a desk can each frame the
+                      set properly without this file measuring anything. */}
+                  <div
+                    ref={roomInner}
+                    className="relative"
+                    style={{
+                      width: `calc(${scene.aspect} * var(--zoom, 2.4) / var(--view, 1) * 100%)`,
+                      height: "calc(var(--zoom, 2.4) * 100%)",
+                    }}
+                  >
+                    {/* Photograph first, picture composited on top of it and
+                        clipped to the screen. No alpha channel required. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={scene.image}
+                      alt=""
+                      draggable={false}
+                      onError={() => setSceneBroken(true)}
+                      className="pointer-events-none absolute inset-0 h-full w-full"
+                    />
+                    <div
+                      className="absolute overflow-hidden bg-[#04050a]"
+                      style={{
+                        left: pct(scene.screen.x),
+                        top: pct(scene.screen.y),
+                        width: pct(scene.screen.w),
+                        height: pct(scene.screen.h),
+                      }}
+                    >
+                      {tube}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* The frame is a hole you look through, not a picture hung on a
+                  wall — the edges have to fall off. */}
+              <span aria-hidden className="th-window-vignette" />
+
+              {/* Turn far enough and the set is behind you. Nothing here is
+                  ever a dead end: one click puts your eyes back on it. */}
+              {turned ? (
+                <button type="button" onClick={lookBack} className="th-chip th-chip--tl">
+                  Back to the set
+                </button>
+              ) : (
+                <span className="th-chip th-chip--tl th-chip--hint" aria-hidden>
+                  Drag to look around
+                </span>
+              )}
+
+              {/* The way out to a real watch, on the frame rather than over the
+                  television: a hit box the size of the glass is a hit box over
+                  the player's own controls. */}
+              <button
+                type="button"
+                onClick={() => {
+                  flash("FULL SCREEN");
+                  setBig(true);
+                }}
+                aria-label="Watch full screen"
+                className="th-chip th-chip--tr"
+              >
+                <Glyph>
+                  <path d="M4.5 9V4.5H9M19.5 9V4.5H15M4.5 15v4.5H9M19.5 15v4.5H15" />
+                </Glyph>
+                Full screen
+              </button>
+            </div>
+          ) : big ? (
+            /* Full screen. Fixed rather than merely wide: inside the page's own
+               column a 16:9 box is still a box you can scroll away from, and the
+               whole point of this state is to get out of the film's way. On a
+               desktop browser this element is also the thing the real
+               Fullscreen API is asked for; on a phone, where there is no element
+               fullscreen to be had, it is simply the whole window. */
+            <div
+              key="full"
+              ref={bigBox}
+              className="fixed inset-0 z-[80] flex h-dvh w-screen flex-col items-center justify-center gap-4 bg-bg px-2"
+            >
+              <div className="flex w-full max-w-5xl justify-center">{tube}</div>
+              <button type="button" onClick={() => setBig(false)} className="th-btn">
+                Put it back in the set
+              </button>
+            </div>
+          ) : gate ? (
+            /* Signed out: the room, still, with the door in front of it. */
+            <div key="still" className="th-window th-window--still">
+              <span aria-hidden className="th-window-vignette" />
+              <div className="th-gate">
+                <p className="th-gate-top">Members only</p>
+                <p className="th-gate-line">A free account plays everything.</p>
+                <Link href="/login?next=/tv" className="th-btn th-btn--amber">
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div
+              key="cabinet"
+              className="mx-auto w-full rounded-2xl border-2 border-[#4a3b31] bg-[#2b221c] p-2.5 shadow-2xl"
+            >
+              {tube}
+              <div className="relative mt-2 overflow-hidden">
+                {/* Paint order IS the illusion: mouth, tape, then face plate. */}
+                <div className="mx-3 h-4 rounded-sm border border-[#0f0d0b] bg-[#08070a]" />
+                {film && deck && (
+                  <div
+                    className={`absolute left-4 right-4 top-0 rounded-sm border border-[#3b332a] bg-[#17140f] px-2 py-1.5 ${
+                      deck === "swap" ? "tape-swap" : "tape-load"
+                    }`}
+                  >
+                    <div className="flex justify-around">
+                      <span className="block h-[22px] w-[22px] rounded-full border-[3px] border-[#584a3d] bg-[#0d0b08]" />
+                      <span className="block h-[22px] w-[22px] rounded-full border-[3px] border-[#584a3d] bg-[#0d0b08]" />
+                    </div>
+                    <div className="mt-1 rounded-sm bg-[#e8e0cd] px-1.5 py-1">
+                      <span className="block truncate font-display text-sm leading-none text-[#1a1410]">
+                        {film.title.toUpperCase()}
+                      </span>
+                      <span className="mt-0.5 block truncate font-mono text-[0.5rem] text-[#5a4c3e]">
+                        {film.director} · {film.year}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="relative bg-[#2b221c] pt-1.5">
+                  <div className="mx-3 h-[3px] rounded-sm bg-[#3d312a]" />
+                  <div className="flex items-center gap-2 px-1 pt-1.5">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${stage === "playing" ? "bg-avail" : "bg-ticket"}`}
+                    />
+                    <span className="flex-1 font-mono text-[0.55rem] uppercase tracking-widest text-[#8d7a68]">
+                      {channel ? `CH ${chNo} · ${channel.label}` : "Deep Cut · 4-head hi-fi"}
+                    </span>
+                    <span className="h-3 w-3 rounded-full border border-[#584a3d] bg-[#1d1712]" />
+                    <span className="h-3 w-3 rounded-full border border-[#584a3d] bg-[#1d1712]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* On a desk the guide sits under the set, two columns wide; on a
+              phone it goes last, after the remote and the card (the order is
+              in theatre.css, so the markup stays one tree). */}
+          {channels.length > 0 && !gate ? guide : null}
+        </div>
+
+        {gate ? null : (
+          <div className="th-side">
+            {error ? (
+              <p className="th-status th-status--bad">{error}</p>
+            ) : films === null ? (
+              <p className="th-status">Warming up the tube…</p>
+            ) : (
+              <>
+                {remote}
+                {nowPlaying}
+                {featureCard}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <p className="th-foot">
         Every film plays from its maker&apos;s own account. Their views, their numbers — we just
         keep the room dark.
       </p>
-
-      <Link
-        href="/"
-        className="text-center font-mono text-[0.65rem] uppercase tracking-widest text-dim underline"
-      >
-        ← Back to the theater
-      </Link>
     </section>
   );
 }

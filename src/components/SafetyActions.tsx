@@ -69,7 +69,7 @@ export default function SafetyActions({ userId, name }: { userId: string; name: 
         aria-expanded={open}
         className="font-mono text-[0.6rem] uppercase tracking-widest text-dim underline decoration-line"
       >
-        🛡 Block or report
+        Block or report
       </button>
 
       {open && (
@@ -95,7 +95,7 @@ export default function SafetyActions({ userId, name }: { userId: string; name: 
                 onClick={() => void block()}
                 className="rounded border border-ticket px-3 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-ticket disabled:opacity-50"
               >
-                🚫 Block {name}
+                Block {name}
               </button>
               <button
                 disabled={busy}

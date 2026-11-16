@@ -34,7 +34,7 @@ export default function InviteButton({ card = false }: { card?: boolean }) {
         onClick={() => void invite()}
         className="rounded border border-ticket px-3 py-2 font-mono text-xs uppercase tracking-widest text-ticket glow-ticket"
       >
-        {copied ? "Copied ✓" : "📣 Invite friends"}
+        {copied ? "Copied ✓" : "Invite friends"}
       </button>
     );
   }
@@ -53,7 +53,7 @@ export default function InviteButton({ card = false }: { card?: boolean }) {
         onClick={() => void invite()}
         className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
       >
-        {copied ? "Link copied ✓" : "📣 Send a ticket"}
+        {copied ? "Link copied ✓" : "Send a ticket"}
       </button>
     </div>
   );

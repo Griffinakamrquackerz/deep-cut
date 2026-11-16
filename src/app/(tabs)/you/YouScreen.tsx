@@ -89,7 +89,7 @@ export default function YouScreen(props: {
           onClick={() => void shareProfileLink()}
           className="flex-1 rounded bg-amber px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-widest text-bg"
         >
-          🎟 Share my card
+          Share my card
         </button>
         <button
           onClick={shareCard}

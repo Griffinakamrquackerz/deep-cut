@@ -269,7 +269,7 @@ export default function SettingsScreen({
               disabled={uploading}
               className="mt-1.5 rounded border border-amber px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest text-amber disabled:opacity-50"
             >
-              {uploading ? "Developing…" : avatar ? "New photo" : "📸 Add photo"}
+              {uploading ? "Developing…" : avatar ? "New photo" : "Add photo"}
             </button>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function SettingsScreen({
           {signature ? (
             <div className="mt-2 flex items-center justify-between rounded border border-amber/60 bg-bg px-3 py-2">
               <span className="min-w-0 truncate text-sm text-cream">
-                🎞 {signature.title}{" "}
+                {signature.title}{" "}
                 <span className="font-mono text-xs text-dim">{signature.year ?? ""}</span>
               </span>
               <button
@@ -445,7 +445,7 @@ export default function SettingsScreen({
         >
           <span className="text-left">
             <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-              {muted ? "🔇" : "🔊"} Sound effects
+              Sound effects
             </span>
             <span className="font-mono text-[0.6rem] text-dim">
               clicks, chimes & confetti pops
@@ -469,7 +469,7 @@ export default function SettingsScreen({
         >
           <span className="text-left">
             <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-              🎬 Where your money goes
+              Where your money goes
             </span>
             <span className="font-mono text-[0.6rem] text-dim">
               the tiers, the votes, and what gets made
@@ -532,7 +532,7 @@ export default function SettingsScreen({
         disabled={signingOut}
         className="mt-2 rounded border border-line px-4 py-3 font-mono text-xs uppercase tracking-widest text-cream disabled:opacity-50"
       >
-        {signingOut ? "Dimming the lights…" : "🚪 Sign out"}
+        {signingOut ? "Dimming the lights…" : "Sign out"}
       </button>
 
       {isAdmin && (
@@ -540,7 +540,7 @@ export default function SettingsScreen({
           href="/admin"
           className="rounded border border-amber/50 bg-amber/5 px-4 py-3 text-center font-mono text-xs uppercase tracking-widest text-amber"
         >
-          🎛 Projection booth (admin)
+          Projection booth (admin)
         </a>
       )}
 
@@ -685,14 +685,14 @@ function BalconySeats({
             disabled={!!busy}
             className="pulse-cta mt-3 w-full rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream disabled:opacity-50"
           >
-            {busy === "lifetime" ? "Opening the box office…" : "🏛 Get lifetime access — $150"}
+            {busy === "lifetime" ? "Opening the box office…" : "Get lifetime access — $150"}
           </button>
         </div>
       )}
       {active ? (
         <>
           <p className="mt-1 font-display text-2xl text-amber">
-            {lifetime ? "🏛 LIFETIME BALCONY" : "🥂 YOU'RE IN THE BALCONY"}
+            {lifetime ? "LIFETIME BALCONY" : "YOU'RE IN THE BALCONY"}
           </p>
           <p className="font-mono text-[0.65rem] text-dim">
             {PREMIUM_DEALS_PER_DAY} deals a day · zero ads
@@ -730,10 +730,10 @@ function BalconySeats({
         <>
           <p className="mt-1 font-display text-2xl text-amber">MOVE UP TO THE BALCONY</p>
           <ul className="mt-1 flex flex-col gap-0.5 font-mono text-[0.65rem] text-cream/90">
-            <li>🎟 {PREMIUM_DEALS_PER_DAY} deals a day (general admission gets {FREE_DEALS_PER_WINDOW} per {FREE_DEAL_WINDOW_HOURS} hours)</li>
+            <li>{PREMIUM_DEALS_PER_DAY} deals a day (general admission gets {FREE_DEALS_PER_WINDOW} per {FREE_DEAL_WINDOW_HOURS} hours)</li>
             <li>Free window starts with your first deal and resets {FREE_DEAL_WINDOW_HOURS} hours later.</li>
-            <li>🚫 Zero ads, anywhere</li>
-            <li>🥂 Member stamp on your card</li>
+            <li>Zero ads, anywhere</li>
+            <li>Member stamp on your card</li>
           </ul>
           {available && (
             <button

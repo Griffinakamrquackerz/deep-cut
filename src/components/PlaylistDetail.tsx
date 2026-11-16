@@ -264,7 +264,7 @@ export default function PlaylistDetail({
             >
               <span className="text-left">
                 <span className="block font-mono text-xs uppercase tracking-wider text-cream">
-                  {isPublic ? "🌐 Public mixtape" : "🔒 Private mixtape"}
+                  {isPublic ? "Public mixtape" : "Private mixtape"}
                 </span>
                 <span className="font-mono text-[0.6rem] text-dim">
                   {isPublic

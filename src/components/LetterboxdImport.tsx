@@ -113,7 +113,7 @@ export default function LetterboxdImport({ onDone }: { onDone: () => void }) {
                 onClick={() => fileRef.current?.click()}
                 className="pulse-cta rounded bg-ticket px-4 py-3 font-mono text-xs font-medium uppercase tracking-[0.2em] text-cream"
               >
-                ★ Choose the CSV ★
+                Choose the CSV
               </button>
               {error && <p className="font-mono text-xs text-ticket">{error}</p>}
             </>
